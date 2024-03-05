@@ -16,8 +16,11 @@ class Enemy(Entity):
         
         self.add(self.manager.groups["enemy"])
 
-        self.image = pygame.Surface((32, 32))
-        self.image.fill((255, 0, 0))
+        temp_s = pygame.Surface((32, 32))
+        temp_s.fill((255, 0, 0))
+        self.animation_manager.add_animation("TEMP", [temp_s])
+        self.image = self.animation_manager.set_animation("TEMP")
+
         self.rect = self.image.get_rect(topleft = start_pos)
         self.pos.xy = self.rect.topleft
 

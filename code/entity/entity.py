@@ -1,8 +1,9 @@
-import pygame, random
-from engine import Sprite
+import pygame
+from engine import Sprite, AnimationManager
+from util.constants import *
+
 from .stats import EntityStats
 from .bar import HealthBar
-from util.constants import *
 
 class Entity(Sprite):
     def __init__(self, parent, stats: EntityStats, hide_health_bar = False):
@@ -10,6 +11,8 @@ class Entity(Sprite):
         self.velocity = pygame.Vector2()
         self.pos = pygame.Vector2()
         self.stats = stats
+
+        self.animation_manager: AnimationManager = self.add_child(AnimationManager(self))
 
         self.health = self.stats.health
         self.iframes = self.stats.iframes
@@ -100,6 +103,7 @@ class Entity(Sprite):
     def update(self):
         super().update()
         self.move()
+        self.animation_manager.update()
         self.iframes -= self.manager.dt
         if self.iframes < 0:
             self.iframes = 0

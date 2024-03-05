@@ -22,20 +22,26 @@ class Player(Entity):
         self.id = "player"
         # self.image = pygame.Surface((TILE_SIZE // 2, TILE_SIZE // 2))
         # self.image.fill((49, 222, 49))
-        self.animation_manager: AnimationManager = self.add_child(AnimationManager(self))
-        self.animation_manager.add_animation("idle-right", parse_spritesheet(self.manager.get_image("player/idle-anim"), frame_count = 4))
-        self.animation_manager.add_animation("idle-left", parse_spritesheet(self.manager.get_image("player/idle-anim"), frame_count = 4, flip = True))
-        self.animation_manager.add_animation("walk-right", parse_spritesheet(self.manager.get_image("player/walk-anim"), frame_count = 6))
-        self.animation_manager.add_animation("walk-left", parse_spritesheet(self.manager.get_image("player/walk-anim"), frame_count = 6, flip = True))
-        self.image = self.animation_manager.set_animation("idle-left")
+        
+        self._load_animations()
+        self.image = self.animation_manager.set_animation("idle-right")
 
         self.rect = self.image.get_rect(topleft = start_pos)
         self.pos.xy = self.rect.topleft
 
-        self.last_facing: Literal["left", "right"] = "right"
+        self.last_facing = "right"
 
         self.DELETE_LATER_attack_cd = 30
         self.attack_cd = self.DELETE_LATER_attack_cd
+
+    def _load_animations(self):
+        types = ["idle", "damage", "walk", "death"]
+        directions = ["right", "left", "down", "up"]
+        for type in types:
+            rows = parse_spritesheet(self.manager.get_image("player/" + type), frame_count = 4, direction = "y")
+            for i, dir in enumerate(directions):
+                anim = parse_spritesheet(rows[i], frame_size = (16 * PIXEL_SCALE, 16 * PIXEL_SCALE))
+                self.animation_manager.add_animation(type + "-" + dir, anim)
 
     def get_inputs(self):
         # movement
@@ -45,8 +51,10 @@ class Player(Entity):
 
         if keys[pygame.K_w]:
             dv.y -= 1
+            self.last_facing = "up"
         if keys[pygame.K_s]:
             dv.y += 1
+            self.last_facing = "down"
         if keys[pygame.K_a]:
             dv.x -= 1
             self.last_facing = "left"
@@ -98,12 +106,6 @@ class Player(Entity):
     def update(self):
         super().update()
         self.get_inputs()
-        self.animation_manager.update()
         self.attack_cd -= self.manager.dt
         if self.attack_cd < 0:
             self.attack_cd = 0
-
-        # if self.iframes > 0:
-        #     self.image.fill((0, 0, 255))
-        # else:
-        #     self.image.fill((49, 222, 49))

@@ -11,7 +11,8 @@ class Sprite(pygame.sprite.Sprite, Node):
 
     def kill(self):
         for child in self.children:
-            child.kill()
+            if isinstance(child, Sprite):
+                child.kill()
             
         self.parent.remove_child(self)
         pygame.sprite.Sprite.kill(self)

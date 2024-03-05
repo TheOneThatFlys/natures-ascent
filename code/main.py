@@ -28,7 +28,7 @@ class Game:
         pygame.display.set_caption("Nature's Ascent")
 
         self.manager = Manager()
-        self.manager.set_pixel_scale(2)
+        self.manager.set_pixel_scale(PIXEL_SCALE)
         self.manager.load_assets()
 
         pygame.display.set_icon(self.manager.get_image("tree"))

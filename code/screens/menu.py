@@ -11,7 +11,7 @@ class Menu(Screen):
             parent = self,
             style = Style(
                 size = self.rect.size,
-                colour = (23, 24, 25)
+                colour = (15,15,15)
             )
         )
 
