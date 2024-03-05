@@ -72,7 +72,12 @@ class Game:
                     self._screens[self.current_screen].on_key_down(event.key)
                     if event.key == pygame.K_F9:
                         # reload assets
+                        print("[DEBUG] Reloading assets...")
                         self.manager.load_assets()
+
+                        current_screen = self._screens[self.current_screen]
+                        current_screen.__init__(self)
+
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     self._screens[self.current_screen].on_mouse_down(event.button)
                 elif event.type == pygame.VIDEORESIZE:

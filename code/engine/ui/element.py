@@ -41,7 +41,7 @@ class Element(Node):
 
     def redraw_image(self):
         self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
-        self.image.fill(self.style.colour)
+        
 
         if self.style.image:
             # if no size provided
@@ -67,6 +67,8 @@ class Element(Node):
                     self.image = self.style.image
                 else:
                     raise TypeError(f"Unknown image stretch type: {self.style.stretch_type}")
+        else:
+            self.image.fill(self.style.colour)
 
         self.rect = self.image.get_rect()
         self.calculate_position()

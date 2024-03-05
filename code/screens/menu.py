@@ -10,8 +10,7 @@ class Menu(Screen):
             parent = self,
             style = Style(
                 size = self.rect.size,
-                image = self.manager.get_image("bg"),
-                stretch_type = "skew"
+                colour = (23, 24, 25)
             )
         )
 
@@ -22,8 +21,20 @@ class Menu(Screen):
                 style = Style(
                     alignment = "top-center",
                     offset = (0, 100),
-                    fore_colour = (255, 255, 255),
+                    fore_colour = (99, 169, 65),
                     font = self.manager.get_font("alagard", 72),
+                )
+            )
+        )
+
+        self.tree_img = self.master_container.add_child(
+            Element(
+                self,
+                style = Style(
+                    size = (384, 384),
+                    image = self.manager.get_image("tree"),
+                    stretch_type = "expand",
+                    alignment = "bottom-center"
                 )
             )
         )
@@ -32,22 +43,21 @@ class Menu(Screen):
             Button(
                 parent = self.master_container,
                 style = Style(
-                    alignment = "top-center",
-                    offset = (0, 200),
-                    size = (120, 70),
-                    colour = (0, 255, 0),
-                    image = self.manager.get_image("download"),
-                    stretch_type = "skew",
+                    alignment = "bottom-center",
+                    offset = (0, self.tree_img.image.get_height() + 48),
+                    size = (192, 96),
+                    image = self.manager.get_image("play_button/normal"),
+                    stretch_type = "expand",
                 ),
                 hover_style = Style(
-                    colour = (255, 0, 0),
-                    image = None,
+                    image = self.manager.get_image("play_button/hover"),
                 ),
                 on_click = self.parent.set_screen,
                 click_args = ("level",),
             )
         )
 
+        # play button text
         self.play_button.add_child(
             Text(
                 parent = self.play_button,
