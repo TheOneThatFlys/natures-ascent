@@ -14,14 +14,18 @@ class Entity(Sprite):
         self.health = self.stats.health
         self.iframes = self.stats.iframes
 
-        if not hide_health_bar:
-            self.add_child(HealthBar(
+        self.hide_health_bar = hide_health_bar
+        self.time_since_hit = HEALTH_VISIBILITY_TIME + 1
+        self.health_bar = self.add_child(
+            HealthBar(
                 self,
-                border_colour = (12, 50, 13),
+                border_colour = (0, 0, 0),
                 border_size = 2,
                 health_colour = (255, 10, 10),
-                health_height = 4,
-            ))
+                health_height = 4
+            )
+        )
+        self.health_bar.hide()
 
     # both collision functions take the future position of the hitbox
     # and check if it intersects with an obstical
@@ -72,6 +76,8 @@ class Entity(Sprite):
             if self.health <= 0:
                 self.kill()
 
+            self.time_since_hit = 0
+
     def move(self):
         # checking collisions of one direction at a time
         # ensures that an overlap of bounds is due to the
@@ -97,3 +103,10 @@ class Entity(Sprite):
         self.iframes -= self.manager.dt
         if self.iframes < 0:
             self.iframes = 0
+
+        if self.time_since_hit < HEALTH_VISIBILITY_TIME:
+            self.time_since_hit += self.manager.dt
+            if not self.hide_health_bar:
+                self.health_bar.show()
+        else:
+            self.health_bar.hide()

@@ -14,6 +14,8 @@ class HealthBar(Sprite):
         self.health_colour = health_colour
         self.health_height = health_height
 
+        self.hidden = False
+
         self._redraw_image()
 
     def _redraw_image(self, *padding_xy):
@@ -37,3 +39,14 @@ class HealthBar(Sprite):
         # render bar below parent with a little padding
         self.rect.bottom = self.parent.rect.top - 16
         self.rect.centerx = self.parent.rect.centerx
+
+    def show(self):
+        if self.hidden:
+            print("asdhOISADHOID")
+            self.add(self.manager.groups["render"])
+            self.hidden = False
+
+    def hide(self):
+        if not self.hidden:
+            self.remove(self.manager.groups["render"])
+            self.hidden = True

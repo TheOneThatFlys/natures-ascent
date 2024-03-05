@@ -1,4 +1,5 @@
 import pygame
+from typing import Literal
 from util.constants import *
 from weapon import MeleeWeaponAttack, WeaponStats
 from engine import parse_animation, AnimationManager
@@ -30,7 +31,7 @@ class Player(Entity):
         self.rect = self.image.get_rect(topleft = start_pos)
         self.pos.xy = self.rect.topleft
 
-        self.last_facing = "right"
+        self.last_facing: Literal["left", "right"] = "right"
 
         self.DELETE_LATER_attack_cd = 30
         self.attack_cd = self.DELETE_LATER_attack_cd
