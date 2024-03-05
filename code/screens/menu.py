@@ -1,6 +1,7 @@
 import pygame
 from engine import Screen
 from engine.ui import Element, Style, Text, Button
+from util import parse_spritesheet
 
 class Menu(Screen):
     def __init__(self, parent):
@@ -39,6 +40,7 @@ class Menu(Screen):
             )
         )
 
+        play_norm, play_hover = parse_spritesheet(self.manager.get_image("playbutton"), frame_count=2)
         self.play_button = self.master_container.add_child(
             Button(
                 parent = self.master_container,
@@ -47,28 +49,14 @@ class Menu(Screen):
                     position = "absolute",
                     offset = (0, self.title.rect.bottom + (self.tree_img.rect.y - self.title.rect.bottom) / 2 - 48),
                     size = (96, 96),
-                    image = self.manager.get_image("play_button/normal"),
+                    image = play_norm,
                     stretch_type = "expand",
                 ),
                 hover_style = Style(
-                    image = self.manager.get_image("play_button/hover"),
+                    image = play_hover,
                 ),
                 on_click = self.parent.set_screen,
                 click_args = ("level",),
-            )
-        )
-
-        # play button text
-        self.play_button.add_child(
-            Text(
-                parent = self.play_button,
-                text = "Play",
-                style = Style(
-                    alignment = "center-center",
-                    fore_colour = (255, 255, 255),
-                    font = self.manager.get_font("alagard", 24),
-                    offset = (0.1, 0),
-                )
             )
         )
 

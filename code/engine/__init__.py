@@ -3,4 +3,4 @@ from .manager import Manager
 from .screen import Screen
 from .sprite import Sprite
 
-from .animation import parse_spritesheet, AnimationManager
+from .animation import AnimationManager
