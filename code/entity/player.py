@@ -20,13 +20,17 @@ class Player(Entity):
         self.id = "player"
         # self.image = pygame.Surface((TILE_SIZE // 2, TILE_SIZE // 2))
         # self.image.fill((49, 222, 49))
-        self.animation_manager = self.add_child(AnimationManager(self))
-        self.animation_manager.add_animation("idle", parse_animation(self.manager.get_image("TEMP_PLAYER"), frame_count = 4))
-        self.animation_manager.set_animation("idle")
-        self.image = self.animation_manager.get_default("idle")
+        self.animation_manager: AnimationManager = self.add_child(AnimationManager(self))
+        self.animation_manager.add_animation("idle-right", parse_animation(self.manager.get_image("player/idle-anim"), frame_count = 4))
+        self.animation_manager.add_animation("idle-left", parse_animation(self.manager.get_image("player/idle-anim"), frame_count = 4, flip = True))
+        self.animation_manager.add_animation("walk-right", parse_animation(self.manager.get_image("player/walk-anim"), frame_count = 6))
+        self.animation_manager.add_animation("walk-left", parse_animation(self.manager.get_image("player/walk-anim"), frame_count = 6, flip = True))
+        self.image = self.animation_manager.set_animation("idle-left")
 
         self.rect = self.image.get_rect(topleft = start_pos)
         self.pos.xy = self.rect.topleft
+
+        self.last_facing = "right"
 
         self.DELETE_LATER_attack_cd = 30
         self.attack_cd = self.DELETE_LATER_attack_cd
@@ -43,8 +47,15 @@ class Player(Entity):
             dv.y += 1
         if keys[pygame.K_a]:
             dv.x -= 1
+            self.last_facing = "left"
         if keys[pygame.K_d]:
             dv.x += 1
+            self.last_facing = "right"
+
+        if keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d]:
+            self.animation_manager.set_animation("walk-" + self.last_facing)
+        else:
+            self.animation_manager.set_animation("idle-" + self.last_facing)
 
         if keys[pygame.K_RIGHT]:
             self.try_attack("right")
