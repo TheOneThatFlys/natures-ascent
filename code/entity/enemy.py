@@ -9,7 +9,7 @@ class Enemy(Entity):
             stats = EntityStats(
                 health = 30,
                 iframes = 20,
-                contact_damage = 10,
+                contact_damage = 1000,
                 walk_speed = 0.6
             )
         )

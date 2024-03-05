@@ -15,6 +15,10 @@ class AnimationManager(Node):
         self._counter = 0
         self._current_index = 0
 
+    @property
+    def current(self):
+        return self._current
+
     def add_animation(self, key: str, animation: list[pygame.Surface]):
         "Add an animation. Can be chain called."
         self._animations[key] = animation

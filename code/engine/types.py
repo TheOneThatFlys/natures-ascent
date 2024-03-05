@@ -5,3 +5,4 @@ Alignment = Literal["top-left", "top-right", "bottom-left", "bottom-right", "cen
 Position = Literal["absolute", "relative"]
 Colour = pygame.Color | tuple[int, int, int]
 StretchType = Literal["skew", "expand", "none", "fit"]
+Direction = Literal["up", "down", "left", "right"]
