@@ -1,7 +1,6 @@
 # TODO:
 # - MAKE ASSETS - FEEL POLISHED
 # Weapon system - equip & inv
-# Animation
 # Rooms
 # Generation
 
@@ -71,6 +70,9 @@ class Game:
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
                     self._screens[self.current_screen].on_key_down(event.key)
+                    if event.key == pygame.K_F9:
+                        # reload assets
+                        self.manager.load_assets()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     self._screens[self.current_screen].on_mouse_down(event.button)
                 elif event.type == pygame.VIDEORESIZE:
