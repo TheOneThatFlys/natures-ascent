@@ -2,7 +2,8 @@ import pygame
 from typing import Literal
 from util.constants import *
 from weapon import MeleeWeaponAttack, WeaponStats
-from engine import parse_spritesheet, AnimationManager
+from engine import AnimationManager
+from util import parse_spritesheet
 from .entity import Entity
 from .stats import EntityStats
 
