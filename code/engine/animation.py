@@ -2,9 +2,9 @@ import pygame
 from .node import Node
 from .sprite import Sprite
 
-def parse_animation(spritesheet, *, frame_size: tuple[int, int] = None, frame_count: int = None, no_alpha: bool = False, flip: bool = False) -> list[pygame.Surface]:
+def parse_spritesheet(spritesheet, *, frame_size: tuple[int, int] = None, frame_count: int = None, no_alpha: bool = False, flip: bool = False) -> list[pygame.Surface]:
     """
-    Returns a list of surfaces containing each frame of the animation sheet.
+    Returns a list of surfaces containing each frame of the sprite sheet.
 
     Modifications to the base spritesheet will not affect the resulting frames.
 

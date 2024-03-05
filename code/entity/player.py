@@ -2,7 +2,7 @@ import pygame
 from typing import Literal
 from util.constants import *
 from weapon import MeleeWeaponAttack, WeaponStats
-from engine import parse_animation, AnimationManager
+from engine import parse_spritesheet, AnimationManager
 from .entity import Entity
 from .stats import EntityStats
 
@@ -22,10 +22,10 @@ class Player(Entity):
         # self.image = pygame.Surface((TILE_SIZE // 2, TILE_SIZE // 2))
         # self.image.fill((49, 222, 49))
         self.animation_manager: AnimationManager = self.add_child(AnimationManager(self))
-        self.animation_manager.add_animation("idle-right", parse_animation(self.manager.get_image("player/idle-anim"), frame_count = 4))
-        self.animation_manager.add_animation("idle-left", parse_animation(self.manager.get_image("player/idle-anim"), frame_count = 4, flip = True))
-        self.animation_manager.add_animation("walk-right", parse_animation(self.manager.get_image("player/walk-anim"), frame_count = 6))
-        self.animation_manager.add_animation("walk-left", parse_animation(self.manager.get_image("player/walk-anim"), frame_count = 6, flip = True))
+        self.animation_manager.add_animation("idle-right", parse_spritesheet(self.manager.get_image("player/idle-anim"), frame_count = 4))
+        self.animation_manager.add_animation("idle-left", parse_spritesheet(self.manager.get_image("player/idle-anim"), frame_count = 4, flip = True))
+        self.animation_manager.add_animation("walk-right", parse_spritesheet(self.manager.get_image("player/walk-anim"), frame_count = 6))
+        self.animation_manager.add_animation("walk-left", parse_spritesheet(self.manager.get_image("player/walk-anim"), frame_count = 6, flip = True))
         self.image = self.animation_manager.set_animation("idle-left")
 
         self.rect = self.image.get_rect(topleft = start_pos)

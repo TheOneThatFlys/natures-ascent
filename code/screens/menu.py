@@ -43,9 +43,10 @@ class Menu(Screen):
             Button(
                 parent = self.master_container,
                 style = Style(
-                    alignment = "bottom-center",
-                    offset = (0, self.tree_img.image.get_height() + 48),
-                    size = (192, 96),
+                    alignment = "top-center",
+                    position = "absolute",
+                    offset = (0, self.title.rect.bottom + (self.tree_img.rect.y - self.title.rect.bottom) / 2 - 48),
+                    size = (96, 96),
                     image = self.manager.get_image("play_button/normal"),
                     stretch_type = "expand",
                 ),
@@ -70,6 +71,10 @@ class Menu(Screen):
                 )
             )
         )
+
+    def on_resize(self, new_res):
+        # on resize: just recreate menu with new res
+        self.__init__(self.parent)
 
     def render(self, window):
         self.master_container.render(window)
