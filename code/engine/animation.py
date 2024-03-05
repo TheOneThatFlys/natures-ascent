@@ -15,6 +15,8 @@ class AnimationManager(Node):
         self._counter = 0
         self._current_index = 0
 
+        self.finished = False
+
     @property
     def current(self):
         return self._current
@@ -29,6 +31,7 @@ class AnimationManager(Node):
         if key != self._current:
             self._current = key
             self._current_index = 0
+            self.finished = False
 
         return self._animations[key][0]
 
@@ -39,5 +42,6 @@ class AnimationManager(Node):
             self._current_index += 1
             if self._current_index == len(self._animations[self._current]):
                 self._current_index = 0
+                self.finished = True
             self._counter = 0
 

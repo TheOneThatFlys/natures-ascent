@@ -1,2 +1,2 @@
 from .parsers import parse_spritesheet
-from .misc import scale_surface_by
+from .misc import scale_surface_by, get_closest_direction

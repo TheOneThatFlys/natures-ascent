@@ -1,6 +1,6 @@
 import pygame
 from engine.types import *
-from util import parse_spritesheet, scale_surface_by
+from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 from weapon import MeleeWeaponAttack, WeaponStats
 from .entity import Entity
@@ -45,6 +45,7 @@ class Player(Entity):
         self.pos.xy = self.rect.topleft
 
         self.last_facing = LastFacing()
+        self.walking = False
 
         self.DELETE_LATER_attack_cd = 30
         self.attack_cd = self.DELETE_LATER_attack_cd
@@ -64,24 +65,24 @@ class Player(Entity):
 
         dv = pygame.Vector2()
 
-        walking = False
+        self.walking = False
 
         if keys[pygame.K_w]:
             dv.y -= 1
             self.last_facing.set("walk", "up")
-            walking = True
+            self.walking = True
         if keys[pygame.K_s]:
             dv.y += 1
             self.last_facing.set("walk", "down")
-            walking = True
+            self.walking = True
         if keys[pygame.K_a]:
             dv.x -= 1
             self.last_facing.set("walk", "left")
-            walking = True
+            self.walking = True
         if keys[pygame.K_d]:
             dv.x += 1
             self.last_facing.set("walk", "right")
-            walking = True
+            self.walking = True
 
         attacking = False
         if keys[pygame.K_RIGHT]:
@@ -103,12 +104,20 @@ class Player(Entity):
         current_animation = self.animation_manager.current
         if "death" in current_animation or "damage" in current_animation: return
 
-        if walking:
+        self.eval_anim()
+
+    def eval_anim(self):
+        if self.walking:
             # use last attack direction if in attack anim, else use walk direction
             direction = self.last_facing.attack if self.attack_cd > 0 else self.last_facing.walk
             self.animation_manager.set_animation("walk-" + direction)
         else:
             self.animation_manager.set_animation("idle-" + self.last_facing.overall)
+
+    def hit(self, other, damage: int = 0, kb_magnitude: int = 0):
+        super().hit(other, damage, kb_magnitude)
+        hit_direction = get_closest_direction(pygame.Vector2(other.rect.center) - pygame.Vector2(self.rect.center))
+        self.animation_manager.set_animation("damage-" + hit_direction)
 
     def try_attack(self, direction: Direction) -> bool:
         "Attempts an attack, returning True if successful and False if not"
@@ -140,3 +149,7 @@ class Player(Entity):
         self.attack_cd -= self.manager.dt
         if self.attack_cd < 0:
             self.attack_cd = 0
+
+        if "damage" in self.animation_manager.current:
+            if self.animation_manager.finished:
+                self.eval_anim()
