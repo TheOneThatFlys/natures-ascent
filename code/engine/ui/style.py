@@ -22,6 +22,8 @@ class Style:
     image: pygame.Surface = None
     stretch_type: StretchType = "none"
 
+    text_shadow: bool = False
+
     @staticmethod
     def from_style(style: Style, **changes) -> Style:
         "Returns a shallow copy of style with changes."

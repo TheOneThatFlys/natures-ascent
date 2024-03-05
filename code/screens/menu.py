@@ -23,6 +23,8 @@ class Menu(Screen):
                     alignment = "top-center",
                     offset = (0, 100),
                     fore_colour = (99, 169, 65),
+                    colour = (23, 68, 41),
+                    text_shadow = True,
                     font = self.manager.get_font("alagard", 72),
                 )
             )
