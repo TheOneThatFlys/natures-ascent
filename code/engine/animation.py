@@ -2,7 +2,7 @@ import pygame
 from .node import Node
 from .sprite import Sprite
 
-def parse_animation(spritesheet, *, frame_size: tuple[int, int] = None, frame_count: int = None, no_alpha = False) -> list[pygame.Surface]:
+def parse_animation(spritesheet, *, frame_size: tuple[int, int] = None, frame_count: int = None, no_alpha: bool = False, flip: bool = False) -> list[pygame.Surface]:
     """
     Returns a list of surfaces containing each frame of the animation sheet.
 
@@ -29,6 +29,8 @@ def parse_animation(spritesheet, *, frame_size: tuple[int, int] = None, frame_co
         else:
             frame = pygame.Surface(size, pygame.SRCALPHA)
         frame.blit(spritesheet, (-i * size[0], 0))
+        if flip:
+            frame = pygame.transform.flip(frame, 1, 0)
         frames.append(frame)
 
     return frames
@@ -52,13 +54,11 @@ class AnimationManager(Node):
         return self
 
     def set_animation(self, key: str):
-        "Plays the specified animation."
+        "Plays the specified animation and returns first frame."
         if key != self._current:
             self._current = key
             self._current_index = 0
 
-    def get_default(self, key: str) -> pygame.Surface:
-        "Get the first frame of an animation."
         return self._animations[key][0]
 
     def update(self):
