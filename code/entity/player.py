@@ -51,7 +51,7 @@ class Player(Entity):
         self.attack_cd = self.DELETE_LATER_attack_cd
 
     def _load_animations(self):
-        types = ["idle", "damage", "walk", "death"]
+        types = ["idle", "damage", "walk"]
         directions = ["right", "left", "down", "up"]
         for type in types:
             rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/" + type), 2), frame_count = 4, direction = "y")
