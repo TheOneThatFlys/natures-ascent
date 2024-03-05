@@ -1,9 +1,7 @@
 import pygame
-from typing import Literal
 from util.constants import *
 from weapon import MeleeWeaponAttack, WeaponStats
-from engine import AnimationManager
-from util import parse_spritesheet
+from util import parse_spritesheet, scale_surface_by
 from .entity import Entity
 from .stats import EntityStats
 
@@ -38,9 +36,9 @@ class Player(Entity):
         types = ["idle", "damage", "walk", "death"]
         directions = ["right", "left", "down", "up"]
         for type in types:
-            rows = parse_spritesheet(self.manager.get_image("player/" + type), frame_count = 4, direction = "y")
+            rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/" + type), 2), frame_count = 4, direction = "y")
             for i, dir in enumerate(directions):
-                anim = parse_spritesheet(rows[i], frame_size = (16 * PIXEL_SCALE, 16 * PIXEL_SCALE))
+                anim = parse_spritesheet(rows[i], frame_size = (32 * PIXEL_SCALE, 32 * PIXEL_SCALE))
                 self.animation_manager.add_animation(type + "-" + dir, anim)
 
     def get_inputs(self):
@@ -62,11 +60,6 @@ class Player(Entity):
             dv.x += 1
             self.last_facing = "right"
 
-        if keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d]:
-            self.animation_manager.set_animation("walk-" + self.last_facing)
-        else:
-            self.animation_manager.set_animation("idle-" + self.last_facing)
-
         if keys[pygame.K_RIGHT]:
             self.try_attack("right")
         elif keys[pygame.K_LEFT]:
@@ -75,6 +68,11 @@ class Player(Entity):
             self.try_attack("up")
         elif keys[pygame.K_DOWN]:
             self.try_attack("down")
+
+        if keys[pygame.K_w] or keys[pygame.K_s] or keys[pygame.K_a] or keys[pygame.K_d]:
+            self.animation_manager.set_animation("walk-" + self.last_facing)
+        else:
+            self.animation_manager.set_animation("idle-" + self.last_facing)
 
         # normalise vector so that diagonal movement is the
         # same speed as horizontal
@@ -102,6 +100,7 @@ class Player(Entity):
                 )
             )
             self.attack_cd = self.DELETE_LATER_attack_cd
+            self.last_facing = direction
 
     def update(self):
         super().update()
