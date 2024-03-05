@@ -6,12 +6,7 @@ class Element(Node):
     def __init__(self, parent: Node, style: Style):
         super().__init__(parent)
 
-        if hasattr(parent, "style"):
-            parent_style = parent.style
-        else:
-            parent_style = Style()
-
-        self.style = Style.merge(parent_style, style)
+        self.style = style
 
         self.redraw_image()
 
@@ -20,17 +15,20 @@ class Element(Node):
         if self.style.position == "relative":
             base_rect = self.parent.rect
         elif self.style.position == "absolute":
-            raise NotImplementedError()
+            base_rect = pygame.display.get_surface().get_rect()
         else:
             raise TypeError(f"Unknown position type: {self.style.position}")
 
         y_alignment, x_alignment = self.style.alignment.split("-")
+
         if x_alignment == "left":
             self.rect.x = base_rect.x + self.style.offset[0]
         elif x_alignment == "right":
             self.rect.right = base_rect.right - self.style.offset[0]
         elif x_alignment == "center":
             self.rect.centerx = base_rect.centerx + self.style.offset[0]
+        else:
+            raise TypeError(f"Unknown x alignment type: {x_alignment}")
 
         if y_alignment == "top":
             self.rect.y = base_rect.y + self.style.offset[1]
@@ -38,6 +36,8 @@ class Element(Node):
             self.rect.bottom = base_rect.bottom - self.style.offset[1]
         elif y_alignment == "center":
             self.rect.centery = base_rect.centery + self.style.offset[1]
+        else:
+            raise TypeError(f"Unknown y alignment type: {y_alignment}")
 
     def redraw_image(self):
         self.image = pygame.Surface(self.style.size)

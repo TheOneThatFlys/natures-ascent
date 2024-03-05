@@ -1,10 +1,21 @@
-import pygame, math
-from entity import Entity
-from util.math import clamp
+import pygame
+from .entity import Entity
+from .stats import EntityStats
 
 class Enemy(Entity):
     def __init__(self, parent, start_pos):
-        super().__init__(parent)
+        super().__init__(
+            parent,
+            stats = EntityStats(
+                health = 30,
+                iframes = 20,
+                contact_damage = 10,
+                walk_speed = 0.6
+            )
+        )
+        
+        self.add(self.manager.groups["enemy"])
+
         self.image = pygame.Surface((32, 32))
         self.image.fill((255, 0, 0))
         self.rect = self.image.get_rect(topleft = start_pos)
@@ -17,7 +28,7 @@ class Enemy(Entity):
 
         velocity = pygame.Vector2(self.player.rect.center) - pygame.Vector2(self.rect.center)
         if velocity.magnitude() != 0:
-            velocity = velocity.normalize() * 0.6
+            velocity = velocity.normalize() * self.stats.walk_speed
 
         self.add_velocity(velocity)
 

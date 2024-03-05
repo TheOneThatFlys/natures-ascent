@@ -1,15 +1,27 @@
 import pygame, random
 from engine import Sprite
+from .stats import EntityStats
+from .bar import HealthBar
 from util.constants import *
 
 class Entity(Sprite):
-    def __init__(self, parent):
+    def __init__(self, parent, stats: EntityStats, hide_health_bar = False):
         super().__init__(parent, groups = ["render", "update"])
         self.velocity = pygame.Vector2()
         self.pos = pygame.Vector2()
+        self.stats = stats
 
-        self.STAT_max_iframes = 60
-        self.iframes = self.STAT_max_iframes
+        self.health = self.stats.health
+        self.iframes = self.stats.iframes
+
+        if not hide_health_bar:
+            self.add_child(HealthBar(
+                self,
+                border_colour = (12, 50, 13),
+                border_size = 2,
+                health_colour = (255, 10, 10),
+                health_height = 4,
+            ))
 
     # both collision functions take the future position of the hitbox
     # and check if it intersects with an obstical
@@ -47,13 +59,18 @@ class Entity(Sprite):
         "Adds velocity to entity, i.e a force in an instant."
         self.velocity += velocity
 
-    def hit(self, other, kb_magnitude = 0):
+    def hit(self, other, damage = 0, kb_magnitude = 0):
         if self.iframes == 0:
             kbv = self.pos - other.pos
             kbv.scale_to_length(kb_magnitude)
             self.add_velocity(kbv)
 
-            self.iframes = self.STAT_max_iframes
+            self.iframes = self.stats.iframes
+
+            self.health -= damage
+
+            if self.health <= 0:
+                self.kill()
 
     def move(self):
         # checking collisions of one direction at a time
@@ -75,6 +92,7 @@ class Entity(Sprite):
         self.rect.topleft = self.pos
 
     def update(self):
+        super().update()
         self.move()
         self.iframes -= self.manager.dt
         if self.iframes < 0:

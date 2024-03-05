@@ -1,9 +1,9 @@
 from __future__ import annotations
 import pygame
 from dataclasses import dataclass, replace, fields
-from .types import *
+from ..types import *
 
-IGNORED_MERGE_PROPERTIES = ("size", "offset")
+IGNORED_DEFAULT_MERGE = ("image")
 
 @dataclass
 class Style:
@@ -14,11 +14,8 @@ class Style:
     alignment: Alignment = "top-left"
     offset: tuple[int, int] = (0, 0)
 
-    border_thickness = 0
-
     colour: Colour = (0, 0, 0)
     fore_colour: Colour = (0, 0, 0)
-    border_colour: Colour = (0, 0, 0)
 
     font: pygame.font.Font = None
 
@@ -35,8 +32,7 @@ class Style:
         """
         Returns a new style with merged properties from style1 and style2; properties from style2 will take priority.\n
         Ignored properties:
-        - size
-        - offset
+        - image
         """
 
         # if one of the styles is None, return the other
@@ -59,7 +55,8 @@ class Style:
             # if there are conflicts...
             else:
                 # style 1 value is assigned if style 2 value is default (omitted)
-                if style2_val == default_val:
+                # or is an ignored field
+                if style2_val == default_val and not field.name in IGNORED_DEFAULT_MERGE:
                     setattr(new_style, field.name, style1_val)
                 else:
                     # style 2 value is assigned if style 2 is specified

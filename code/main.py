@@ -1,3 +1,10 @@
+# TODO:
+# - MAKE ASSETS - FEEL POLISHED
+# Weapon system - equip & inv
+# Animation
+# Rooms
+# Generation
+
 from __future__ import annotations
 
 import os
@@ -22,6 +29,8 @@ class Game:
         pygame.display.set_caption("Nature's Ascent")
 
         self.manager = Manager()
+        self.manager.set_pixel_scale(2)
+        self.manager.load_assets()
 
         # dictionary to hold screens
         self._screens: dict[str, Screen] = {}

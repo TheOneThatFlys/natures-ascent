@@ -14,19 +14,23 @@ class Level(Screen):
         self.player = self.add_child(Player(self, pygame.Vector2(0, 0)))
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite=self.player, follow_speed=0.1))
 
+        self.debug_enabled = False
+
         self._gen_test_map()
 
     def _gen_test_map(self, n = 10):
         temp = pygame.Surface((TILE_SIZE, TILE_SIZE))
         temp.fill((255, 255, 255))
         for i in range(n):
-            Tile(self, temp, (i * TILE_SIZE, i* TILE_SIZE))
-        Enemy(self, (-TILE_SIZE, -TILE_SIZE))
+            self.add_child(Tile(self, temp, (i * TILE_SIZE, i* TILE_SIZE)))
+        self.add_child(Enemy(self, (-TILE_SIZE, -TILE_SIZE)))
 
     def on_key_down(self, key):
         if key == pygame.K_r:
             # restart level
             self.__init__()
+        elif key == pygame.K_F3:
+            self.debug_enabled = not self.debug_enabled
 
     def on_resize(self, new_size):
         # remake game surface to new size
@@ -41,9 +45,12 @@ class Level(Screen):
         # update all sprites in update group
         self.manager.groups["update"].update()
 
+    def debug(self):
+        pass
+
     def render(self, surface: pygame.Surface):
         # clear game surface
-        self.game_surface.fill((0, 0, 0))
+        self.game_surface.fill((30, 31, 33))
 
         # render objects with layered camera
         self.camera.render(
@@ -55,6 +62,9 @@ class Level(Screen):
 
         # render to window
         surface.blit(self.game_surface, (0, 0))
+
+        if self.debug_enabled:
+            self.debug()
 
 class FollowCameraLayered(Sprite):
     def __init__(self, level, target_sprite, follow_speed = 2, tolerence = 5):

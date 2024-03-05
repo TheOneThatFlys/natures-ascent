@@ -10,34 +10,25 @@ class Menu(Screen):
             parent = self,
             style = Style(
                 size = self.rect.size,
-            )
-        )
-
-        self.test_image = self.master_container.add_child(
-            Element(
-                parent = self.master_container,
-                style = Style(
-                    alignment = "bottom-center",
-                    image = pygame.image.load("assets/download.png").convert(),
-                    stretch_type = "fit"
-                )
+                image = self.manager.get_image("bg"),
+                stretch_type = "skew"
             )
         )
 
         self.title = self.master_container.add_child(
             Text(
                 parent = self.master_container,
-                text = "TILE HERE",
+                text = "Nature's Ascent",
                 style = Style(
                     alignment = "top-center",
                     offset = (0, 100),
                     fore_colour = (255, 255, 255),
-                    font = pygame.font.Font(None, 32),
+                    font = self.manager.get_font("alagard", 72),
                 )
             )
         )
 
-        self.test_button = self.master_container.add_child(
+        self.play_button = self.master_container.add_child(
             Button(
                 parent = self.master_container,
                 style = Style(
@@ -45,25 +36,26 @@ class Menu(Screen):
                     offset = (0, 200),
                     size = (120, 70),
                     colour = (0, 255, 0),
-                    image = pygame.image.load("assets/download.png").convert(),
-                    stretch_type="skew",
+                    image = self.manager.get_image("download"),
+                    stretch_type = "skew",
                 ),
                 hover_style = Style(
                     colour = (255, 0, 0),
+                    image = None,
                 ),
                 on_click = self.parent.set_screen,
                 click_args = ("level",),
             )
         )
 
-        self.test_button.add_child(
+        self.play_button.add_child(
             Text(
-                parent = self.test_button,
-                text = "WOW",
+                parent = self.play_button,
+                text = "Play",
                 style = Style(
                     alignment = "center-center",
                     fore_colour = (255, 255, 255),
-                    font = pygame.font.Font(None, 16),
+                    font = self.manager.get_font("alagard", 24),
                     offset = (0.1, 0),
                 )
             )
