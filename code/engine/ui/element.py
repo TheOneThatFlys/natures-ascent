@@ -40,7 +40,7 @@ class Element(Node):
             raise TypeError(f"Unknown y alignment type: {y_alignment}")
 
     def redraw_image(self):
-        self.image = pygame.Surface(self.style.size)
+        self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
         self.image.fill(self.style.colour)
 
         if self.style.image:
