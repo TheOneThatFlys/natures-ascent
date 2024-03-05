@@ -42,7 +42,6 @@ class HealthBar(Sprite):
 
     def show(self):
         if self.hidden:
-            print("asdhOISADHOID")
             self.add(self.manager.groups["render"])
             self.hidden = False
 
