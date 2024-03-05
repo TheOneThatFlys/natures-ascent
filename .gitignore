@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /.VSCodeCounter/2024-03-01_10-58-31
+
+.VSCodeCounter
