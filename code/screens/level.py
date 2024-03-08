@@ -1,8 +1,26 @@
 import pygame
 from util.constants import *
-from engine import Screen, Sprite
+from engine import Screen, Sprite, ui
 from entity import Player, Enemy
 from world import Tile
+
+class DebugUI(ui.Element):
+    def __init__(self, parent):
+        super().__init__(parent, style = ui.Style(alpha = 0, visible = False))
+
+        self.fps = self.add_child(ui.Text(
+            parent = self,
+            text = "LOADING FPS",
+            style = ui.Style(
+                font = self.manager.get_font("alagard", 32),
+                fore_colour = (255, 255, 255),
+                alignment= "top-left",
+                )
+            )
+        )
+
+    def update(self):
+        self.fps.set_text(f"{60 / self.manager.dt} FPS")
 
 class Level(Screen):
     def __init__(self, game):
@@ -14,9 +32,22 @@ class Level(Screen):
         self.player = self.add_child(Player(self, pygame.Vector2(0, 0)))
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite=self.player, follow_speed=0.1))
 
-        self.debug_enabled = False
-
+        self._add_ui_components()
         self._gen_test_map()
+
+    def _add_ui_components(self):
+        self.master_ui = ui.Element(
+            self,
+            style = ui.Style(
+                size = self.rect.size,
+                alpha = 0
+            )
+        )
+
+        self.debug_ui = self.master_ui.add_child(DebugUI(self))
+
+    def toggle_debug(self):
+        self.debug_ui.style.visible = not self.debug_ui.style.visible
 
     def _gen_test_map(self, n = 10):
         temp = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -30,7 +61,7 @@ class Level(Screen):
             # restart level
             self.__init__()
         elif key == pygame.K_F3:
-            self.debug_enabled = not self.debug_enabled
+            self.toggle_debug()
 
     def on_resize(self, new_size):
         # remake game surface to new size
@@ -44,9 +75,7 @@ class Level(Screen):
     def update(self):
         # update all sprites in update group
         self.manager.groups["update"].update()
-
-    def debug(self):
-        pass
+        self.master_ui.update()
 
     def render(self, surface: pygame.Surface):
         # clear game surface
@@ -59,12 +88,10 @@ class Level(Screen):
         )
 
         # render GUI elements
+        self.master_ui.render(self.game_surface)
 
         # render to window
         surface.blit(self.game_surface, (0, 0))
-
-        if self.debug_enabled:
-            self.debug()
 
 class FollowCameraLayered(Sprite):
     def __init__(self, level, target_sprite, follow_speed = 2, tolerence = 5):

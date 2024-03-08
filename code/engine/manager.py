@@ -32,7 +32,7 @@ class Manager():
     def update_dt(self) -> None:
         "Updates delta time for current frame. Should be called every frame"
         now_time = time.time()
-        self._dt = (now_time - self._last_time) * self.fps
+        self.dt = self.fps * (now_time - self._last_time)
         self._last_time = now_time
 
     def add_object(self, id, node):

@@ -1,6 +1,9 @@
 from __future__ import annotations
 import pygame
 from .manager import Manager
+from typing import TypeVar
+
+T = TypeVar("T", bound = "Node")
 
 class Node():
     def __init__(self, parent: Node):
@@ -14,7 +17,7 @@ class Node():
     def get_render_offset(self) -> pygame.Vector2:
         return pygame.Vector2(0, 0)
 
-    def add_child(self, child: Node) -> Node:
+    def add_child(self, child: T) -> T:
         self.children.append(child)
         if hasattr(child, "id"):
             self.manager.add_object(child.id, child)

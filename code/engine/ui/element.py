@@ -80,7 +80,8 @@ class Element(Node):
 
     def render(self, window):
         # draw self then render children
-        if self.style.visible and self.style.alpha > 0:
+        if not self.style.visible: return
+        if self.style.alpha > 0:
             window.blit(self.image, self.rect)
 
         for child in self.children:
