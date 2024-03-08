@@ -16,6 +16,7 @@ class Style:
 
     colour: Colour = (0, 0, 0)
     fore_colour: Colour = (0, 0, 0)
+    alpha: int = 255
 
     font: pygame.font.Font = None
 

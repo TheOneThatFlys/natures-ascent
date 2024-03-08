@@ -41,7 +41,7 @@ class Element(Node):
 
     def redraw_image(self):
         self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
-        
+        self.image.set_alpha(self.style.alpha)
 
         if self.style.image:
             # if no size provided
@@ -80,7 +80,7 @@ class Element(Node):
 
     def render(self, window):
         # draw self then render children
-        if self.style.visible:
+        if self.style.visible and self.style.alpha > 0:
             window.blit(self.image, self.rect)
 
         for child in self.children:
