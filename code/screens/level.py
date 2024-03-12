@@ -69,11 +69,12 @@ class HudUI(ui.Element):
             pygame.draw.rect(self.health_bar.image, (0, 0, 0), border_rect, border_radius = 4)
             pygame.draw.rect(self.health_bar.image, (30, 30, 30), shading_rect, border_radius = 4)
             pygame.draw.rect(self.health_bar.image, self.health_bar.style.fore_colour, health_rect, border_radius = 4)
-            self.health_bar.redraw_image()
 
             # re-cache values
             self.cached_values["player.health"] = player.health
             self.cached_values["player.stats.health"] = player.stats.health
+
+            pygame.display.get_surface().blit(self.health_bar.image, (0, 0))
 
 class Level(Screen):
     def __init__(self, game):
@@ -113,7 +114,7 @@ class Level(Screen):
     def on_key_down(self, key):
         if key == pygame.K_r:
             # restart level
-            self.__init__()
+            self.reset()
         elif key == pygame.K_F3:
             self.toggle_debug()
 
