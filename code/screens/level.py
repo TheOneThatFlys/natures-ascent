@@ -62,6 +62,10 @@ class HudUI(ui.Element):
                 (player.health / player.stats.health) * (self.health_bar.rect.width - 2 * self.BAR_PADDING),
                 self.health_bar.rect.height - 2 * self.BAR_PADDING
                 )
+            
+            shadow_rect = health_rect.copy()
+            shadow_rect.height = self.BAR_PADDING * 2
+            shadow_rect.bottom = border_rect.height - self.BAR_PADDING
 
             shading_rect = health_rect.copy()
             shading_rect.width = self.health_bar.rect.width - 2 * self.BAR_PADDING
@@ -69,6 +73,7 @@ class HudUI(ui.Element):
             pygame.draw.rect(self.health_bar.image, (0, 0, 0), border_rect, border_radius = 4)
             pygame.draw.rect(self.health_bar.image, (15, 15, 15), shading_rect, border_radius = 4)
             pygame.draw.rect(self.health_bar.image, self.health_bar.style.fore_colour, health_rect, border_radius = 4)
+            pygame.draw.rect(self.health_bar.image, (40, 200, 10), shadow_rect, border_radius = 4)
 
             # re-cache values
             self.cached_values["player.health"] = player.health
