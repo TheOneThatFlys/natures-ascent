@@ -40,7 +40,7 @@ class HudUI(ui.Element):
                 stretch_type = "none",
                 offset = (16, 16),
                 colour = (0, 0, 0),
-                fore_colour = (255, 10, 10)
+                fore_colour = (60, 222, 34)
                 )
             ))
 
@@ -52,14 +52,23 @@ class HudUI(ui.Element):
         
         # cache values to prevent ui updates every frame
         if player.health != self.cached_values["player.health"] or player.stats.health != self.cached_values["player.stats.health"]:
-            self.health_bar.image.fill(self.health_bar.style.colour)
+
+            self.health_bar.image = pygame.Surface(self.health_bar.image.get_size(), pygame.SRCALPHA)
+            border_rect = self.health_bar.image.get_rect()
+            
             health_rect = pygame.Rect(
                 self.BAR_PADDING,
                 self.BAR_PADDING,
                 (player.health / player.stats.health) * (self.health_bar.rect.width - 2 * self.BAR_PADDING),
                 self.health_bar.rect.height - 2 * self.BAR_PADDING
                 )
-            pygame.draw.rect(self.health_bar.image, self.health_bar.style.fore_colour, health_rect)
+
+            shading_rect = health_rect.copy()
+            shading_rect.width = self.health_bar.rect.width - 2 * self.BAR_PADDING
+
+            pygame.draw.rect(self.health_bar.image, (0, 0, 0), border_rect, border_radius = 4)
+            pygame.draw.rect(self.health_bar.image, (30, 30, 30), shading_rect, border_radius = 4)
+            pygame.draw.rect(self.health_bar.image, self.health_bar.style.fore_colour, health_rect, border_radius = 4)
             self.health_bar.redraw_image()
 
             # re-cache values
