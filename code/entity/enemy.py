@@ -9,7 +9,7 @@ class Enemy(Entity):
             stats = EntityStats(
                 health = 30,
                 iframes = 20,
-                contact_damage = 1000,
+                contact_damage = 10,
                 walk_speed = 0.6
             )
         )
@@ -37,7 +37,7 @@ class Enemy(Entity):
 
     def check_player_collision(self):
         if self.rect.colliderect(self.player.rect):
-            self.player.hit(self, kb_magnitude = 10)
+            self.player.hit(self, kb_magnitude = 10, damage = self.stats.contact_damage)
 
     def update(self):
         self.follow_player()

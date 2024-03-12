@@ -1,6 +1,9 @@
 import pygame
+from typing import TypeVar
 from ..node import Node
 from .style import Style
+
+T = TypeVar("T", bound = "Element")
 
 class Element(Node):
     def __init__(self, parent: Node, style: Style):
@@ -90,3 +93,9 @@ class Element(Node):
     def update(self):
         for child in self.children:
             child.update()
+
+    def add_child(self, child: T) -> T:
+        c = super().add_child(child)
+        if c.parent != self:
+            raise TypeError(f"Type mismatch: child must be initialised with correct parent ({self} : {c.parent})")
+        return c

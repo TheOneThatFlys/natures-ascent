@@ -1,12 +1,15 @@
 import pygame
+from typing import Literal
 from engine import Sprite, AnimationManager
 from util.constants import *
 
 from .stats import EntityStats
 from .bar import HealthBar
 
+HealthBarMode = Literal["normal", "always-show", "always-hide"]
+
 class Entity(Sprite):
-    def __init__(self, parent, stats: EntityStats, hide_health_bar = False):
+    def __init__(self, parent, stats: EntityStats, health_bar_mode: HealthBarMode = "normal"):
         super().__init__(parent, groups = ["render", "update"])
         self.velocity = pygame.Vector2()
         self.pos = pygame.Vector2()
@@ -17,7 +20,7 @@ class Entity(Sprite):
         self.health = self.stats.health
         self.iframes = self.stats.iframes
 
-        self.hide_health_bar = hide_health_bar
+        self.health_bar_mode = health_bar_mode
         self.time_since_hit = HEALTH_VISIBILITY_TIME + 1
         self.health_bar = self.add_child(
             HealthBar(
@@ -25,10 +28,13 @@ class Entity(Sprite):
                 border_colour = (0, 0, 0),
                 border_size = 2,
                 health_colour = (255, 10, 10),
-                health_height = 4
             )
         )
-        self.health_bar.hide()
+
+        if health_bar_mode == "always-hide" or health_bar_mode == "normal":
+            self.health_bar.hide()
+        else:
+            self.health_bar.show()
 
     # both collision functions take the future position of the hitbox
     # and check if it intersects with an obstical
@@ -108,9 +114,9 @@ class Entity(Sprite):
         if self.iframes < 0:
             self.iframes = 0
 
-        if self.time_since_hit < HEALTH_VISIBILITY_TIME:
-            self.time_since_hit += self.manager.dt
-            if not self.hide_health_bar:
+        if self.health_bar_mode == "normal":
+            if self.time_since_hit < HEALTH_VISIBILITY_TIME:
+                self.time_since_hit += self.manager.dt
                 self.health_bar.show()
-        else:
-            self.health_bar.hide()
+            else:
+                self.health_bar.hide()

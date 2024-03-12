@@ -63,7 +63,6 @@ class Game:
             self.clock.tick(FPS)
             # calculate dt
             self.manager.update_dt()
-            print(self.manager.dt)
 
             # poll events
             for event in pygame.event.get():

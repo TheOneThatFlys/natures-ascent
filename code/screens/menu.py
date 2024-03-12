@@ -32,7 +32,7 @@ class Menu(Screen):
 
         self.tree_img = self.master_container.add_child(
             Element(
-                self,
+                self.master_container,
                 style = Style(
                     size = (384, 384),
                     image = self.manager.get_image("tree"),

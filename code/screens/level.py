@@ -6,7 +6,7 @@ from world import Tile
 
 class DebugUI(ui.Element):
     def __init__(self, parent):
-        super().__init__(parent, style = ui.Style(alpha = 0, visible = False))
+        super().__init__(parent, style = ui.Style(alpha = 0, visible = False, size = parent.rect.size))
 
         self.fps = self.add_child(ui.Text(
             parent = self,
@@ -19,8 +19,52 @@ class DebugUI(ui.Element):
             )
         )
 
+        self.update_timer = 0
+
     def update(self):
-        self.fps.set_text(f"{60 / self.manager.dt} FPS")
+        self.update_timer += self.manager.dt
+        if self.update_timer >= 20:
+            self.fps.set_text(f"{round(60 / self.manager.dt)} FPS")
+            self.update_timer = 0
+
+class HudUI(ui.Element):
+    BAR_PADDING = 4
+    def __init__(self, parent):
+        super().__init__(parent, style = ui.Style(alpha = 0, visible = True, size = parent.rect.size))
+
+        self.health_bar = self.add_child(ui.Element(
+            parent = self,
+            style = ui.Style(
+                alignment = "top-right",
+                image = pygame.Surface((256, 32)),
+                stretch_type = "none",
+                offset = (16, 16),
+                colour = (0, 0, 0),
+                fore_colour = (255, 10, 10)
+                )
+            ))
+
+        self.cached_values = {"player.health": -1, "player.stats.health": -1}
+
+    def update(self):
+        # player health bar
+        player: Player = self.manager.get_object_from_id("player")
+        
+        # cache values to prevent ui updates every frame
+        if player.health != self.cached_values["player.health"] or player.stats.health != self.cached_values["player.stats.health"]:
+            self.health_bar.image.fill(self.health_bar.style.colour)
+            health_rect = pygame.Rect(
+                self.BAR_PADDING,
+                self.BAR_PADDING,
+                (player.health / player.stats.health) * (self.health_bar.rect.width - 2 * self.BAR_PADDING),
+                self.health_bar.rect.height - 2 * self.BAR_PADDING
+                )
+            pygame.draw.rect(self.health_bar.image, self.health_bar.style.fore_colour, health_rect)
+            self.health_bar.redraw_image()
+
+            # re-cache values
+            self.cached_values["player.health"] = player.health
+            self.cached_values["player.stats.health"] = player.stats.health
 
 class Level(Screen):
     def __init__(self, game):
@@ -29,7 +73,7 @@ class Level(Screen):
 
         self.manager.add_groups(["render", "update", "collide", "enemy"])
 
-        self.player = self.add_child(Player(self, pygame.Vector2(0, 0)))
+        self.player = self.add_child(Player(self, pygame.Vector2(-TILE_SIZE, 0)))
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite=self.player, follow_speed=0.1))
 
         self._add_ui_components()
@@ -44,7 +88,8 @@ class Level(Screen):
             )
         )
 
-        self.debug_ui = self.master_ui.add_child(DebugUI(self))
+        self.debug_ui = self.master_ui.add_child(DebugUI(self.master_ui))
+        self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
 
     def toggle_debug(self):
         self.debug_ui.style.visible = not self.debug_ui.style.visible

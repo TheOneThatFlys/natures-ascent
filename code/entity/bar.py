@@ -1,18 +1,19 @@
 import pygame
 from engine import Sprite
 from engine.types import *
+from util.constants import *
 
 class HealthBar(Sprite):
 
-    HEALTH_PIXEL_RATIO = 1
+    HEALTH_BAR_WIDTH = TILE_SIZE
+    HEALTH_BAR_HEIGHT = 8
 
-    def __init__(self, parent, border_colour: Colour, border_size: int, health_colour: Colour, health_height: int):
+    def __init__(self, parent, border_colour: Colour, border_size: int, health_colour: Colour):
         super().__init__(parent, ["render", "update"])
 
         self.border_colour = border_colour
         self.border_size = border_size
         self.health_colour = health_colour
-        self.health_height = health_height
 
         self.hidden = False
 
@@ -23,13 +24,19 @@ class HealthBar(Sprite):
         current_health = self.parent.health
 
         self.image = pygame.Surface((
-            max_health * self.HEALTH_PIXEL_RATIO + self.border_size * 2,
-            self.health_height + self.border_size * 2
+            self.HEALTH_BAR_WIDTH,
+            self.HEALTH_BAR_HEIGHT
         ))
 
         self.image.fill(self.border_colour)
         
-        health_rect = pygame.Rect(self.border_size, self.border_size, current_health, self.health_height)
+        health_rect = pygame.Rect(
+            self.border_size,
+            self.border_size,
+            (current_health / max_health) * (self.HEALTH_BAR_WIDTH - self.border_size * 2),
+            self.HEALTH_BAR_HEIGHT - self.border_size * 2
+            )
+
         pygame.draw.rect(self.image, self.health_colour, health_rect)
 
         self.rect = self.image.get_rect()

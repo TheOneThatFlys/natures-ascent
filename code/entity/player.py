@@ -31,7 +31,7 @@ class Player(Entity):
                 walk_speed = 1.5,
                 iframes = 60,
             ),
-            hide_health_bar = True
+            health_bar_mode = "normal"
         )
 
         self.id = "player"
@@ -43,6 +43,8 @@ class Player(Entity):
 
         self.rect = self.image.get_rect(topleft = start_pos)
         self.pos.xy = self.rect.topleft
+
+        self.health_bar.health_colour = (60, 222, 34)
 
         self.last_facing = LastFacing()
         self.walking = False
