@@ -67,7 +67,7 @@ class HudUI(ui.Element):
             shading_rect.width = self.health_bar.rect.width - 2 * self.BAR_PADDING
 
             pygame.draw.rect(self.health_bar.image, (0, 0, 0), border_rect, border_radius = 4)
-            pygame.draw.rect(self.health_bar.image, (30, 30, 30), shading_rect, border_radius = 4)
+            pygame.draw.rect(self.health_bar.image, (15, 15, 15), shading_rect, border_radius = 4)
             pygame.draw.rect(self.health_bar.image, self.health_bar.style.fore_colour, health_rect, border_radius = 4)
 
             # re-cache values
