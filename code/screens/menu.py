@@ -3,6 +3,50 @@ from engine import Screen
 from engine.ui import Element, Style, Text, Button
 from util import parse_spritesheet
 
+class TextButtonMenu(Button):
+    def __init__(self, parent, yoffset, text):
+        super().__init__(
+            parent = parent,
+            style = Style(
+                alignment = "top-center",
+                offset = (0, yoffset),
+                size = (1, 1),
+                alpha = 0
+                ),
+            hover_style=None
+            )
+
+        text_size = self.manager.get_font("alagard", 32).size(text)
+        self.style.size = text_size[0] + 4, text_size[1] + 4
+        self.hover_style.size = self.style.size
+        self.redraw_image()
+
+        self.text = self.add_child(Text(
+            self,
+            Style(
+                font = self.manager.get_font("alagard", 32),
+                colour = (23, 68, 41),
+                fore_colour = (99, 169, 65),
+                alignment = "center-center",
+                position = "relative",
+                text_shadow = True,
+            ),
+            text
+        ))
+
+
+    def update(self):
+        super().update()
+        if self.hovering and not self.last_hovering:
+            self.text.style.colour = (51, 22, 31)
+            self.text.style.fore_colour = (95, 41, 46)
+            self.text.redraw_image()
+        elif not self.hovering and self.last_hovering:
+            self.text.style.colour = (23, 68, 41)
+            self.text.style.fore_colour = (99, 169, 65)
+            self.text.redraw_image()
+
+
 class Menu(Screen):
     def __init__(self, parent):
         super().__init__("menu", parent)
@@ -42,25 +86,8 @@ class Menu(Screen):
             )
         )
 
-        play_norm, play_hover = parse_spritesheet(self.manager.get_image("playbutton"), frame_count=2)
-        self.play_button = self.master_container.add_child(
-            Button(
-                parent = self.master_container,
-                style = Style(
-                    alignment = "top-center",
-                    position = "absolute",
-                    offset = (0, self.title.rect.bottom + (self.tree_img.rect.y - self.title.rect.bottom) / 2 - 48),
-                    size = (96, 96),
-                    image = play_norm,
-                    stretch_type = "expand",
-                ),
-                hover_style = Style(
-                    image = play_hover,
-                ),
-                on_click = self.parent.set_screen,
-                click_args = ("level",),
-            )
-        )
+        self.play_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.title.rect.bottom + 16, "NEW RUN"))
+        self.leaderboard_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.play_button.rect.bottom, "LEADERBOARD"))
 
     def on_resize(self, new_res):
         # on resize: just recreate menu with new res
