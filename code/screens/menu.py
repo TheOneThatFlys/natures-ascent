@@ -59,6 +59,18 @@ class Menu(Screen):
             )
         )
 
+        self.tree_img = self.master_container.add_child(
+            Element(
+                self.master_container,
+                style = Style(
+                    size = (384, 384),
+                    image = self.manager.get_image("tree"),
+                    stretch_type = "expand",
+                    alignment = "bottom-center"
+                )
+            )
+        )
+
         self.title = self.master_container.add_child(
             Text(
                 parent = self.master_container,
@@ -74,17 +86,6 @@ class Menu(Screen):
             )
         )
 
-        self.tree_img = self.master_container.add_child(
-            Element(
-                self.master_container,
-                style = Style(
-                    size = (384, 384),
-                    image = self.manager.get_image("tree"),
-                    stretch_type = "expand",
-                    alignment = "bottom-center"
-                )
-            )
-        )
 
         self.play_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.title.rect.bottom + 16, "NEW RUN"))
         self.leaderboard_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.play_button.rect.bottom, "LEADERBOARD"))
