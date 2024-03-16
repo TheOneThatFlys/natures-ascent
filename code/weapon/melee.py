@@ -9,7 +9,7 @@ Direction = Literal["left", "right", "up", "down"]
 class MeleeWeaponAttack(Sprite):
     def __init__(self, parent: Node, stats: WeaponStats, direction: Direction):
         super().__init__(parent, groups = ["update"])
-        self.id = "player_melee_attack"
+        self.id = "player_attack"
 
         self.rect = pygame.Rect(0, 0, *stats.size)
         self._hit_enemies = [] # keep track of hit enemies

@@ -38,6 +38,9 @@ class Manager():
     def add_object(self, id, node):
         self.objects[id] = node
         return node
+    
+    def remove_object(self, id):
+        del self.objects[id]
 
     def get_object_from_id(self, id: str):
         return self.objects.get(id, None)

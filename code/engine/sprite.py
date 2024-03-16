@@ -16,3 +16,5 @@ class Sprite(pygame.sprite.Sprite, Node):
             
         self.parent.remove_child(self)
         pygame.sprite.Sprite.kill(self)
+        if hasattr(self, "id"):
+            self.manager.remove_object(self.id)

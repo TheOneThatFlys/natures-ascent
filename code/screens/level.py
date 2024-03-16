@@ -141,7 +141,7 @@ class Level(Screen):
         hitboxes += self.manager.groups["enemy"].sprites()
         hitboxes.append(self.player)
 
-        if melee_attack := self.manager.get_object_from_id("player_melee_attack"):
+        if melee_attack := self.manager.get_object_from_id("player_attack"):
             hitboxes.append(melee_attack)
 
         for entity in hitboxes:
