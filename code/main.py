@@ -31,7 +31,7 @@ class Game:
         self.manager.set_pixel_scale(PIXEL_SCALE)
         self.manager.load_assets()
 
-        pygame.display.set_icon(self.manager.get_image("tree"))
+        pygame.display.set_icon(self.manager.get_image("menu/tree"))
 
         # dictionary to hold screens
         self._screens: dict[str, Screen] = {}
