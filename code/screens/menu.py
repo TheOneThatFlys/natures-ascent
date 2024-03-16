@@ -71,7 +71,7 @@ class Menu(Screen):
                 self.master_container,
                 style = Style(
                     size = (384, 384),
-                    image = self.manager.get_image("tree"),
+                    image = self.manager.get_image("menu/tree"),
                     stretch_type = "expand",
                     alignment = "bottom-center"
                 )
