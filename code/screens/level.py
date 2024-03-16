@@ -213,5 +213,5 @@ class FollowCameraLayered(Sprite):
 
         # render sprites based on y position
         for sprite in sorted(sprite_group.sprites(), key = lambda s: s.rect.centery):
-            new_pos = (sprite.rect.x - self.offset.x, sprite.rect.y - self.offset.y)
+            new_pos = (sprite.rect.x - self.offset.x + sprite.render_offset[0], sprite.rect.y - self.offset.y + sprite.render_offset[1])
             surface.blit(sprite.image, new_pos)

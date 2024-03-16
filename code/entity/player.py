@@ -61,6 +61,11 @@ class Player(Entity):
                 anim = parse_spritesheet(rows[i], frame_size = (32 * PIXEL_SCALE, 32 * PIXEL_SCALE))
                 self.animation_manager.add_animation(type + "-" + dir, anim)
 
+        attack_rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/sword_attack"), 2), frame_count = 4, direction = "y")
+        for i, dir in enumerate(directions):
+            anim = parse_spritesheet(attack_rows[i], frame_size = (32 * PIXEL_SCALE * 3, 32 * PIXEL_SCALE * 3))
+            self.animation_manager.add_animation("sword_attack" + "-" + dir, anim)
+
     def get_inputs(self):
         # movement
         keys = pygame.key.get_pressed()
@@ -104,7 +109,7 @@ class Player(Entity):
         self.add_velocity(dv)
 
         current_animation = self.animation_manager.current
-        if "death" in current_animation or "damage" in current_animation: return
+        if "death" in current_animation or "damage" in current_animation or "attack" in current_animation: return
 
         self.eval_anim()
 
@@ -119,7 +124,8 @@ class Player(Entity):
     def hit(self, other, damage: int = 0, kb_magnitude: int = 0):
         super().hit(other, damage, kb_magnitude)
         hit_direction = get_closest_direction(pygame.Vector2(other.rect.center) - pygame.Vector2(self.rect.center))
-        self.animation_manager.set_animation("damage-" + hit_direction)
+        if not "attack" in self.animation_manager.current: 
+            self.animation_manager.set_animation("damage-" + hit_direction)
 
     def try_attack(self, direction: Direction) -> bool:
         "Attempts an attack, returning True if successful and False if not"
@@ -129,9 +135,9 @@ class Player(Entity):
                 MeleeWeaponAttack(
                     self,
                     WeaponStats(
-                        size = (32, 64),
+                        size = (self.rect.width / 2, self.rect.height),
                         damage = 5,
-                        attack_time = 30,
+                        attack_time = ANIMATION_FRAME_TIME * 3,
                         knockback = 10,
                     ),
                     direction
@@ -139,6 +145,7 @@ class Player(Entity):
             )
             self.attack_cd = self.DELETE_LATER_attack_cd
             self.last_facing.set("attack", direction)
+            self.animation_manager.set_animation("sword_attack-" + direction)
             return True
         return False
         
@@ -149,6 +156,6 @@ class Player(Entity):
         if self.attack_cd < 0:
             self.attack_cd = 0
 
-        if "damage" in self.animation_manager.current:
+        if "damage" in self.animation_manager.current or "attack" in self.animation_manager.current:
             if self.animation_manager.finished:
                 self.eval_anim()

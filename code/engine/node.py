@@ -14,9 +14,6 @@ class Node():
     def update(self) -> None:
         pass
 
-    def get_render_offset(self) -> pygame.Vector2:
-        return pygame.Vector2(0, 0)
-
     def add_child(self, child: T) -> T:
         self.children.append(child)
         if hasattr(child, "id"):

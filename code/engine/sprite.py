@@ -5,6 +5,8 @@ class Sprite(pygame.sprite.Sprite, Node):
     def __init__(self, parent, groups: list[str] = []):
         Node.__init__(self, parent)
         pygame.sprite.Sprite.__init__(self)
+
+        self.render_offset = (0, 0)
         
         for g in groups:
             self.add(self.manager.groups[g])
