@@ -5,7 +5,7 @@ from engine.ui import Element, Style, Text, Button
 from util import parse_spritesheet
 
 class TextButtonMenu(Button):
-    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable, click_args: Iterable = []):
+    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable, click_args: Iterable = [], text_hover: str = None):
         super().__init__(
             parent = parent,
             style = Style(
@@ -37,18 +37,22 @@ class TextButtonMenu(Button):
             text
         ))
 
+        self.text_normal = text
+        self.text_hover = text_hover if text_hover else text
+
 
     def update(self):
         super().update()
         if self.hovering and not self.last_hovering:
             self.text.style.colour = (51, 22, 31)
             self.text.style.fore_colour = (95, 41, 46)
+            self.text.set_text(self.text_hover)
             self.text.redraw_image()
         elif not self.hovering and self.last_hovering:
             self.text.style.colour = (23, 68, 41)
             self.text.style.fore_colour = (99, 169, 65)
+            self.text.set_text(self.text_normal)
             self.text.redraw_image()
-
 
 class Menu(Screen):
     def __init__(self, parent):
@@ -80,7 +84,7 @@ class Menu(Screen):
                 text = "Nature's Ascent",
                 style = Style(
                     alignment = "top-center",
-                    offset = (0, 100),
+                    offset = (0, 64),
                     fore_colour = (99, 169, 65),
                     colour = (23, 68, 41),
                     text_shadow = True,
@@ -90,8 +94,37 @@ class Menu(Screen):
         )
 
 
-        self.play_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.title.rect.bottom + 16, "NEW RUN", self.parent.set_screen, ["level",]))
-        self.leaderboard_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.play_button.rect.bottom, "LEADERBOARD", self.parent.set_screen, ["menu",]))
+        self.play_button = self.master_container.add_child(TextButtonMenu(
+            parent = self.master_container,
+            yoffset = self.title.rect.bottom + 16,
+            text = "New Run",
+            on_click = self.parent.set_screen,
+            click_args = ["level",]
+        ))
+
+        self.leaderboard_button = self.master_container.add_child(TextButtonMenu(
+            parent = self.master_container,
+            yoffset = self.play_button.rect.bottom,
+            text = "Leaderboard",
+            on_click = self.parent.set_screen,
+            click_args = ["menu",]
+        ))
+
+        self.settings_button = self.master_container.add_child(TextButtonMenu(
+            parent = self.master_container,
+            yoffset = self.leaderboard_button.rect.bottom,
+            text = "Settings",
+            on_click = self.parent.set_screen,
+            click_args = ["menu",]
+        ))
+        
+        self.exit_button = self.master_container.add_child(TextButtonMenu(
+            parent = self.master_container,
+            yoffset = self.settings_button.rect.bottom,
+            text = "Exit",
+            text_hover = ":c",
+            on_click = self.parent.queue_close
+        ))
 
     def on_resize(self, new_res):
         # on resize: just recreate menu with new res
