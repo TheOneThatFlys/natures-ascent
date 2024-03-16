@@ -91,6 +91,8 @@ class Level(Screen):
         self.player = self.add_child(Player(self, pygame.Vector2(-TILE_SIZE, 0)))
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite=self.player, follow_speed=0.1))
 
+        self.debug_enabled = False
+
         self._add_ui_components()
         self._gen_test_map()
 
@@ -108,6 +110,7 @@ class Level(Screen):
 
     def toggle_debug(self):
         self.debug_ui.style.visible = not self.debug_ui.style.visible
+        self.debug_enabled = not self.debug_enabled
 
     def _gen_test_map(self, n = 10):
         temp = pygame.Surface((TILE_SIZE, TILE_SIZE))
@@ -132,6 +135,16 @@ class Level(Screen):
     def reset(self):
         self.__init__(self.parent)
 
+    def debug(self):
+        # render hitboxes of enemies and player
+        for entity in self.manager.groups["enemy"].sprites() + [self.player]:
+            scaled_pos_start = self.camera.convert_coords(pygame.Vector2(entity.rect.topleft))
+            scaled_pos_end = scaled_pos_start + pygame.Vector2(entity.rect.size)
+            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_start.x, scaled_pos_end.y))
+            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_end.x, scaled_pos_start.y))
+            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_start.x, scaled_pos_end.y))
+            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_end.x, scaled_pos_start.y))
+
     def update(self):
         # update all sprites in update group
         self.manager.groups["update"].update()
@@ -146,6 +159,9 @@ class Level(Screen):
             surface = self.game_surface,
             sprite_group = self.manager.groups["render"]
         )
+
+        if self.debug_enabled:
+            self.debug()
 
         # render GUI elements
         self.master_ui.render(self.game_surface)
