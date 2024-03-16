@@ -40,7 +40,7 @@ class Manager():
         return node
 
     def get_object_from_id(self, id: str):
-        return self.objects[id]
+        return self.objects.get(id, None)
 
     def add_groups(self, names: list[str]):
         for name in names:

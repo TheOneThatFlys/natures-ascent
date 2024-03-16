@@ -7,8 +7,9 @@ from .stats import WeaponStats
 Direction = Literal["left", "right", "up", "down"]
 
 class MeleeWeaponAttack(Sprite):
-    def __init__(self, parent: Node, image: pygame.Surface, stats: WeaponStats, direction: Direction):
-        super().__init__(parent, groups = ["update", "render"])
+    def __init__(self, parent: Node, stats: WeaponStats, direction: Direction):
+        super().__init__(parent, groups = ["update"])
+        self.id = "player_melee_attack"
 
         self.rect = pygame.Rect(0, 0, *stats.size)
         self._hit_enemies = [] # keep track of hit enemies
@@ -19,16 +20,8 @@ class MeleeWeaponAttack(Sprite):
 
         self.direction = direction
 
-        rotation_factor = 0
         self._stick_to_parent_position()
-        if direction == "right":
-            rotation_factor = 180
-        elif direction == "down":
-            rotation_factor = 270
-        elif direction == "up":
-            rotation_factor = 90
 
-        self.image = pygame.transform.rotate(image, rotation_factor)
         self.life = stats.attack_time
         self.stats = stats
 

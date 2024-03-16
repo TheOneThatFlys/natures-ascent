@@ -124,13 +124,10 @@ class Player(Entity):
     def try_attack(self, direction: Direction) -> bool:
         "Attempts an attack, returning True if successful and False if not"
         if self.attack_cd <= 0:
-            temp_s = pygame.Surface((32, 64))
-            temp_s.fill((255, 255, 0))
             # create attack
             self.add_child(
                 MeleeWeaponAttack(
                     self,
-                    temp_s,
                     WeaponStats(
                         size = (32, 64),
                         damage = 5,
