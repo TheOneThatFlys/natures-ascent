@@ -49,7 +49,7 @@ class Player(Entity):
         self.last_facing = LastFacing()
         self.walking = False
 
-        self.DELETE_LATER_attack_cd = 30
+        self.DELETE_LATER_attack_cd = 40
         self.attack_cd = self.DELETE_LATER_attack_cd
 
     def _load_animations(self):
@@ -129,7 +129,7 @@ class Player(Entity):
 
     def try_attack(self, direction: Direction) -> bool:
         "Attempts an attack, returning True if successful and False if not"
-        if self.attack_cd <= 0 and not "player_attack" in self.manager.objects:
+        if self.attack_cd <= 0:
             # create attack
             self.add_child(
                 MeleeWeaponAttack(
