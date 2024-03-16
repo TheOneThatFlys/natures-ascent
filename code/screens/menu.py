@@ -1,10 +1,11 @@
 import pygame
+from typing import Callable, Iterable
 from engine import Screen
 from engine.ui import Element, Style, Text, Button
 from util import parse_spritesheet
 
 class TextButtonMenu(Button):
-    def __init__(self, parent, yoffset, text):
+    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable, click_args: Iterable = []):
         super().__init__(
             parent = parent,
             style = Style(
@@ -13,7 +14,9 @@ class TextButtonMenu(Button):
                 size = (1, 1),
                 alpha = 0
                 ),
-            hover_style=None
+            hover_style=None,
+            on_click = on_click,
+            click_args = click_args
             )
 
         text_size = self.manager.get_font("alagard", 32).size(text)
@@ -87,8 +90,8 @@ class Menu(Screen):
         )
 
 
-        self.play_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.title.rect.bottom + 16, "NEW RUN"))
-        self.leaderboard_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.play_button.rect.bottom, "LEADERBOARD"))
+        self.play_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.title.rect.bottom + 16, "NEW RUN", self.parent.set_screen, ["level",]))
+        self.leaderboard_button = self.master_container.add_child(TextButtonMenu(self.master_container, self.play_button.rect.bottom, "LEADERBOARD", self.parent.set_screen, ["menu",]))
 
     def on_resize(self, new_res):
         # on resize: just recreate menu with new res
