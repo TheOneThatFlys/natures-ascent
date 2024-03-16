@@ -32,6 +32,9 @@ class AnimationManager(Node):
             self._current = key
             self._current_index = 0
             self.finished = False
+            # reset frame cooldown so no latency
+            # when swapping animations
+            self._counter = self._frame_time
 
         return self._animations[key][0]
 
