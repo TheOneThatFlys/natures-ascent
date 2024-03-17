@@ -29,7 +29,7 @@ class DebugUI(ui.Element):
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
-    def __init__(self, parent, health_colour, shadow_colour, border_colour, background_colour):
+    def __init__(self, parent, health_colour, shadow_colour, border_colour, background_colour, text_colour):
         super().__init__(
             parent = parent,
             style = ui.Style(
@@ -40,10 +40,17 @@ class HealthBar(ui.Element):
             )
         )
 
+        self.text = self.add_child(ui.Text(self, text = "0/0", style = ui.Style(
+            alignment = "center-center",
+            fore_colour = border_colour,
+            font = self.manager.get_font("alagard", 20)
+        )))
+
         self.health_colour = health_colour
         self.shadow_colour = shadow_colour
         self.border_colour = border_colour
         self.background_colour = background_colour
+        self.text_colour = text_colour
 
         self.player = self.manager.get_object_from_id("player")
 
@@ -73,12 +80,23 @@ class HealthBar(ui.Element):
         pygame.draw.rect(self.image, self.health_colour, health_rect, border_bottom_left_radius = 4, border_top_left_radius = 4, border_bottom_right_radius = right_radius, border_top_right_radius = right_radius)
         pygame.draw.rect(self.image, self.shadow_colour, shadow_rect, border_bottom_left_radius = 4, border_bottom_right_radius = right_radius)
 
+        self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
+
 class HudUI(ui.Element):
     BAR_PADDING = 4
     def __init__(self, parent):
         super().__init__(parent, style = ui.Style(alpha = 0, visible = True, size = parent.rect.size))
 
-        self.health_bar = self.add_child(HealthBar(self, health_colour = (99, 169, 65), shadow_colour = (46, 109, 53), border_colour = (51, 22, 31), background_colour = (91, 49, 56)))
+        self.health_bar = self.add_child(
+            HealthBar(
+                self,
+                health_colour = (99, 169, 65),
+                shadow_colour = (46, 109, 53),
+                border_colour = (51, 22, 31),
+                background_colour = (91, 49, 56),
+                text_colour = (51, 22, 31)
+            )
+        )
 
 class Level(Screen):
     def __init__(self, game, debug_enabled = False):
