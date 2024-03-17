@@ -43,7 +43,7 @@ class HealthBar(ui.Element):
         self.text = self.add_child(ui.Text(self, text = "0/0", style = ui.Style(
             alignment = "center-center",
             fore_colour = border_colour,
-            font = self.manager.get_font("alagard", 20)
+            font = self.manager.get_font("alagard", 16)
         )))
 
         self.health_colour = health_colour
