@@ -150,6 +150,11 @@ class Level(Screen):
         self.game_surface = pygame.Surface(new_size)
         # recalibrate camera
         self.camera.set_screen_size(new_size)
+        self.master_ui.style.size = new_size
+        self.debug_ui.style.size = new_size
+        self.hud_ui.style.size = new_size
+        for item in self.master_ui.get_all_children():
+            item.redraw_image()
 
     def reset(self):
         self.__init__(self.parent, self.debug_enabled)

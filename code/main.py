@@ -85,6 +85,7 @@ class Game:
                 elif event.type == pygame.VIDEORESIZE:
                     self._screens[self.current_screen].on_resize(event.size)
 
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
             self._screens[self.current_screen].update()
 
             # clear the window

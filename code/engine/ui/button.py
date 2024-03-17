@@ -34,6 +34,7 @@ class Button(Element):
         if self.rect.collidepoint(mouse_pos):
             self.hovering = True
             self.set_style(self.hover_style)
+            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)
 
             if left_clicking and not self._prev_frame_click:
                 self.clicking = True
