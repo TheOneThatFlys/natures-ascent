@@ -23,6 +23,8 @@ class Manager():
         self.objects: dict = {}
         # stores loaded assets
         self.assets: dict = {"image": {}, "sound": {}, "font": {}}
+        # store current playing music
+        self.music_current = ""
 
         self.fps: int = fps
         self.dt = 1
@@ -119,15 +121,20 @@ class Manager():
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]
     
-    def play_sound(self, *, sound_object: pygame.mixer.Sound = None, sound_name: str = None, volume: float = 1.0, loop = False):
-        if sound_object:
-            s = sound_object
-        elif sound_name:
-            s = self.get_sound(sound_name)
-        else:
-            raise TypeError("Manager.play_sound() requires either sound object or sound name arguement")
+    def play_sound(self, sound_name: str, volume: float = 1.0, loop = False):
+        if sound_name.startswith("music/") and self.music_current != "":
+            # dont play multiple musics at once
+            if sound_name == self.music_current:
+                return
+            
+            # stop previously playing music
+            self.get_sound(self.music_current).stop()
+            self.music_current = sound_name
+
+        s = self.get_sound(sound_name)
         s.set_volume(volume)
-        n_loops = 1000000 if loop else 0
+        n_loops = -1 if loop else 0
         s.play(n_loops)
+        
 
 

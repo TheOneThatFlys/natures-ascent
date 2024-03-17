@@ -49,7 +49,7 @@ class TextButtonMenu(Button):
     def update(self):
         super().update()
         if self.hovering and not self.last_hovering:
-            self.manager.play_sound(sound_name = "button_hover", volume = 0.3)
+            self.manager.play_sound(sound_name = "button_hover", volume = 0.1)
             self.text.style.colour = (51, 22, 31)
             self.text.style.fore_colour = (95, 41, 46)
             self.text.set_text(self.text_hover)
@@ -68,7 +68,9 @@ class Menu(Screen):
             parent = self,
             style = Style(
                 size = self.rect.size,
-                colour = (15,15,15)
+                image = self.draw_background(self.rect.size),
+                stretch_type = "skew",
+                colour = (78, 173, 245)
             )
         )
 
@@ -134,9 +136,36 @@ class Menu(Screen):
 
         self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
 
+    def draw_background(self, screen_size: tuple[int, int], pixel_scale: int = 6, line_thickness: int = 7) -> pygame.Surface:
+        COLOUR_ONE = (37, 44, 55)
+        COLOUR_TWO = (26, 30, 36)
+
+        bg = pygame.Surface((screen_size[0] / pixel_scale, screen_size[1] / pixel_scale))
+        bg.fill(COLOUR_ONE)
+
+        n_lines = int((max(screen_size[0], screen_size[1]) + min(screen_size[0], screen_size[1])) / pixel_scale / line_thickness)
+        for x in range(n_lines):
+            if x % 2 == 0:
+                d = x * line_thickness + line_thickness / 2
+                e = line_thickness
+                pygame.draw.line(bg, COLOUR_TWO, (d + e, -e), (-e, d + e), line_thickness)
+
+        width, height = bg.get_size()
+        pygame.draw.line(bg, COLOUR_TWO, (0, 0), (width, 0), line_thickness)
+        pygame.draw.line(bg, COLOUR_TWO, (0, 0), (0, height), line_thickness)
+        pygame.draw.line(bg, COLOUR_TWO, (width - 1, 0), (width - 1, height), line_thickness)
+        pygame.draw.line(bg, COLOUR_TWO, (0, height - 1), (width, height - 1), line_thickness)
+
+        # pygame.draw.line(bg, COLOUR_TWO, (width - line_thickness / 2, height - line_thickness / 2), (width - line_thickness / 2, 0), line_thickness)
+
+        return pygame.transform.scale(bg, screen_size)
+            
     def on_resize(self, new_res):
-        # on resize: just recreate menu with new res
-        self.__init__(self.parent)
+        self.master_container.style.image = self.draw_background(new_res)
+
+        self.master_container.style.size = new_res
+        for item in self.master_container.get_all_children():
+            item.redraw_image()
 
     def render(self, window):
         self.master_container.render(window)
