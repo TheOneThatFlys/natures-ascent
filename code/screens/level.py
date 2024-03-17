@@ -10,9 +10,9 @@ class DebugUI(ui.Element):
 
         self.fps = self.add_child(ui.Text(
             parent = self,
-            text = "LOADING FPS",
+            text = "loading fps...",
             style = ui.Style(
-                font = self.manager.get_font("alagard", 32),
+                font = self.manager.get_font("alagard", 16),
                 fore_colour = (255, 255, 255),
                 alignment= "top-left",
                 )
@@ -27,62 +27,61 @@ class DebugUI(ui.Element):
             self.fps.set_text(f"{round(60 / self.manager.dt)} FPS")
             self.update_timer = 0
 
-class HudUI(ui.Element):
+class HealthBar(ui.Element):
     BAR_PADDING = 4
-    def __init__(self, parent):
-        super().__init__(parent, style = ui.Style(alpha = 0, visible = True, size = parent.rect.size))
-
-        self.health_bar = self.add_child(ui.Element(
-            parent = self,
+    def __init__(self, parent, health_colour, shadow_colour, border_colour, background_colour):
+        super().__init__(
+            parent = parent,
             style = ui.Style(
                 alignment = "top-right",
                 image = pygame.Surface((256, 32)),
                 stretch_type = "none",
                 offset = (16, 16),
-                colour = (0, 0, 0),
-                fore_colour = (60, 222, 34)
-                )
-            ))
+            )
+        )
 
-        self.cached_values = {"player.health": -1, "player.stats.health": -1}
+        self.health_colour = health_colour
+        self.shadow_colour = shadow_colour
+        self.border_colour = border_colour
+        self.background_colour = background_colour
+
+        self.player = self.manager.get_object_from_id("player")
 
     def update(self):
-        # player health bar
-        player: Player = self.manager.get_object_from_id("player")
+        self.image = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
+        border_rect = self.image.get_rect()
         
-        # cache values to prevent ui updates every frame
-        if player.health != self.cached_values["player.health"] or player.stats.health != self.cached_values["player.stats.health"]:
+        health_rect = pygame.Rect(
+            self.BAR_PADDING,
+            self.BAR_PADDING,
+            (self.player.health / self.player.stats.health) * (self.rect.width - 2 * self.BAR_PADDING),
+            self.rect.height - 2 * self.BAR_PADDING
+            )
+        
+        shadow_rect = health_rect.copy()
+        shadow_rect.height = self.BAR_PADDING * 2
+        shadow_rect.bottom = border_rect.height - self.BAR_PADDING
 
-            self.health_bar.image = pygame.Surface(self.health_bar.image.get_size(), pygame.SRCALPHA)
-            border_rect = self.health_bar.image.get_rect()
-            
-            health_rect = pygame.Rect(
-                self.BAR_PADDING,
-                self.BAR_PADDING,
-                (player.health / player.stats.health) * (self.health_bar.rect.width - 2 * self.BAR_PADDING),
-                self.health_bar.rect.height - 2 * self.BAR_PADDING
-                )
-            
-            shadow_rect = health_rect.copy()
-            shadow_rect.height = self.BAR_PADDING * 2
-            shadow_rect.bottom = border_rect.height - self.BAR_PADDING
+        shading_rect = health_rect.copy()
+        shading_rect.width = self.rect.width - 2 * self.BAR_PADDING
 
-            shading_rect = health_rect.copy()
-            shading_rect.width = self.health_bar.rect.width - 2 * self.BAR_PADDING
+        # only have round right if one max health
+        right_radius = 4 if self.player.health == self.player.stats.health else 0
 
-            pygame.draw.rect(self.health_bar.image, (0, 0, 0), border_rect, border_radius = 4)
-            pygame.draw.rect(self.health_bar.image, (15, 15, 15), shading_rect, border_radius = 4)
-            pygame.draw.rect(self.health_bar.image, self.health_bar.style.fore_colour, health_rect, border_radius = 4)
-            pygame.draw.rect(self.health_bar.image, (40, 200, 10), shadow_rect, border_radius = 4)
+        pygame.draw.rect(self.image, self.border_colour, border_rect, border_radius = 4)
+        pygame.draw.rect(self.image, self.background_colour, shading_rect, border_radius = 4)
+        pygame.draw.rect(self.image, self.health_colour, health_rect, border_bottom_left_radius = 4, border_top_left_radius = 4, border_bottom_right_radius = right_radius, border_top_right_radius = right_radius)
+        pygame.draw.rect(self.image, self.shadow_colour, shadow_rect, border_bottom_left_radius = 4, border_bottom_right_radius = right_radius)
 
-            # re-cache values
-            self.cached_values["player.health"] = player.health
-            self.cached_values["player.stats.health"] = player.stats.health
+class HudUI(ui.Element):
+    BAR_PADDING = 4
+    def __init__(self, parent):
+        super().__init__(parent, style = ui.Style(alpha = 0, visible = True, size = parent.rect.size))
 
-            pygame.display.get_surface().blit(self.health_bar.image, (0, 0))
+        self.health_bar = self.add_child(HealthBar(self, health_colour = (99, 169, 65), shadow_colour = (46, 109, 53), border_colour = (51, 22, 31), background_colour = (91, 49, 56)))
 
 class Level(Screen):
-    def __init__(self, game):
+    def __init__(self, game, debug_enabled = False):
         super().__init__("level", parent = game, reset_on_load = True)
         self.game_surface = pygame.Surface(game.window.get_size())
 
@@ -95,6 +94,9 @@ class Level(Screen):
 
         self._add_ui_components()
         self._gen_test_map()
+
+        if debug_enabled:
+            self.toggle_debug()
 
     def _add_ui_components(self):
         self.master_ui = ui.Element(
@@ -132,7 +134,7 @@ class Level(Screen):
         self.camera.set_screen_size(new_size)
 
     def reset(self):
-        self.__init__(self.parent)
+        self.__init__(self.parent, self.debug_enabled)
 
     def debug(self):
         # render hitboxes of enemies and player

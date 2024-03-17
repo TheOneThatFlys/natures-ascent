@@ -18,7 +18,7 @@ class Entity(Sprite):
         self.animation_manager: AnimationManager = self.add_child(AnimationManager(self))
 
         self.health = self.stats.health
-        self.iframes = self.stats.iframes
+        self.iframes = 0
 
         self.health_bar_mode = health_bar_mode
         self.time_since_hit = HEALTH_VISIBILITY_TIME + 1

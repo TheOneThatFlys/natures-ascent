@@ -50,7 +50,7 @@ class Player(Entity):
         self.walking = False
 
         self.DELETE_LATER_attack_cd = 40
-        self.attack_cd = self.DELETE_LATER_attack_cd
+        self.attack_cd = 0
 
     def _load_animations(self):
         types = ["idle", "damage", "walk"]
