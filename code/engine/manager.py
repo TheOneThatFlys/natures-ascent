@@ -119,7 +119,7 @@ class Manager():
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]
     
-    def play_sound(self, *, sound_object: pygame.mixer.Sound = None, sound_name: str = None, volume: float = 1.0):
+    def play_sound(self, *, sound_object: pygame.mixer.Sound = None, sound_name: str = None, volume: float = 1.0, loop = False):
         if sound_object:
             s = sound_object
         elif sound_name:
@@ -127,6 +127,7 @@ class Manager():
         else:
             raise TypeError("Manager.play_sound() requires either sound object or sound name arguement")
         s.set_volume(volume)
-        s.play()
+        n_loops = 1000000 if loop else 0
+        s.play(n_loops)
 
 

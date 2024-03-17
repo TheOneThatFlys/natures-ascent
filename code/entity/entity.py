@@ -87,6 +87,11 @@ class Entity(Sprite):
 
             self.time_since_hit = 0
 
+            self.on_hit(other)
+
+    def on_hit(self, other):
+        pass
+
     def move(self):
         # checking collisions of one direction at a time
         # ensures that an overlap of bounds is due to the

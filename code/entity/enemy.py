@@ -39,6 +39,10 @@ class Enemy(Entity):
         if self.rect.colliderect(self.player.rect):
             self.player.hit(self, kb_magnitude = 10, damage = self.stats.contact_damage)
 
+    def kill(self):
+        super().kill()
+        self.manager.play_sound(sound_name = "squelch", volume = 0.5)
+
     def update(self):
         self.follow_player()
         self.check_player_collision()

@@ -51,6 +51,9 @@ class Game:
 
     def set_screen(self, screen_name: str):
         "Sets the current screen based on screen name"
+        if screen_name != self.current_screen and self.current_screen != None:
+            self._screens[self.current_screen].destroy()
+
         self.current_screen = screen_name
 
         if self._screens[screen_name].reset_on_load:

@@ -1,4 +1,5 @@
 import pygame
+import random
 from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
@@ -121,8 +122,8 @@ class Player(Entity):
         else:
             self.animation_manager.set_animation("idle-" + self.last_facing.overall)
 
-    def hit(self, other, damage: int = 0, kb_magnitude: int = 0):
-        super().hit(other, damage, kb_magnitude)
+    def on_hit(self, other):
+        self.manager.play_sound(sound_name = f"hit{random.randint(1, 3)}", volume = 0.2)
         hit_direction = get_closest_direction(pygame.Vector2(other.rect.center) - pygame.Vector2(self.rect.center))
         if not "attack" in self.animation_manager.current: 
             self.animation_manager.set_animation("damage-" + hit_direction)
@@ -146,6 +147,7 @@ class Player(Entity):
             self.attack_cd = self.DELETE_LATER_attack_cd
             self.last_facing.set("attack", direction)
             self.animation_manager.set_animation("sword_attack-" + direction)
+            self.manager.play_sound(sound_name = "sword_slash", volume = 0.2)
             return True
         return False
         

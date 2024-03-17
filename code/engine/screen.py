@@ -19,5 +19,8 @@ class Screen(Node):
     def on_resize(self, new_res):
         pass
 
+    def destroy(self):
+        pass
+
     def reset(self):
         self.__init__(self.name, self.parent, self.reset_on_load)
