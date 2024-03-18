@@ -43,13 +43,13 @@ class TextButtonMenu(Button):
         self.text_hover = text_hover if text_hover else text
 
     def _on_click_with_sound(self, *args):
-        self.manager.play_sound(sound_name = "button_click", volume = 0.3)
+        self.manager.play_sound(sound_name = "effect/button_click", volume = 0.3)
         self.click_func(*args)
 
     def update(self):
         super().update()
         if self.hovering and not self.last_hovering:
-            self.manager.play_sound(sound_name = "button_hover", volume = 0.1)
+            self.manager.play_sound(sound_name = "effect/button_hover", volume = 0.1)
             self.text.style.colour = (51, 22, 31)
             self.text.style.fore_colour = (95, 41, 46)
             self.text.set_text(self.text_hover)
