@@ -60,7 +60,7 @@ class Manager():
         "Set scale for loading assets"
         self._load_scale = scale
 
-    def load_assets(self):
+    def load(self):
         """
         Loads all supported files in ./assets
 

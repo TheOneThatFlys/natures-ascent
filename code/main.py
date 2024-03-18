@@ -29,7 +29,7 @@ class Game:
 
         self.manager = Manager()
         self.manager.set_pixel_scale(PIXEL_SCALE)
-        self.manager.load_assets()
+        self.manager.load()
 
         pygame.display.set_icon(self.manager.get_image("menu/tree"))
 
