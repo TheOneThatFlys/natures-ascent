@@ -112,7 +112,7 @@ class Menu(Screen):
             yoffset = self.title.rect.bottom + 16,
             text = "New Run",
             on_click = self.parent.set_screen,
-            click_args = ["level",]
+            click_args = ["level"]
         ))
 
         self.leaderboard_button = self.master_container.add_child(TextButtonMenu(
@@ -126,7 +126,8 @@ class Menu(Screen):
             parent = self.master_container,
             yoffset = self.leaderboard_button.rect.bottom,
             text = "Settings",
-            enabled = False
+            on_click = self.parent.set_screen,
+            click_args = ["settings"]
         ))
         
         self.exit_button = self.master_container.add_child(TextButtonMenu(
@@ -146,13 +147,11 @@ class Menu(Screen):
                 visible = False
             ),
             hover_style = None,
-            on_click = self.secret,
+            on_click = self.manager.play_sound,
+            click_args=["effect/hit1"]
         ))
 
         self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
-
-    def secret(self):
-        self.manager.play_sound("effect/hit1")
 
     def draw_background(self, screen_size: tuple[int, int], pixel_scale: int = 6, line_thickness: int = 7) -> pygame.Surface:
         COLOUR_ONE = (37, 44, 55)

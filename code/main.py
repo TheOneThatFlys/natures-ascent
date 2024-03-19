@@ -14,7 +14,7 @@ pygame.init()
 from typing import Callable
 from util.constants import *
 from engine import Screen, Manager
-from screens import Level, Menu
+from screens import Level, Menu, Settings
 
 class Game:
     # main game class that manages screens and pygame events
@@ -42,6 +42,7 @@ class Game:
 
         self.add_screen("level", Level)
         self.add_screen("menu", Menu)
+        self.add_screen("settings", Settings)
         self.set_screen("menu")
 
     def queue_close(self):
