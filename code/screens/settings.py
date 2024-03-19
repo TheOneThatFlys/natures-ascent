@@ -13,6 +13,19 @@ class SettingsUI(Element):
             )
         )
 
+        self.title_text = self.add_child(Text(
+            parent = self,
+            text = "Settings",
+            style = Style(
+                alignment = "top-center",
+                offset = (0, 64),
+                colour = (20, 20, 20),
+                fore_colour = (255, 255, 255),
+                font = self.manager.get_font("alagard", 72),
+                text_shadow = True
+            )
+        ))
+
 class SettingsScreen(Screen):
     def __init__(self, game):
         super().__init__(game)
