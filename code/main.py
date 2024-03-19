@@ -8,8 +8,10 @@ from __future__ import annotations
 
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
+
 import pygame
 pygame.init()
+from typing import Callable
 from util.constants import *
 from engine import Screen, Manager
 from screens import Level, Menu
@@ -34,30 +36,27 @@ class Game:
         pygame.display.set_icon(self.manager.get_image("menu/tree"))
 
         # dictionary to hold screens
-        self._screens: dict[str, Screen] = {}
+        self._screens: dict[str, Callable[[Game], None]] = {}
         self.current_screen: str = None
+        self.current_screen_instance: Screen = None
 
-        self.add_screen(Level(self))
-        self.add_screen(Menu(self))
+        self.add_screen("level", Level)
+        self.add_screen("menu", Menu)
         self.set_screen("menu")
 
     def queue_close(self):
         "Quits program after current game loop finishes"
         self.running = False
 
-    def add_screen(self, screen: Screen):
+    def add_screen(self, name: str, screen: Callable[[Game], None]):
         "Add screen object to screen dictionary, key being screen.name"
-        self._screens[screen.name] = screen
+        self._screens[name] = screen
 
     def set_screen(self, screen_name: str):
         "Sets the current screen based on screen name"
-        if screen_name != self.current_screen and self.current_screen != None:
-            self._screens[self.current_screen].destroy()
-
+        if screen_name == self.current_screen: return
         self.current_screen = screen_name
-
-        if self._screens[screen_name].reset_on_load:
-            self._screens[screen_name].reset()
+        self.current_screen_instance = self._screens[screen_name](self)
 
     def run(self):
         # main loop
@@ -74,19 +73,19 @@ class Game:
 
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
-                    self._screens[self.current_screen].on_key_down(event.key)
+                    self.current_screen_instance.on_key_down(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self._screens[self.current_screen].on_mouse_down(event.button)
+                    self.current_screen_instance.on_mouse_down(event.button)
                 elif event.type == pygame.VIDEORESIZE:
-                    self._screens[self.current_screen].on_resize(event.size)
+                    self.current_screen_instance.on_resize(event.size)
 
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
-            self._screens[self.current_screen].update()
+            self.current_screen_instance.update()
 
             # clear the window
             self.window.fill((0, 0, 0))
             # draw screen to window
-            self._screens[self.current_screen].render(self.window)
+            self.current_screen_instance.render(self.window)
             pygame.display.update()
 
         pygame.quit()

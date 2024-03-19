@@ -1,11 +1,12 @@
 import pygame
+import random
 from typing import Callable, Iterable
 from engine import Screen
 from engine.ui import Element, Style, Text, Button
 from util import parse_spritesheet
 
 class TextButtonMenu(Button):
-    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable, click_args: Iterable = [], text_hover: str = None):
+    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable = None, click_args: Iterable = [], text_hover: str = None, enabled = True):
         super().__init__(
             parent = parent,
             style = Style(
@@ -19,19 +20,23 @@ class TextButtonMenu(Button):
             click_args = click_args
             )
 
-        self.click_func = on_click
+        self.click_func = on_click if on_click else self.do_nothing
+        self.enabled = enabled
 
         text_size = self.manager.get_font("alagard", 32).size(text)
         self.style.size = text_size[0] + 4, text_size[1] + 4
         self.hover_style.size = self.style.size
         self.redraw_image()
 
+        fore_colour = (99, 169, 65) if self.enabled else (100, 100, 100)
+        shadow_colour = (23, 68, 41) if self.enabled else (10, 10, 10)
+
         self.text = self.add_child(Text(
             self,
             Style(
                 font = self.manager.get_font("alagard", 32),
-                colour = (23, 68, 41),
-                fore_colour = (99, 169, 65),
+                colour = shadow_colour,
+                fore_colour = fore_colour,
                 alignment = "center-center",
                 position = "relative",
                 text_shadow = True,
@@ -47,6 +52,7 @@ class TextButtonMenu(Button):
         self.click_func(*args)
 
     def update(self):
+        if not self.enabled: return
         super().update()
         if self.hovering and not self.last_hovering:
             self.manager.play_sound(sound_name = "effect/button_hover", volume = 0.1)
@@ -62,7 +68,7 @@ class TextButtonMenu(Button):
 
 class Menu(Screen):
     def __init__(self, parent):
-        super().__init__("menu", parent)
+        super().__init__(parent)
         
         self.master_container = Element(
             parent = self,
@@ -101,7 +107,6 @@ class Menu(Screen):
             )
         )
 
-
         self.play_button = self.master_container.add_child(TextButtonMenu(
             parent = self.master_container,
             yoffset = self.title.rect.bottom + 16,
@@ -114,16 +119,14 @@ class Menu(Screen):
             parent = self.master_container,
             yoffset = self.play_button.rect.bottom,
             text = "Leaderboard",
-            on_click = self.parent.set_screen,
-            click_args = ["menu",]
+            enabled = False
         ))
 
         self.settings_button = self.master_container.add_child(TextButtonMenu(
             parent = self.master_container,
             yoffset = self.leaderboard_button.rect.bottom,
             text = "Settings",
-            on_click = self.parent.set_screen,
-            click_args = ["menu",]
+            enabled = False
         ))
         
         self.exit_button = self.master_container.add_child(TextButtonMenu(
@@ -134,7 +137,34 @@ class Menu(Screen):
             on_click = self.parent.queue_close
         ))
 
+        self.secret_button = self.tree_img.add_child(Button(
+            parent = self.tree_img,
+            style = Style(
+                size = (8, 8),
+                position = "relative",
+                alignment = "center-center",
+                visible = False
+            ),
+            hover_style = None,
+            on_click = self.secret,
+        ))
+
+        s_text = self.manager.get_font("alagard", 100).render("RISHANGA GAMING", False, (255, 0, 0))
+        s_text = pygame.transform.rotate(s_text, 45)
+        self.secret_text = self.master_container.add_child(Element(
+            parent = self.master_container,
+            style = Style(
+                alignment= "center-center",
+                image = s_text,
+                visible = False
+            )
+        ))
+
         self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
+
+    def secret(self):
+        self.secret_text.style.visible = False if self.secret_text.style.visible == True else True
+        self.secret_text.redraw_image()
 
     def draw_background(self, screen_size: tuple[int, int], pixel_scale: int = 6, line_thickness: int = 7) -> pygame.Surface:
         COLOUR_ONE = (37, 44, 55)
@@ -172,6 +202,3 @@ class Menu(Screen):
 
     def update(self):
         self.master_container.update()
-
-    def destroy(self):
-        self.manager.get_sound("music/menu").stop()

@@ -1,11 +1,9 @@
 from .node import Node
 
 class Screen(Node):
-    def __init__(self, name: str, parent: Node, reset_on_load: bool = False):
+    def __init__(self, parent: Node):
         super().__init__(parent)
-        self.name = name
         self.rect = parent.window.get_rect()
-        self.reset_on_load = reset_on_load
         
     def on_key_down(self, key):
         pass
@@ -18,9 +16,3 @@ class Screen(Node):
 
     def on_resize(self, new_res):
         pass
-
-    def destroy(self):
-        pass
-
-    def reset(self):
-        self.__init__(self.name, self.parent, self.reset_on_load)

@@ -121,14 +121,23 @@ class Manager():
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]
     
+    def stop_music(self):
+        # return if no music is playing
+        if self.music_current == "": return
+        
+        self.get_sound(self.music_current).stop()
+        self.music_current = ""
+
     def play_sound(self, sound_name: str, volume: float = 1.0, loop = False):
-        if sound_name.startswith("music/") and self.music_current != "":
-            # dont play multiple musics at once
-            if sound_name == self.music_current:
+        if sound_name.startswith("music/"):
+            # if trying to play the same track twice, just continue current
+            if self.music_current == sound_name:
                 return
             
             # stop previously playing music
-            self.get_sound(self.music_current).stop()
+            if self.music_current != "":
+                self.get_sound(self.music_current).stop()
+
             self.music_current = sound_name
 
         s = self.get_sound(sound_name)

@@ -100,7 +100,7 @@ class HudUI(ui.Element):
 
 class Level(Screen):
     def __init__(self, game, debug_enabled = False):
-        super().__init__("level", parent = game, reset_on_load = True)
+        super().__init__(parent = game)
         self.game_surface = pygame.Surface(game.window.get_size())
 
         self.manager.add_groups(["render", "update", "collide", "enemy"])
@@ -115,6 +115,8 @@ class Level(Screen):
 
         if debug_enabled:
             self.toggle_debug()
+
+        self.manager.stop_music()
 
     def _add_ui_components(self):
         self.master_ui = ui.Element(
@@ -141,7 +143,9 @@ class Level(Screen):
     def on_key_down(self, key):
         if key == pygame.K_r:
             # restart level
-            self.reset()
+            self.TEMP_reset()
+        elif key == pygame.K_ESCAPE:
+            self.parent.set_screen("menu")
         elif key == pygame.K_F3:
             self.toggle_debug()
 
@@ -156,7 +160,7 @@ class Level(Screen):
         for item in self.master_ui.get_all_children():
             item.redraw_image()
 
-    def reset(self):
+    def TEMP_reset(self):
         self.__init__(self.parent, self.debug_enabled)
 
     def debug(self):
