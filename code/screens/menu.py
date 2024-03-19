@@ -149,22 +149,10 @@ class Menu(Screen):
             on_click = self.secret,
         ))
 
-        s_text = self.manager.get_font("alagard", 100).render("RISHANGA GAMING", False, (255, 0, 0))
-        s_text = pygame.transform.rotate(s_text, 45)
-        self.secret_text = self.master_container.add_child(Element(
-            parent = self.master_container,
-            style = Style(
-                alignment= "center-center",
-                image = s_text,
-                visible = False
-            )
-        ))
-
         self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
 
     def secret(self):
-        self.secret_text.style.visible = False if self.secret_text.style.visible == True else True
-        self.secret_text.redraw_image()
+        self.manager.play_sound("effect/hit1")
 
     def draw_background(self, screen_size: tuple[int, int], pixel_scale: int = 6, line_thickness: int = 7) -> pygame.Surface:
         COLOUR_ONE = (37, 44, 55)
@@ -185,8 +173,6 @@ class Menu(Screen):
         pygame.draw.line(bg, COLOUR_TWO, (0, 0), (0, height), line_thickness)
         pygame.draw.line(bg, COLOUR_TWO, (width - 1, 0), (width - 1, height), line_thickness)
         pygame.draw.line(bg, COLOUR_TWO, (0, height - 1), (width, height - 1), line_thickness)
-
-        # pygame.draw.line(bg, COLOUR_TWO, (width - line_thickness / 2, height - line_thickness / 2), (width - line_thickness / 2, 0), line_thickness)
 
         return pygame.transform.scale(bg, screen_size)
             
