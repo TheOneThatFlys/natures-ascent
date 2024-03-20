@@ -81,7 +81,7 @@ class Game:
                     self.current_screen_instance.on_resize(event.size)
 
             # reset cursor image
-            self.manager.set_cursor("cursor/arrow")
+            self.manager.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
 
             # update screen instance
             self.current_screen_instance.update()

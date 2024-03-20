@@ -32,8 +32,7 @@ class Manager():
         self._last_time = time.time()
         self._load_scale = 1
 
-        self._current_cursor = "cursor/arrow"
-        self._cursors = {}
+        self._current_cursor = pygame.SYSTEM_CURSOR_ARROW
 
     def update_dt(self) -> None:
         "Updates delta time for current frame. Should be called every frame"
@@ -64,12 +63,11 @@ class Manager():
         "Set scale for loading assets"
         self._load_scale = scale
 
-    def set_cursor(self, cursor_name: str):
-        if self._current_cursor != cursor_name:
-            self._current_cursor = cursor_name
+    def set_cursor(self, cursor_enum):
+        self._current_cursor = cursor_enum
 
     def load_cursor(self):
-        pygame.mouse.set_cursor(self._cursors[self._current_cursor])
+        pygame.mouse.set_cursor(self._current_cursor)
 
     def load(self):
         """
@@ -124,10 +122,6 @@ class Manager():
                     # replace backslashes with forward
                     key = key.replace("\\", "/")
                     self.assets[ext_dir_map[extension]][key] = loaded_asset
-
-                    # also update cursors
-                    if key.startswith("cursor/"):
-                        self._cursors[key] = pygame.Cursor((4, 4), loaded_asset)
 
     def get_image(self, name: str) -> pygame.Surface:
         return self.assets["image"][name]
