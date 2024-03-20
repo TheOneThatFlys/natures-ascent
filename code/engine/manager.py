@@ -16,7 +16,7 @@ class Font():
         return new_font
 
 class Manager():
-    def __init__(self, fps: int = 60):
+    def __init__(self, fps: int = 60, num_channels = 8):
         # stores groups
         self.groups: dict[str, pygame.sprite.Group] = {}
         # stores objects of interest
@@ -33,6 +33,8 @@ class Manager():
         self._load_scale = 1
 
         self._current_cursor = pygame.SYSTEM_CURSOR_ARROW
+
+        pygame.mixer.set_num_channels(num_channels)
 
     def update_dt(self) -> None:
         "Updates delta time for current frame. Should be called every frame"

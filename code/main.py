@@ -29,7 +29,7 @@ class Game:
 
         pygame.display.set_caption("Nature's Ascent")
 
-        self.manager = Manager()
+        self.manager = Manager(num_channels = 32)
         self.manager.set_pixel_scale(PIXEL_SCALE)
         self.manager.load()
 
