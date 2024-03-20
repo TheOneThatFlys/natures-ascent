@@ -14,6 +14,10 @@ class Coin(Sprite):
 
         self.player = self.manager.get_object_from_id("player")
 
+    def kill(self):
+        self.manager.play_sound("effect/coin", 0.5)
+        super().kill()
+
     def update(self):
         self.am.update()
         if self.rect.colliderect(self.player.rect):

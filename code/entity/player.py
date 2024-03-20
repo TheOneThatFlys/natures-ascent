@@ -123,7 +123,7 @@ class Player(Entity):
             self.animation_manager.set_animation("idle-" + self.last_facing.overall)
 
     def on_hit(self, other):
-        self.manager.play_sound(sound_name = f"effect/hit{random.randint(1, 3)}", volume = 0.2)
+        self.manager.play_sound(sound_name = "effect/hit", volume = 0.2)
         hit_direction = get_closest_direction(pygame.Vector2(other.rect.center) - pygame.Vector2(self.rect.center))
         if not "attack" in self.animation_manager.current: 
             self.animation_manager.set_animation("damage-" + hit_direction)

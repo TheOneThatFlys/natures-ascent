@@ -148,7 +148,7 @@ class Menu(Screen):
             ),
             hover_style = None,
             on_click = self.manager.play_sound,
-            click_args=["effect/hit1"]
+            click_args=["effect/hit_alt"]
         ))
 
         self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
