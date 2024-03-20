@@ -80,8 +80,14 @@ class Game:
                 elif event.type == pygame.VIDEORESIZE:
                     self.current_screen_instance.on_resize(event.size)
 
-            pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
+            # reset cursor image
+            self.manager.set_cursor("cursor/arrow")
+
+            # update screen instance
             self.current_screen_instance.update()
+
+            # call os to change cursor
+            self.manager.load_cursor()
 
             # clear the window
             self.window.fill((0, 0, 0))
