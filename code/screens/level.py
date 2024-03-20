@@ -165,15 +165,12 @@ class Level(Screen):
         self.__init__(self.parent, self.debug_enabled)
 
     def debug(self):
-        # render hitboxes of enemies and player
-        hitboxes = []
-        hitboxes += self.manager.groups["enemy"].sprites()
-        hitboxes.append(self.player)
+        # render hitboxes of anything that has a rect
+        for entity in self.get_all_children():
+            if not hasattr(entity, "rect"): continue
+            # ignore self
+            if entity == self: continue
 
-        if melee_attack := self.manager.get_object_from_id("player_attack"):
-            hitboxes.append(melee_attack)
-
-        for entity in hitboxes:
             scaled_pos_start = self.camera.convert_coords(pygame.Vector2(entity.rect.topleft))
             scaled_pos_end = scaled_pos_start + pygame.Vector2(entity.rect.size)
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_start.x, scaled_pos_end.y))
@@ -196,11 +193,11 @@ class Level(Screen):
             sprite_group = self.manager.groups["render"]
         )
 
-        if self.debug_enabled:
-            self.debug()
-
         # render GUI elements
         self.master_ui.render(self.game_surface)
+
+        if self.debug_enabled:
+            self.debug()
 
         # render to window
         surface.blit(self.game_surface, (0, 0))
