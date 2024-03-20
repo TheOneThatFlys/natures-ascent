@@ -53,8 +53,14 @@ class Player(Entity):
         self.last_facing = LastFacing()
         self.walking = False
 
-        self.DELETE_LATER_attack_cd = 40
         self.attack_cd = 0
+        self.weapon = WeaponStats(
+            size = (self.rect.width / 2, self.rect.height),
+            damage = 10,
+            attack_time = ANIMATION_FRAME_TIME * 3,
+            cooldown_time = ANIMATION_FRAME_TIME * 4,
+            knockback = 10,
+        )
 
     def _load_animations(self):
         types = ["idle", "damage", "walk"]
@@ -138,16 +144,11 @@ class Player(Entity):
             self.add_child(
                 MeleeWeaponAttack(
                     self,
-                    WeaponStats(
-                        size = (self.rect.width / 2, self.rect.height),
-                        damage = 10,
-                        attack_time = ANIMATION_FRAME_TIME * 3,
-                        knockback = 10,
-                    ),
+                    self.weapon,
                     direction
                 )
             )
-            self.attack_cd = self.DELETE_LATER_attack_cd
+            self.attack_cd = self.weapon.cooldown_time
             self.last_facing.set("attack", direction)
             self.animation_manager.set_animation("sword_attack-" + direction)
             self.manager.play_sound(sound_name = "effect/sword_slash", volume = 0.2)
