@@ -1,2 +1,1 @@
-from .melee import MeleeWeaponAttack
-from .stats import WeaponStats
+from .melee import MeleeWeaponAttack, WeaponStats

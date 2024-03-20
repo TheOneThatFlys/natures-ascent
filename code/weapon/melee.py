@@ -4,7 +4,16 @@ from typing import Literal
 from engine import Node, Sprite
 from .stats import WeaponStats
 
+from dataclasses import dataclass
+
 Direction = Literal["left", "right", "up", "down"]
+
+@dataclass
+class WeaponStats:
+    size: tuple[int, int] = (100, 50)
+    damage: float = 5.0
+    attack_time: int = 40
+    knockback: float = 4.0
 
 class MeleeWeaponAttack(Sprite):
     def __init__(self, parent: Node, stats: WeaponStats, direction: Direction):
