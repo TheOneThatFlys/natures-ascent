@@ -1,13 +1,16 @@
 import pygame
+
 from .entity import Entity
 from .stats import EntityStats
+
+from item import Coin
 
 class Enemy(Entity):
     def __init__(self, parent, start_pos):
         super().__init__(
             parent,
             stats = EntityStats(
-                health = 30,
+                health = 20,
                 iframes = 20,
                 contact_damage = 10,
                 walk_speed = 0.6
@@ -40,8 +43,10 @@ class Enemy(Entity):
             self.player.hit(self, kb_magnitude = 10, damage = self.stats.contact_damage)
 
     def kill(self):
-        super().kill()
         self.manager.play_sound(sound_name = "effect/squelch", volume = 0.5)
+        level = self.manager.get_object_from_id("level")
+        level.add_child(Coin(level, (self.rect.centerx, self.rect.bottom)))
+        super().kill()
 
     def update(self):
         self.follow_player()

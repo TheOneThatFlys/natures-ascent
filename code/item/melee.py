@@ -2,7 +2,6 @@ import pygame
 from typing import Literal
 
 from engine import Node, Sprite
-from .stats import WeaponStats
 
 from dataclasses import dataclass
 

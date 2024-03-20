@@ -3,7 +3,7 @@ import random
 from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
-from weapon import MeleeWeaponAttack, WeaponStats
+from item import MeleeWeaponAttack, WeaponStats
 from .entity import Entity
 from .stats import EntityStats
 
@@ -137,7 +137,7 @@ class Player(Entity):
                     self,
                     WeaponStats(
                         size = (self.rect.width / 2, self.rect.height),
-                        damage = 5,
+                        damage = 10,
                         attack_time = ANIMATION_FRAME_TIME * 3,
                         knockback = 10,
                     ),

@@ -104,6 +104,7 @@ class Level(Screen):
         self.game_surface = pygame.Surface(game.window.get_size())
 
         self.manager.add_groups(["render", "update", "collide", "enemy"])
+        self.manager.add_object("level", self)
 
         self.player = self.add_child(Player(self, pygame.Vector2(-TILE_SIZE, 0)))
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite=self.player, follow_speed=0.1))
