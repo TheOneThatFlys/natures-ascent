@@ -106,8 +106,8 @@ class Level(Screen):
         self.manager.add_groups(["render", "update", "collide", "enemy"])
         self.manager.add_object("level", self)
 
-        self.player = self.add_child(Player(self, pygame.Vector2(-TILE_SIZE, 0)))
-        self.camera = self.add_child(FollowCameraLayered(self, target_sprite=self.player, follow_speed=0.1))
+        self.player = self.add_child(Player(self, pygame.Vector2(TILE_SIZE, TILE_SIZE)))
+        self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
 
         self.debug_enabled = False
 
@@ -138,8 +138,11 @@ class Level(Screen):
     # TEMP ---------------------!!
     def _gen_test_map(self, n = 10):
         for i in range(n):
-            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (i * TILE_SIZE, i* TILE_SIZE)))
-        self.add_child(Enemy(self, (-TILE_SIZE, -TILE_SIZE)))
+            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (i * TILE_SIZE, n * TILE_SIZE)))
+            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (i * TILE_SIZE, 0)))
+            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (n * TILE_SIZE, i * TILE_SIZE)))
+            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (0, i * TILE_SIZE)))
+        self.add_child(Enemy(self, (TILE_SIZE, TILE_SIZE * 4)))
 
     def on_key_down(self, key):
         if key == pygame.K_r:
