@@ -45,7 +45,7 @@ class Enemy(Entity):
     def kill(self):
         self.manager.play_sound(sound_name = "effect/squelch", volume = 0.5)
         level = self.manager.get_object_from_id("level")
-        for _ in range(100):
+        for _ in range(3):
             level.add_child(Coin(level, (self.rect.centerx, self.rect.bottom)))
         super().kill()
 
