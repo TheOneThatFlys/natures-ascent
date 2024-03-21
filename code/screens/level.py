@@ -113,15 +113,8 @@ class DebugUI(ui.Element):
 
         self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
 
-# {room type: [(room_cell_x, room_cell_y, connection_direction)]}
-_ROOM_CONNECTIONS = {
-    "1x1": [(0, 0, "left"), (0, 0, "right"), (0, 0, "up"), (0, 0, "down")],
-    "1x2": [(-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (2, 0)],
-    "1x3": [(-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (2, 1), (2, -1), (3, 0)],
-    "2x2": [(-1, 0), (0, -1), (1, -1), (2, 0), (2, 1), (1, 2), (0, 2), (-1, 1)]
-}
 class Room(Node):
-    def __init__(self, parent, origin: tuple[int, int], room_size, type: str):
+    def __init__(self, parent, origin: tuple[int, int], room_size):
         super().__init__(parent)
 
         self.rect = pygame.Rect(*origin, TILE_SIZE * room_size, TILE_SIZE * room_size)
@@ -136,53 +129,46 @@ class Room(Node):
 
         self._activated = False
 
-        self.gen_connections_random(_ROOM_CONNECTIONS[type])
+        self.gen_connections_random()
         self.add_tiles()
 
-    def gen_connections_random(self, possible: list[tuple[int, int, str]]):
-        for _ in range(len(possible)):
-            con = random.choice(possible)
+    def gen_connections_random(self):
+        p = ["left", "right", "up", "down"]
+        for _ in range(len(p)):
+            con = random.choice(p)
             if con in self.connections: continue
             self.connections.append(con)
 
     def add_tiles(self):
         self.add_doors()
-        if self.type == "1x1":
-            for n in range(self.room_size):
-                s = pygame.Surface((TILE_SIZE, TILE_SIZE))
-                s.fill((255, 255, 255))
-                self.add_tile(s, (n, 0))
-                self.add_tile(s, (n, self.room_size - 1))
-                self.add_tile(s, (0, n))
-                self.add_tile(s, (self.room_size - 1, n))
+        for n in range(self.room_size):
+            s = pygame.Surface((TILE_SIZE, TILE_SIZE))
+            s.fill((255, 255, 255))
+            self.add_tile(s, (n, 0))
+            self.add_tile(s, (n, self.room_size - 1))
+            self.add_tile(s, (0, n))
+            self.add_tile(s, (self.room_size - 1, n))
 
     def add_doors(self):
         "Generate the relative positions of 'doors'"
         for connection in self.connections:
-            # unpack connect info
-            room_cell_pos = connection[0], connection[1]
-            direction = connection[2]
-
             second_offset = ()
 
-            # scale room coords to tile coords
-            x = room_cell_pos[0] * self.room_size
-            y = room_cell_pos[0] * self.room_size
-
+            x = y = 0
             # bunch of hard coding
-            if direction == "up":
-                x += self.room_size // 2
+            if connection == "up":
+                x = self.room_size // 2
                 second_offset = (-1, 0)
-            elif direction == "down":
-                x += self.room_size // 2
-                y += self.room_size - 1
+            elif connection == "down":
+                x = self.room_size // 2
+                y = self.room_size - 1
                 second_offset = (-1, 0)
-            elif direction == "left":
-                y += self.room_size // 2
+            elif connection == "left":
+                y = self.room_size // 2
                 second_offset = (0, -1)
-            elif direction == "right":
-                x += self.room_size - 1
-                y += self.room_size // 2
+            elif connection == "right":
+                x = self.room_size - 1
+                y = self.room_size // 2
                 second_offset = (0, -1)
 
             self.door_positions.append((x, y))
@@ -220,7 +206,7 @@ class FloorManager(Node):
         self.player = self.add_child(Player(self, self.spawn_room.rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE / 2)))
 
     def _gen_1x1(self, origin):
-        room = Room(self, origin, self.room_size, "1x1")
+        room = Room(self, origin, self.room_size)
 
         return room
 
