@@ -1,31 +1,9 @@
 import pygame
+import random
 from util.constants import *
-from engine import Screen, Sprite, ui
+from engine import Screen, Sprite, Node, ui
 from entity import Player, Enemy
 from world import Tile
-
-class DebugUI(ui.Element):
-    def __init__(self, parent):
-        super().__init__(parent, style = ui.Style(alpha = 0, visible = False, size = parent.rect.size))
-
-        self.fps = self.add_child(ui.Text(
-            parent = self,
-            text = "loading fps...",
-            style = ui.Style(
-                font = self.manager.get_font("alagard", 16),
-                fore_colour = (255, 255, 255),
-                alignment= "top-left",
-                )
-            )
-        )
-
-        self.update_timer = 0
-
-    def update(self):
-        self.update_timer += self.manager.dt
-        if self.update_timer >= 20:
-            self.fps.set_text(f"{round(60 / self.manager.dt)} FPS")
-            self.update_timer = 0
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
@@ -98,6 +76,163 @@ class HudUI(ui.Element):
             )
         )
 
+class DebugUI(ui.Element):
+    def __init__(self, parent):
+        super().__init__(parent, style = ui.Style(alpha = 0, visible = False, size = parent.rect.size))
+
+        self.fps = self.add_child(ui.Text(
+            parent = self,
+            text = "loading fps...",
+            style = ui.Style(
+                font = self.manager.get_font("alagard", 16),
+                fore_colour = (255, 255, 255),
+                alignment= "top-left",
+                )
+            )
+        )
+        self.position = self.add_child(ui.Text(
+            parent = self,
+            text = "loading position...",
+            style = ui.Style(
+                font = self.manager.get_font("alagard", 16),
+                fore_colour = (255, 255, 255),
+                alignment = "top-left",
+                offset = (0, self.fps.rect.bottom),
+            )
+        ))
+
+        self.update_timer = 0
+        
+        self.player: Player = self.manager.get_object_from_id("player")
+
+    def update(self):
+        self.update_timer += self.manager.dt
+        if self.update_timer >= 20:
+            self.fps.set_text(f"{round(60 / self.manager.dt)} FPS")
+            self.update_timer = 0
+
+        self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
+
+# {room type: [(room_cell_x, room_cell_y, connection_direction)]}
+_ROOM_CONNECTIONS = {
+    "1x1": [(0, 0, "left"), (0, 0, "right"), (0, 0, "up"), (0, 0, "down")],
+    "1x2": [(-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (2, 0)],
+    "1x3": [(-1, 0), (0, 1), (0, -1), (1, 1), (1, -1), (2, 1), (2, -1), (3, 0)],
+    "2x2": [(-1, 0), (0, -1), (1, -1), (2, 0), (2, 1), (1, 2), (0, 2), (-1, 1)]
+}
+class Room(Node):
+    def __init__(self, parent, origin: tuple[int, int], room_size, type: str):
+        super().__init__(parent)
+
+        self.rect = pygame.Rect(*origin, TILE_SIZE * room_size, TILE_SIZE * room_size)
+        self.type = type
+        self.room_size = room_size
+        self.origin = origin
+
+        self.enemies = []
+        self.player: Player = self.manager.get_object_from_id("player")
+        self.connections = []
+        self.door_positions = []
+
+        self._activated = False
+
+        self.gen_connections_random(_ROOM_CONNECTIONS[type])
+        self.add_tiles()
+
+    def gen_connections_random(self, possible: list[tuple[int, int, str]]):
+        for _ in range(len(possible)):
+            con = random.choice(possible)
+            if con in self.connections: continue
+            self.connections.append(con)
+
+    def add_tiles(self):
+        self.add_doors()
+        if self.type == "1x1":
+            for n in range(self.room_size):
+                s = pygame.Surface((TILE_SIZE, TILE_SIZE))
+                s.fill((255, 255, 255))
+                self.add_tile(s, (n, 0))
+                self.add_tile(s, (n, self.room_size - 1))
+                self.add_tile(s, (0, n))
+                self.add_tile(s, (self.room_size - 1, n))
+
+    def add_doors(self):
+        "Generate the relative positions of 'doors'"
+        for connection in self.connections:
+            # unpack connect info
+            room_cell_pos = connection[0], connection[1]
+            direction = connection[2]
+
+            second_offset = ()
+
+            # scale room coords to tile coords
+            x = room_cell_pos[0] * self.room_size
+            y = room_cell_pos[0] * self.room_size
+
+            # bunch of hard coding
+            if direction == "up":
+                x += self.room_size // 2
+                second_offset = (-1, 0)
+            elif direction == "down":
+                x += self.room_size // 2
+                y += self.room_size - 1
+                second_offset = (-1, 0)
+            elif direction == "left":
+                y += self.room_size // 2
+                second_offset = (0, -1)
+            elif direction == "right":
+                x += self.room_size - 1
+                y += self.room_size // 2
+                second_offset = (0, -1)
+
+            self.door_positions.append((x, y))
+            self.door_positions.append((x + second_offset[0], y + second_offset[1]))
+
+    def add_tile(self, image, relative_position):
+        # convert relative grid coords to world coords
+        position = self.origin + pygame.Vector2(relative_position[0] * TILE_SIZE, relative_position[1] * TILE_SIZE)
+        # check if position is in a door
+        if relative_position in self.door_positions: return
+        # add tile
+        Tile(self, image, position)
+
+    def activate(self):
+        self._activated = True
+
+    def update(self):
+        if self.player.rect.colliderect(self.rect) and not self._activated:
+            self.activate()
+
+class FloorManager(Node):
+    def __init__(self, parent, room_size = 8):
+        super().__init__(parent)
+        if room_size % 2 == 1:
+            raise ValueError("Room size must be even.")
+        self.room_size = room_size
+
+        self.rooms = []
+
+    def generate(self):
+        "Generate a floor"
+        # generate pixel map overlay of rooms
+        self.spawn_room = random.choice([self._gen_1x1])((0, 0))
+
+        self.player = self.add_child(Player(self, self.spawn_room.rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE / 2)))
+
+    def _gen_1x1(self, origin):
+        room = Room(self, origin, self.room_size, "1x1")
+
+        return room
+
+    def _gen_1x2(self, origin):
+        pass
+
+    def _gen_1x3(self, origin):
+        pass
+
+    def _gen_2x2(self, origin):
+        pass
+
 class Level(Screen):
     def __init__(self, game, debug_enabled = False):
         super().__init__(parent = game)
@@ -106,13 +241,15 @@ class Level(Screen):
         self.manager.add_groups(["render", "update", "collide", "enemy"])
         self.manager.add_object("level", self)
 
-        self.player = self.add_child(Player(self, pygame.Vector2(TILE_SIZE, TILE_SIZE)))
+        self.floor_manager = self.add_child(FloorManager(self, room_size = 8))
+        self.floor_manager.generate()
+        self.player = self.manager.get_object_from_id("player")
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
 
         self.debug_enabled = False
 
         self._add_ui_components()
-        self._gen_test_map()
+        # self._gen_test_map()
 
         if debug_enabled:
             self.toggle_debug()
