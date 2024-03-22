@@ -31,6 +31,8 @@ class Entity(Sprite):
             )
         )
 
+        self.hitbox_squish = 2
+
         if health_bar_mode == "always-hide" or health_bar_mode == "normal":
             self.health_bar.hide()
         else:
@@ -41,31 +43,31 @@ class Entity(Sprite):
     # if this is true, then move the player hitbox so that it is touching the 
     # edge of the obstical
     def check_collision_vertical(self):
-        future_player_rect = pygame.Rect(self.pos.x, self.pos.y, self.rect.width, self.rect.height)
+        future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in self.manager.groups["collide"].sprites():
             if sprite == self: continue
             if sprite.rect.colliderect(future_player_rect):
                 if self.velocity.y > 0:
                     future_player_rect.bottom = sprite.rect.top
-                    self.pos = pygame.Vector2(future_player_rect.topleft)
+                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
                     return
                 elif self.velocity.y < 0:
                     future_player_rect.top = sprite.rect.bottom
-                    self.pos = pygame.Vector2(future_player_rect.topleft)
+                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish) 
                     return
 
     def check_collision_horizontal(self):
-        future_player_rect = pygame.Rect(self.pos.x, self.pos.y, self.rect.width, self.rect.height)
+        future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in self.manager.groups["collide"].sprites():
             if sprite == self: continue
             if sprite.rect.colliderect(future_player_rect):
                 if self.velocity.x > 0:
                     future_player_rect.right = sprite.rect.left
-                    self.pos = pygame.Vector2(future_player_rect.topleft)
+                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
                     return
                 elif self.velocity.x < 0:
                     future_player_rect.left = sprite.rect.right
-                    self.pos = pygame.Vector2(future_player_rect.topleft)
+                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
                     return
 
     def add_velocity(self, velocity: pygame.Vector2):
