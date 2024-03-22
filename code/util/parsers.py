@@ -1,7 +1,7 @@
 import pygame
 from typing import Literal
 
-def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, frame_size: int = None, direction: Literal["x", "y"] = "x") -> list[pygame.Surface]:
+def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, frame_size: tuple[int, int] = None, direction: Literal["x", "y"] = "x") -> list[pygame.Surface]:
     """
     Returns a list of surfaces containing each frame of the sprite sheet.
 
