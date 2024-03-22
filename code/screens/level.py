@@ -293,7 +293,7 @@ class Level(Screen):
 
     def render(self, surface: pygame.Surface):
         # clear game surface
-        self.game_surface.fill((66, 36, 51))
+        self.game_surface.fill((51, 22, 31))
 
         # render objects with layered camera
         self.camera.render(
