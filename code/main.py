@@ -1,8 +1,8 @@
 # TODO:
 # - MAKE ASSETS - FEEL POLISHED
-# Weapon system - equip & inv
 # Rooms
 # Generation
+# Weapon system - equip & inv
 
 from __future__ import annotations
 

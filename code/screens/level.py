@@ -1,7 +1,9 @@
+
 import pygame
-import random
+import random, math
 from util.constants import *
 from engine import Screen, Sprite, Node, ui
+from engine.types import Direction
 from entity import Player, Enemy
 from world import Tile
 
@@ -113,30 +115,42 @@ class DebugUI(ui.Element):
 
         self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
 
+room_directions: list[Direction] = ["left", "right", "up", "down"]
+opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
+direction_vector: dict[Direction, tuple[int, int]] = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
+
 class Room(Node):
-    def __init__(self, parent, origin: tuple[int, int], room_size):
+    def __init__(self, parent, origin: tuple[int, int], room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = []):
         super().__init__(parent)
 
         self.rect = pygame.Rect(*origin, TILE_SIZE * room_size, TILE_SIZE * room_size)
         self.type = type
         self.room_size = room_size
-        self.origin = origin
+        self.origin = origin # stored as room coords
 
         self.enemies = []
         self.player: Player = self.manager.get_object_from_id("player")
-        self.connections = []
-        self.door_positions = []
+        self.connections: list[Direction] = []
+        self.door_positions: list[tuple[int, int]] = []
 
         self._activated = False
 
-        self.gen_connections_random()
+        self.gen_connections_random(forced_doors, blacklisted_doors)
         self.add_tiles()
 
-    def gen_connections_random(self):
-        p = ["left", "right", "up", "down"]
-        for _ in range(len(p)):
-            con = random.choice(p)
-            if con in self.connections: continue
+    def gen_connections_random(self, forced_doors, blacklisted_doors):
+        for dir in forced_doors:
+            self.connections.append(dir)
+
+        dv = pygame.Vector2(self.origin) + pygame.Vector2(0.5, 0.5)
+        distance_from_origin = dv.magnitude()
+
+        # scale max connections based on distance from the origin
+        n_rooms = max(int(4 - distance_from_origin / 2), 0)
+
+        for _ in range(n_rooms):
+            con = random.choice(room_directions)
+            if con in self.connections or con in blacklisted_doors: continue
             self.connections.append(con)
 
     def add_tiles(self):
@@ -176,7 +190,7 @@ class Room(Node):
 
     def add_tile(self, image, relative_position):
         # convert relative grid coords to world coords
-        position = self.origin + pygame.Vector2(relative_position[0] * TILE_SIZE, relative_position[1] * TILE_SIZE)
+        position = pygame.Vector2(self.origin) * TILE_SIZE * self.room_size + pygame.Vector2(relative_position) * TILE_SIZE
         # check if position is in a door
         if relative_position in self.door_positions: return
         # add tile
@@ -196,28 +210,47 @@ class FloorManager(Node):
             raise ValueError("Room size must be even.")
         self.room_size = room_size
 
-        self.rooms = []
+        self.rooms: dict[tuple[int, int], Room] = {}
 
     def generate(self):
         "Generate a floor"
-        # generate pixel map overlay of rooms
-        self.spawn_room = random.choice([self._gen_1x1])((0, 0))
+        connection_stack = []
+
+        self.spawn_room = self._gen_1x1((0, 0))
+        for con in self.spawn_room.connections  :
+            connection_stack.append((self.spawn_room.origin, con))
+
+        while connection_stack:
+            room_pos, connection = connection_stack.pop()
+            new_room_offset = direction_vector[connection]
+            new_room_pos = room_pos[0] + new_room_offset[0], room_pos[1] + new_room_offset[1]
+
+            if new_room_pos in self.rooms: continue
+
+            new_room = self._gen_1x1(new_room_pos)
+
+            # push new room connections to stack
+            for con in new_room.connections:
+                connection_stack.append((new_room.origin, con))
 
         self.player = self.add_child(Player(self, self.spawn_room.rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE / 2)))
 
-    def _gen_1x1(self, origin):
-        room = Room(self, origin, self.room_size)
+    def _gen_1x1(self, origin) -> Room:
+        # look through neighbours and force connections with them
+        forced_connections = []
+        blacklisted_connections = []
+        for direction, vector in direction_vector.items():
+            neighbour_pos = origin[0] + vector[0], origin[1] + vector[1]
+            if neighbour_pos in self.rooms:
+                neighbour_room = self.rooms[neighbour_pos]
+                if opposite_directions[direction] in neighbour_room.connections:
+                    forced_connections.append(direction)
+                else:
+                    blacklisted_connections.append(direction)
 
+        room = Room(self, origin, self.room_size, forced_doors = forced_connections, blacklisted_doors = blacklisted_connections)
+        self.rooms[origin] = room
         return room
-
-    def _gen_1x2(self, origin):
-        pass
-
-    def _gen_1x3(self, origin):
-        pass
-
-    def _gen_2x2(self, origin):
-        pass
 
 class Level(Screen):
     def __init__(self, game, debug_enabled = False):
@@ -227,7 +260,7 @@ class Level(Screen):
         self.manager.add_groups(["render", "update", "collide", "enemy"])
         self.manager.add_object("level", self)
 
-        self.floor_manager = self.add_child(FloorManager(self, room_size = 8))
+        self.floor_manager = self.add_child(FloorManager(self, room_size = 10))
         self.floor_manager.generate()
         self.player = self.manager.get_object_from_id("player")
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
