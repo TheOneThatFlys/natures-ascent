@@ -88,6 +88,8 @@ class Map(ui.Element):
         room_rects = []
         connection_rects = []
 
+        player_pos = (0, 0)
+
         for room_coord, room in self.floor_manager.rooms.items():
             # draw room
             scaled_coord = self.scale_room_to_map(room_coord)
@@ -248,7 +250,7 @@ class Level(Screen):
     def on_key_down(self, key):
         if key == pygame.K_r:
             # restart level
-            self.TEMP_reset()
+            self.__init__(self.parent, self.debug_enabled)
         elif key == pygame.K_ESCAPE:
             self.parent.set_screen("menu")
         elif key == pygame.K_F3:
@@ -268,9 +270,6 @@ class Level(Screen):
         self.hud_ui.style.size = new_size
         for item in self.master_ui.get_all_children():
             item.redraw_image()
-
-    def TEMP_reset(self):
-        self.__init__(self.parent, self.debug_enabled)
 
     def debug(self):
         # render hitboxes of anything that has a rect
