@@ -12,13 +12,14 @@ opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "le
 direction_vector: dict[Direction, tuple[int, int]] = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
 
 class Room(Node):
-    def __init__(self, parent, origin: tuple[int, int], room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = []):
+    def __init__(self, parent, origin: tuple[int, int], room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = [], tags = []):
         super().__init__(parent)
 
-        self.rect = pygame.Rect(*origin, TILE_SIZE * room_size, TILE_SIZE * room_size)
+        self.bounding_rect = pygame.Rect(origin[0] * TILE_SIZE * room_size, origin[1] * TILE_SIZE * room_size, TILE_SIZE * room_size, TILE_SIZE * room_size)
         self.type = type
         self.room_size = room_size
         self.origin = origin # stored as room coords
+        self.tags = tags
 
         self.enemies = []
         self.player: Player = self.manager.get_object_from_id("player")
@@ -38,7 +39,14 @@ class Room(Node):
         distance_from_origin = dv.magnitude()
 
         # scale max connections based on distance from the origin
-        n_rooms = max(int(4 - distance_from_origin / 2), 0)
+        n_rooms = max(int(4 - distance_from_origin / 4), 0)
+
+        # limit rooom generation based on target room num
+        # in order to have semi consistent room numbers
+        if len(self.parent.rooms) < self.parent.target_num:
+            n_rooms = max(n_rooms, 1)
+        if len(self.parent.rooms) >= self.parent.target_num:
+            n_rooms = 0
 
         for _ in range(n_rooms):
             con = random.choice(room_directions)
@@ -86,22 +94,23 @@ class Room(Node):
         # check if position is in a door
         if relative_position in self.door_positions: return
         # add tile
-        Tile(self, image, position)
+        self.add_child(Tile(self, image, position))
 
     def activate(self):
         self._activated = True
 
     def update(self):
-        if self.player.rect.colliderect(self.rect) and not self._activated:
+        if self.player.rect.colliderect(self.bounding_rect) and not self._activated:
             self.activate()
 
 class FloorManager(Node):
-    def __init__(self, parent, room_size = 8):
+    def __init__(self, parent, room_size = 8, target_num = 8):
         super().__init__(parent)
-        self.id = "floor-manager"
         if room_size % 2 == 1:
             raise ValueError("Room size must be even.")
+        self.id = "floor-manager"
         self.room_size = room_size
+        self.target_num = target_num
 
         self.rooms: dict[tuple[int, int], Room] = {}
 
@@ -109,8 +118,8 @@ class FloorManager(Node):
         "Generate a floor"
         connection_stack = []
 
-        self.spawn_room = self._gen_1x1((0, 0))
-        for con in self.spawn_room.connections  :
+        self.spawn_room = self._gen_1x1((0, 0), ["spawn"])
+        for con in self.spawn_room.connections:
             connection_stack.append((self.spawn_room.origin, con))
 
         while connection_stack:
@@ -126,9 +135,9 @@ class FloorManager(Node):
             for con in new_room.connections:
                 connection_stack.append((new_room.origin, con))
 
-        self.player = self.add_child(Player(self, self.spawn_room.rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE / 2)))
+        self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE / 2)))
 
-    def _gen_1x1(self, origin) -> Room:
+    def _gen_1x1(self, origin, tags = []) -> Room:
         # look through neighbours and force connections with them
         forced_connections = []
         blacklisted_connections = []
@@ -141,6 +150,7 @@ class FloorManager(Node):
                 else:
                     blacklisted_connections.append(direction)
 
-        room = Room(self, origin, self.room_size, forced_doors = forced_connections, blacklisted_doors = blacklisted_connections)
+        room = Room(self, origin, self.room_size, forced_doors = forced_connections, blacklisted_doors = blacklisted_connections, tags = tags)
         self.rooms[origin] = room
+        self.add_child(room)
         return room

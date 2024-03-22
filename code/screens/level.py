@@ -61,12 +61,80 @@ class HealthBar(ui.Element):
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
 class Map(ui.Element):
-    def __init__(self, parent, floor_manager):
-        super().__init__(parent, style = ui.Style())
+    BORDER_SIZE = 4
+    def __init__(self, parent, style, border_colour, background_colour, room_colour, scale = 32):
+        super().__init__(parent, style = style)
+
+        self.floor_manager: FloorManager = self.manager.get_object_from_id("floor-manager")
+        self.player: Player = self.manager.get_object_from_id("player")
+        self.scale = scale
+
+        self.border_colour = border_colour
+        self.background_colour = background_colour
+        self.room_colour = room_colour
+
+        self.draw_map()
+
+    def scale_room_to_map(self, room_coord):
+        "Scale a room coord into map coordinates"
+        return pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.style.size) / 2
+
+    def draw_map(self):
+        self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
+        map_surf = pygame.Surface((self.style.size[0] - self.BORDER_SIZE * 2, self.style.size[1] - self.BORDER_SIZE * 2))
+        map_surf.fill(self.background_colour)
+
+        for room_coord, room in self.floor_manager.rooms.items():
+            # draw room
+            scaled_coord = self.scale_room_to_map(room_coord)
+
+            colour = self.room_colour
+            if "spawn" in room.tags:
+                colour = (89, 163, 79)
+
+            room_rect = pygame.Rect(*scaled_coord, self.scale, self.scale)
+            pygame.draw.rect(map_surf, colour, room_rect)
+
+            # draw connections
+            for connection in room.connections:
+                con_rect = pygame.Rect(0, 0, self.scale / 4, self.scale / 4)
+                if connection == "left":
+                    con_rect.right = room_rect.left
+                    con_rect.centery = room_rect.centery
+                elif connection == "right":
+                    con_rect.left = room_rect.right
+                    con_rect.centery = room_rect.centery
+                elif connection == "up":
+                    con_rect.bottom = room_rect.top
+                    con_rect.centerx = room_rect.centerx
+                elif connection == "down":
+                    con_rect.top = room_rect.bottom
+                    con_rect.centerx = room_rect.centerx
+
+                pygame.draw.rect(map_surf, self.room_colour, con_rect)
+
+            if room.bounding_rect.colliderect(self.player.rect):
+                rel = (pygame.Vector2(self.player.rect.center) - pygame.Vector2(room.bounding_rect.topleft)) / (self.floor_manager.room_size * TILE_SIZE) * self.scale
+                player_pos = rel + scaled_coord
+
+        pygame.draw.circle(map_surf, (0, 255, 0), player_pos, self.scale / 8)
+
+        # draw borders
+        pygame.draw.rect(self.image, self.border_colour, [0, 0, *self.style.size], border_radius = 4)
+        self.image.blit(map_surf, (self.BORDER_SIZE, self.BORDER_SIZE))
+
+    def increase_scale(self):
+        self.scale *= 2
+        if self.scale > 64:
+            self.scale = 64
+
+    def decrease_scale(self):
+        self.scale /= 2
+        if self.scale < 4:
+            self.scale = 4
 
     def update(self):
         self.draw_map()
-        self.redraw_image()
 
 class HudUI(ui.Element):
     BAR_PADDING = 4
@@ -81,6 +149,20 @@ class HudUI(ui.Element):
                 border_colour = (51, 22, 31),
                 background_colour = (91, 49, 56),
                 text_colour = (51, 22, 31)
+            )
+        )
+
+        self.map = self.add_child(
+            Map(
+                parent = self,
+                style = ui.Style(
+                    alignment = "top-right",
+                    offset = (self.health_bar.style.offset[0], self.health_bar.rect.bottom + TILE_SIZE / 8),
+                    size = (TILE_SIZE * 4, TILE_SIZE * 4),
+                ),
+                background_colour = (91, 49, 56),
+                border_colour = (51, 22, 31),
+                room_colour = (162, 109, 91)
             )
         )
 
@@ -168,6 +250,10 @@ class Level(Screen):
             self.parent.set_screen("menu")
         elif key == pygame.K_F3:
             self.toggle_debug()
+        elif key == pygame.K_EQUALS:
+            self.hud_ui.map.increase_scale()
+        elif key == pygame.K_MINUS:
+            self.hud_ui.map.decrease_scale()
 
     def on_resize(self, new_size):
         # remake game surface to new size
@@ -212,11 +298,12 @@ class Level(Screen):
             sprite_group = self.manager.groups["render"]
         )
 
-        # render GUI elements
-        self.master_ui.render(self.game_surface)
-
+        # draw debug elements
         if self.debug_enabled:
             self.debug()
+
+        # render GUI elements
+        self.master_ui.render(self.game_surface)
 
         # render to window
         surface.blit(self.game_surface, (0, 0))
