@@ -60,6 +60,14 @@ class HealthBar(ui.Element):
 
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
+class Map(ui.Element):
+    def __init__(self, parent, floor_manager):
+        super().__init__(parent, style = ui.Style())
+
+    def update(self):
+        self.draw_map()
+        self.redraw_image()
+
 class HudUI(ui.Element):
     BAR_PADDING = 4
     def __init__(self, parent):
