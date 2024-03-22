@@ -2,11 +2,12 @@ import pygame
 from .node import Node
 
 class Sprite(pygame.sprite.Sprite, Node):
-    def __init__(self, parent, groups: list[str] = []):
+    def __init__(self, parent, groups: list[str] = [], z_index: int = 0):
         Node.__init__(self, parent)
         pygame.sprite.Sprite.__init__(self)
 
         self.render_offset = (0, 0)
+        self.z_index = z_index
         
         for g in groups:
             self.add(self.manager.groups[g])

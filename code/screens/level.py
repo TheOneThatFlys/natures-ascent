@@ -2,8 +2,8 @@
 import pygame
 from util.constants import *
 from engine import Screen, Sprite, ui
-from entity import Player, Enemy
-from world import FloorManager
+from entity import Player
+from world import FloorManager, Tile
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
@@ -274,13 +274,14 @@ class Level(Screen):
 
     def debug(self):
         # render hitboxes of anything that has a rect
-        for entity in self.get_all_children():
-            if not hasattr(entity, "rect"): continue
+        for item in self.get_all_children():
+            if not hasattr(item, "rect"): continue
             # ignore self
-            if entity == self: continue
+            if item == self: continue
+            if isinstance(item, Tile): continue
 
-            scaled_pos_start = self.camera.convert_coords(pygame.Vector2(entity.rect.topleft))
-            scaled_pos_end = scaled_pos_start + pygame.Vector2(entity.rect.size)
+            scaled_pos_start = self.camera.convert_coords(pygame.Vector2(item.rect.topleft))
+            scaled_pos_end = scaled_pos_start + pygame.Vector2(item.rect.size)
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_start.x, scaled_pos_end.y))
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_end.x, scaled_pos_start.y))
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_start.x, scaled_pos_end.y))
@@ -293,7 +294,7 @@ class Level(Screen):
 
     def render(self, surface: pygame.Surface):
         # clear game surface
-        self.game_surface.fill((30, 31, 33))
+        self.game_surface.fill((66, 36, 51))
 
         # render objects with layered camera
         self.camera.render(
@@ -347,6 +348,6 @@ class FollowCameraLayered(Sprite):
         self.offset.y = self.pos.y - self.half_screen_size.y
 
         # render sprites based on y position
-        for sprite in sorted(sprite_group.sprites(), key = lambda s: s.rect.centery):
+        for sprite in sorted(sorted(sprite_group.sprites(), key = lambda s: s.rect.centery), key = lambda s: s.z_index):
             new_pos = (sprite.rect.x - self.offset.x + sprite.render_offset[0], sprite.rect.y - self.offset.y + sprite.render_offset[1])
             surface.blit(sprite.image, new_pos)
