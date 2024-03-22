@@ -152,15 +152,6 @@ class Level(Screen):
         self.debug_ui.style.visible = not self.debug_ui.style.visible
         self.debug_enabled = not self.debug_enabled
 
-    # TEMP ---------------------!!
-    def _gen_test_map(self, n = 10):
-        for i in range(n):
-            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (i * TILE_SIZE, n * TILE_SIZE)))
-            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (i * TILE_SIZE, 0)))
-            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (n * TILE_SIZE, i * TILE_SIZE)))
-            self.add_child(Tile(self, pygame.transform.scale(self.manager.get_image("tiles/wood"), (TILE_SIZE, TILE_SIZE)), (0, i * TILE_SIZE)))
-        self.add_child(Enemy(self, (TILE_SIZE, TILE_SIZE * 4)))
-
     def on_key_down(self, key):
         if key == pygame.K_r:
             # restart level
