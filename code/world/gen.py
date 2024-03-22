@@ -68,9 +68,9 @@ class Room(Node):
         # add floors
         for x in range(1, self.room_size - 1):
             for y in range(1, self.room_size - 1):
-                self.add_tile(self.parent.wall_tileset.get(13), (x, y), False)
+                self.add_tile(self.parent.grass_tileset.get(random.randint(0, 3)), (x, y), False)
         for pos in self.door_positions:
-            self.add_tile(self.parent.wall_tileset.get(13), pos, False)
+            self.add_tile(self.parent.grass_tileset.get(random.randint(0, 3)), pos, False)
 
     def add_doors(self):
         "Generate the relative positions of 'doors'"
@@ -133,6 +133,7 @@ class FloorManager(Node):
         self.target_num = target_num
 
         self.wall_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("tiles/wall_tiles"), 2), TILE_SIZE)
+        self.grass_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("tiles/grass_tiles"), 2), TILE_SIZE)
 
         self.rooms: dict[tuple[int, int], Room] = {}
 
