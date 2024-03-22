@@ -35,7 +35,7 @@ class Room(Node):
         for dir in forced_doors:
             self.connections.append(dir)
 
-        dv = pygame.Vector2(self.origin) + pygame.Vector2(0.5, 0.5)
+        dv = pygame.Vector2(self.origin) - pygame.Vector2(self.parent.spawn_room.origin) + pygame.Vector2(0.5, 0.5)
         distance_from_origin = dv.magnitude()
 
         # scale max connections based on distance from the origin
@@ -103,6 +103,16 @@ class Room(Node):
         if self.player.rect.colliderect(self.bounding_rect) and not self._activated:
             self.activate()
 
+class SpawnRoom(Room):
+    def __init__(self, parent, origin, room_size):
+        super().__init__(parent, origin, room_size, [], [], ["spawn"])
+
+    def gen_connections_random(self, _, __):
+        for _ in range(4):
+            con = random.choice(room_directions)
+            if con in self.connections: continue
+            self.connections.append(con)
+
 class FloorManager(Node):
     def __init__(self, parent, room_size = 8, target_num = 8):
         super().__init__(parent)
@@ -118,7 +128,10 @@ class FloorManager(Node):
         "Generate a floor"
         connection_stack = []
 
-        self.spawn_room = self._gen_1x1((0, 0), ["spawn"])
+        spawn_room_origin = (0, 0)
+
+        self.spawn_room = self.add_child(SpawnRoom(self, spawn_room_origin, self.room_size))
+        self.rooms[spawn_room_origin] = self.spawn_room
         for con in self.spawn_room.connections:
             connection_stack.append((self.spawn_room.origin, con))
 

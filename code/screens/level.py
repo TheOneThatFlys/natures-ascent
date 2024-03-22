@@ -73,27 +73,27 @@ class Map(ui.Element):
         self.background_colour = background_colour
         self.room_colour = room_colour
 
-        self.draw_map()
+        self.player_icon = pygame.transform.scale_by(self.manager.get_image("player/icon"), 0.5)
+
+        self.update_map()
 
     def scale_room_to_map(self, room_coord):
         "Scale a room coord into map coordinates"
-        return pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.style.size) / 2
+        return pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.map_surf.get_size()) / 2 - pygame.Vector2(0.5, 0.5) * self.scale - (pygame.Vector2(self.player.rect.center) / TILE_SIZE // self.floor_manager.room_size) * (self.scale + self.scale / 4)
 
-    def draw_map(self):
-        self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
-        map_surf = pygame.Surface((self.style.size[0] - self.BORDER_SIZE * 2, self.style.size[1] - self.BORDER_SIZE * 2))
-        map_surf.fill(self.background_colour)
+    def update_map(self):
+        self.map_surf = pygame.Surface((self.style.size[0] - self.BORDER_SIZE * 2, self.style.size[1] - self.BORDER_SIZE * 2))
+        self.map_surf.fill(self.background_colour)
+
+        room_rects = []
+        connection_rects = []
 
         for room_coord, room in self.floor_manager.rooms.items():
             # draw room
             scaled_coord = self.scale_room_to_map(room_coord)
 
-            colour = self.room_colour
-            if "spawn" in room.tags:
-                colour = (89, 163, 79)
-
             room_rect = pygame.Rect(*scaled_coord, self.scale, self.scale)
-            pygame.draw.rect(map_surf, colour, room_rect)
+            room_rects.append(room_rect)
 
             # draw connections
             for connection in room.connections:
@@ -111,17 +111,16 @@ class Map(ui.Element):
                     con_rect.top = room_rect.bottom
                     con_rect.centerx = room_rect.centerx
 
-                pygame.draw.rect(map_surf, self.room_colour, con_rect)
+                connection_rects.append(con_rect)
 
             if room.bounding_rect.colliderect(self.player.rect):
                 rel = (pygame.Vector2(self.player.rect.center) - pygame.Vector2(room.bounding_rect.topleft)) / (self.floor_manager.room_size * TILE_SIZE) * self.scale
                 player_pos = rel + scaled_coord
 
-        pygame.draw.circle(map_surf, (0, 255, 0), player_pos, self.scale / 8)
+        for rect in room_rects + connection_rects:
+            pygame.draw.rect(self.map_surf, self.room_colour, rect)
 
-        # draw borders
-        pygame.draw.rect(self.image, self.border_colour, [0, 0, *self.style.size], border_radius = 4)
-        self.image.blit(map_surf, (self.BORDER_SIZE, self.BORDER_SIZE))
+        self.map_surf.blit(self.player_icon, self.player_icon.get_rect(center = player_pos))
 
     def increase_scale(self):
         self.scale *= 2
@@ -134,7 +133,11 @@ class Map(ui.Element):
             self.scale = 4
 
     def update(self):
-        self.draw_map()
+        self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
+        self.update_map()
+        # draw borders
+        pygame.draw.rect(self.image, self.border_colour, [0, 0, *self.style.size], border_radius = 4)
+        self.image.blit(self.map_surf, (self.BORDER_SIZE, self.BORDER_SIZE))
 
 class HudUI(ui.Element):
     BAR_PADDING = 4
@@ -211,7 +214,7 @@ class Level(Screen):
         self.manager.add_groups(["render", "update", "collide", "enemy"])
         self.manager.add_object("level", self)
 
-        self.floor_manager = self.add_child(FloorManager(self, room_size = 10))
+        self.floor_manager = self.add_child(FloorManager(self, room_size = 12))
         self.floor_manager.generate()
         self.player = self.manager.get_object_from_id("player")
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
