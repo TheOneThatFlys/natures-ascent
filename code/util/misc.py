@@ -6,7 +6,7 @@ def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Sur
     new_size = surface.get_width() * scale_factor, surface.get_height() * scale_factor
     return pygame.transform.scale(surface, new_size)
 
-def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7) -> pygame.Surface:
+def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7, offset = 0) -> pygame.Surface:
     "Draw a striped background of given sized and scale onto surface"
     COLOUR_ONE = (37, 44, 55)
     COLOUR_TWO = (26, 30, 36)
@@ -17,7 +17,7 @@ def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thi
     n_lines = int((max(screen_size[0], screen_size[1]) + min(screen_size[0], screen_size[1])) / pixel_scale / line_thickness)
     for x in range(n_lines):
         if x % 2 == 0:
-            d = x * line_thickness + line_thickness / 2
+            d = x * line_thickness + line_thickness / 2 + offset
             e = line_thickness
             pygame.draw.line(bg, COLOUR_TWO, (d + e, -e), (-e, d + e), line_thickness)
 

@@ -147,12 +147,18 @@ class Menu(Screen):
                 visible = False
             ),
             hover_style = None,
-            on_click = self.manager.play_sound,
-            click_args=["effect/hit_alt"]
+            on_click = self._toggle_secret,
         ))
+
+        self.bg_offset = 0
+        self.secret_activated = False
 
         self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
             
+    def _toggle_secret(self):
+        self.secret_activated = not self.secret_activated
+        self.manager.play_sound("effect/hit_alt", 0.5)
+
     def on_resize(self, new_res):
         self.master_container.style.size = new_res
         self.master_container.style.image = util.draw_background(new_res)
@@ -165,3 +171,9 @@ class Menu(Screen):
 
     def update(self):
         self.master_container.update()
+
+        if self.secret_activated:
+            self.master_container.image = util.draw_background(self.rect.size, offset = self.bg_offset)
+            self.bg_offset += 1
+            if self.bg_offset >= 14:
+                self.bg_offset -= 14
