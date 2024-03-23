@@ -3,7 +3,7 @@ import pygame
 from util.constants import *
 from engine import Screen, Sprite, ui
 from entity import Player
-from world import FloorManager, Tile
+from world import FloorManager, Tile, Room
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
@@ -62,16 +62,17 @@ class HealthBar(ui.Element):
 
 class Map(ui.Element):
     BORDER_SIZE = 4
-    def __init__(self, parent, style, border_colour, background_colour, room_colour, scale = 32):
+    def __init__(self, parent, style, scale = 32):
         super().__init__(parent, style = style)
 
         self.floor_manager: FloorManager = self.manager.get_object_from_id("floor-manager")
         self.player: Player = self.manager.get_object_from_id("player")
         self.scale = scale
 
-        self.border_colour = border_colour
-        self.background_colour = background_colour
-        self.room_colour = room_colour
+        self.border_colour = (51, 22, 31)
+        self.background_colour = (91, 49, 56)
+        self.room_colour = (162, 109, 91)
+        self.unactivated_colour = self.border_colour
 
         self.player_icon = pygame.transform.scale_by(self.manager.get_image("player/icon"), 0.5)
 
@@ -81,12 +82,15 @@ class Map(ui.Element):
         "Scale a room coord into map coordinates"
         return pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.map_surf.get_size()) / 2 - pygame.Vector2(0.5, 0.5) * self.scale - (pygame.Vector2(self.player.rect.center) / TILE_SIZE // self.floor_manager.room_size) * (self.scale + self.scale / 4)
 
+    def determine_room_colour(self, room: Room):
+        if room.activated:
+            return self.room_colour
+        else:
+            return self.unactivated_colour
+
     def update_map(self):
         self.map_surf = pygame.Surface((self.style.size[0] - self.BORDER_SIZE * 2, self.style.size[1] - self.BORDER_SIZE * 2))
         self.map_surf.fill(self.background_colour)
-
-        room_rects = []
-        connection_rects = []
 
         player_pos = (0, 0)
 
@@ -95,7 +99,9 @@ class Map(ui.Element):
             scaled_coord = self.scale_room_to_map(room_coord)
 
             room_rect = pygame.Rect(*scaled_coord, self.scale, self.scale)
-            room_rects.append(room_rect)
+
+            colour = self.determine_room_colour(room)
+            pygame.draw.rect(self.map_surf, colour, room_rect)
 
             # draw connections
             for connection in room.connections:
@@ -113,14 +119,11 @@ class Map(ui.Element):
                     con_rect.top = room_rect.bottom
                     con_rect.centerx = room_rect.centerx
 
-                connection_rects.append(con_rect)
+                pygame.draw.rect(self.map_surf, self.room_colour, con_rect)
 
             if room.bounding_rect.colliderect(self.player.rect):
                 rel = (pygame.Vector2(self.player.rect.center) - pygame.Vector2(room.bounding_rect.topleft)) / (self.floor_manager.room_size * TILE_SIZE) * self.scale
                 player_pos = rel + scaled_coord
-
-        for rect in room_rects + connection_rects:
-            pygame.draw.rect(self.map_surf, self.room_colour, rect)
 
         self.map_surf.blit(self.player_icon, self.player_icon.get_rect(center = player_pos))
 
@@ -164,10 +167,7 @@ class HudUI(ui.Element):
                     alignment = "top-right",
                     offset = (self.health_bar.style.offset[0], self.health_bar.rect.bottom + TILE_SIZE / 8),
                     size = (TILE_SIZE * 4, TILE_SIZE * 4),
-                ),
-                background_colour = (91, 49, 56),
-                border_colour = (51, 22, 31),
-                room_colour = (162, 109, 91)
+                )
             )
         )
 
@@ -290,6 +290,7 @@ class Level(Screen):
         # update all sprites in update group
         self.manager.groups["update"].update()
         self.master_ui.update()
+        self.floor_manager.update()
 
     def render(self, surface: pygame.Surface):
         # clear game surface

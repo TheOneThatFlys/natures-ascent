@@ -24,7 +24,6 @@ class Room(Node):
         self.tags = tags
 
         self.enemies = []
-        self.player: Player = self.manager.get_object_from_id("player")
         self.connections: list[Direction] = []
         self.door_positions: list[tuple[int, int]] = []
 
@@ -32,6 +31,10 @@ class Room(Node):
 
         self.gen_connections_random(forced_doors, blacklisted_doors)
         self.add_tiles()
+
+    @property
+    def activated(self) -> bool:
+        return self._activated
 
     def gen_connections_random(self, forced_doors, blacklisted_doors):
         for dir in forced_doors:
@@ -110,8 +113,10 @@ class Room(Node):
         self._activated = True
 
     def update(self):
-        if self.player.rect.colliderect(self.bounding_rect) and not self._activated:
-            self.activate()
+        if not self._activated:
+            player: Player = self.manager.get_object_from_id("player")
+            if player.rect.colliderect(self.bounding_rect):
+                self.activate()
 
 class SpawnRoom(Room):
     def __init__(self, parent, origin, room_size):
@@ -267,3 +272,7 @@ class FloorManager(Node):
         self.rooms[origin] = room
         self.add_child(room)
         return room
+    
+    def update(self):
+        for _, room in self.rooms.items():
+            room.update()
