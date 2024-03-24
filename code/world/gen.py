@@ -4,7 +4,7 @@ from typing import Literal, Type
 
 from engine.types import Direction
 from engine import Node, Sprite
-from entity import Player, Enemy
+from entity import Player, Enemy, Slime
 from util.constants import *
 
 from .tile import Tile, TileSet
@@ -296,7 +296,7 @@ class FloorManager(Node):
             room_size = self.room_size,
             forced_doors = forced_connections,
             blacklisted_doors = blacklisted_connections,
-            enemies = {Enemy: 3},
+            enemies = {Slime: 3},
             tags = tags,
         )
         self.rooms[origin] = room
