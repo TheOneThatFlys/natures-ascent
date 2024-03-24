@@ -75,6 +75,10 @@ class Game:
 
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_F9:
+                        print("[DEBUG] Reloading...")
+                        self.manager.load()
+                        self.current_screen_instance = self._screens[self.current_screen](self)
                     self.current_screen_instance.on_key_down(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     self.current_screen_instance.on_mouse_down(event.button)

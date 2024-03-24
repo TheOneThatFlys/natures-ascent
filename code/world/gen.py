@@ -125,6 +125,7 @@ class SpawnRoom(Room):
         portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
         portal_sprite.image = pygame.transform.scale(self.manager.get_image("tiles/spawn_portal"), (TILE_SIZE * 6, TILE_SIZE * 6))
         portal_sprite.rect = portal_sprite.image.get_rect(center = self.bounding_rect.center)
+        # render above floor and below player
         portal_sprite.z_index = -0.5
 
     def gen_connections_random(self, __, ___):
