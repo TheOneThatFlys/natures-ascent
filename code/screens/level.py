@@ -82,7 +82,9 @@ class Map(ui.Element):
 
     def scale_room_to_map(self, room_coord):
         "Scale a room coord into map coordinates"
-        return pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.map_surf.get_size()) / 2 - pygame.Vector2(0.5, 0.5) * self.scale - (pygame.Vector2(self.player.rect.center) / TILE_SIZE // self.floor_manager.room_size) * (self.scale + self.scale / 4)
+        scaled_room_coords = pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.map_surf.get_size()) / 2 - pygame.Vector2(0.5, 0.5) * self.scale
+        scaled_player_position = (pygame.Vector2(self.player.rect.center) / TILE_SIZE // self.floor_manager.room_size) * (self.scale + self.scale / 4)
+        return scaled_room_coords - scaled_player_position
 
     def _get_room_colour(self, room: Room):
         if room.activated:
