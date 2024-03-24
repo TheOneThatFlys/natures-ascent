@@ -126,7 +126,10 @@ class Manager():
                     self.assets[ext_dir_map[extension]][key] = loaded_asset
 
     def get_image(self, name: str) -> pygame.Surface:
-        return self.assets["image"][name]
+        try:
+            return self.assets["image"][name]
+        except KeyError:
+            return self.assets["image"]["error"]
     
     def get_font(self, name: str, size: int) -> pygame.font.Font:
         return self.assets["font"][name].get(size)

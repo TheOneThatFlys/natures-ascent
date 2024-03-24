@@ -93,6 +93,8 @@ class Map(ui.Element):
     def _get_room_icon(self, room: Room):
         if "spawn" in room.tags:
             return self.spawn_icon
+        elif room.activated:
+            return self.done_icon
         return pygame.Surface((0, 0))
 
     def update_map(self):
