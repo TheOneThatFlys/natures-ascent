@@ -74,7 +74,9 @@ class Map(ui.Element):
         self.room_colour = (162, 109, 91)
         self.unactivated_colour = self.border_colour
 
-        self.player_icon = pygame.transform.scale_by(self.manager.get_image("player/icon"), 0.5)
+        self.player_icon = pygame.transform.scale_by(self.manager.get_image("map/player_icon"), 0.5)
+        self.spawn_icon = self.manager.get_image("map/spawn")
+        self.done_icon = self.manager.get_image("map/check")
 
         self.update_map()
 
@@ -82,11 +84,16 @@ class Map(ui.Element):
         "Scale a room coord into map coordinates"
         return pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.map_surf.get_size()) / 2 - pygame.Vector2(0.5, 0.5) * self.scale - (pygame.Vector2(self.player.rect.center) / TILE_SIZE // self.floor_manager.room_size) * (self.scale + self.scale / 4)
 
-    def determine_room_colour(self, room: Room):
+    def _get_room_colour(self, room: Room):
         if room.activated:
             return self.room_colour
         else:
             return self.unactivated_colour
+
+    def _get_room_icon(self, room: Room):
+        if "spawn" in room.tags:
+            return self.spawn_icon
+        return pygame.Surface((0, 0))
 
     def update_map(self):
         self.map_surf = pygame.Surface((self.style.size[0] - self.BORDER_SIZE * 2, self.style.size[1] - self.BORDER_SIZE * 2))
@@ -100,8 +107,11 @@ class Map(ui.Element):
 
             room_rect = pygame.Rect(*scaled_coord, self.scale, self.scale)
 
-            colour = self.determine_room_colour(room)
+            colour = self._get_room_colour(room)
             pygame.draw.rect(self.map_surf, colour, room_rect)
+
+            icon = self._get_room_icon(room)
+            self.map_surf.blit(icon, icon.get_rect(center = room_rect.center))
 
             # draw connections
             for connection in room.connections:
@@ -119,7 +129,7 @@ class Map(ui.Element):
                     con_rect.top = room_rect.bottom
                     con_rect.centerx = room_rect.centerx
 
-                pygame.draw.rect(self.map_surf, self.room_colour, con_rect)
+                pygame.draw.rect(self.map_surf, colour, con_rect)
 
             if room.bounding_rect.colliderect(self.player.rect):
                 rel = (pygame.Vector2(self.player.rect.center) - pygame.Vector2(room.bounding_rect.topleft)) / (self.floor_manager.room_size * TILE_SIZE) * self.scale
@@ -209,7 +219,7 @@ class DebugUI(ui.Element):
         self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
 
 class Level(Screen):
-    def __init__(self, game, debug_enabled = False):
+    def __init__(self, game, debug_mode = 0):
         super().__init__(parent = game)
         self.game_surface = pygame.Surface(game.window.get_size())
 
@@ -221,13 +231,13 @@ class Level(Screen):
         self.player = self.manager.get_object_from_id("player")
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
 
-        self.debug_enabled = False
+        self.debug_mode = 0
 
         self._add_ui_components()
         # self._gen_test_map()
 
-        if debug_enabled:
-            self.toggle_debug()
+        for _ in range(debug_mode):
+            self.cycle_debug()
 
         self.manager.stop_music()
 
@@ -243,20 +253,35 @@ class Level(Screen):
         self.debug_ui = self.master_ui.add_child(DebugUI(self.master_ui))
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
 
-    def toggle_debug(self):
-        self.debug_ui.style.visible = not self.debug_ui.style.visible
-        self.debug_enabled = not self.debug_enabled
+    def cycle_debug(self):
+        """
+        Cycles current debug mode.
+
+        - 0: off
+        - 1: draw hitboxes
+        - 2: draw hitboxes including tiles
+        """
+        self.debug_mode += 1
+        if self.debug_mode == 3:
+            self.debug_mode = 0
+            self.debug_ui.style.visible = False
+        else:
+            self.debug_ui.style.visible = True
 
     def on_key_down(self, key):
         if key == pygame.K_r:
             # restart level
-            self.__init__(self.parent, self.debug_enabled)
+            self.__init__(self.parent, self.debug_mode)
+
         elif key == pygame.K_ESCAPE:
             self.parent.set_screen("menu")
+            
         elif key == pygame.K_F3:
-            self.toggle_debug()
+            self.cycle_debug()
+
         elif key == pygame.K_EQUALS:
             self.hud_ui.map.increase_scale()
+
         elif key == pygame.K_MINUS:
             self.hud_ui.map.decrease_scale()
 
@@ -277,7 +302,7 @@ class Level(Screen):
             if not hasattr(item, "rect"): continue
             # ignore self
             if item == self: continue
-            if isinstance(item, Tile): continue
+            if isinstance(item, Tile) and self.debug_mode != 2: continue
 
             scaled_pos_start = self.camera.convert_coords(pygame.Vector2(item.rect.topleft))
             scaled_pos_end = scaled_pos_start + pygame.Vector2(item.rect.size)
@@ -303,7 +328,7 @@ class Level(Screen):
         )
 
         # draw debug elements
-        if self.debug_enabled:
+        if self.debug_mode:
             self.debug()
 
         # render GUI elements

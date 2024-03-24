@@ -3,7 +3,7 @@ import random
 from typing import Literal
 
 from engine.types import Direction
-from engine import Node
+from engine import Node, Sprite
 from entity import Player
 from util.constants import *
 
@@ -122,6 +122,11 @@ class SpawnRoom(Room):
     def __init__(self, parent, origin, room_size):
         super().__init__(parent, origin, room_size, [], [], ["spawn"])
 
+        portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
+        portal_sprite.image = pygame.transform.scale(self.manager.get_image("tiles/spawn_portal"), (TILE_SIZE * 6, TILE_SIZE * 6))
+        portal_sprite.rect = portal_sprite.image.get_rect(center = self.bounding_rect.center)
+        portal_sprite.z_index = -0.5
+
     def gen_connections_random(self, __, ___):
         for _ in range(4):
             con = random.choice(room_directions)
@@ -168,7 +173,7 @@ class FloorManager(Node):
 
         self.calculate_textures()
 
-        self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE / 2)))
+        self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE)))
 
     def _get_type_of_tile(self, wall_tiles, all_tiles, coord: tuple[int, int]) -> Literal["wall", "floor", "world"]:
         return "wall" if coord in wall_tiles else "floor" if coord in all_tiles else "world"
