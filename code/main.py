@@ -1,8 +1,9 @@
 # TODO:
-# - MAKE ASSETS - FEEL POLISHED
-# Rooms
-# Generation
+# Settings: config loader
+# Enemies spawn randomly in rooms
+# Different rooms - shop etc
 # Weapon system - equip & inv
+# Weapon upgrades
 
 from __future__ import annotations
 
