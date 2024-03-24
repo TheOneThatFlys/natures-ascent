@@ -1,10 +1,10 @@
 import pygame
 import random
-from typing import Literal
+from typing import Literal, Type
 
 from engine.types import Direction
 from engine import Node, Sprite
-from entity import Player
+from entity import Player, Enemy
 from util.constants import *
 
 from .tile import Tile, TileSet
@@ -14,7 +14,7 @@ opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "le
 direction_vector: dict[Direction, tuple[int, int]] = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
 
 class Room(Node):
-    def __init__(self, parent, origin: tuple[int, int], room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = [], tags = []):
+    def __init__(self, parent, origin: tuple[int, int], room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = [], tags = [], enemies: dict[Type[Enemy], int] = {}):
         super().__init__(parent)
 
         self.bounding_rect = pygame.Rect(origin[0] * TILE_SIZE * room_size, origin[1] * TILE_SIZE * room_size, TILE_SIZE * room_size, TILE_SIZE * room_size)
@@ -23,9 +23,14 @@ class Room(Node):
         self.origin = origin # stored as room coords
         self.tags = tags
 
-        self.enemies = []
         self.connections: list[Direction] = []
         self.door_positions: list[tuple[int, int]] = []
+
+        # store each alive enemy
+        self.enemies = pygame.sprite.Group()
+
+        # store possible enemies which will be spawned upon room activation
+        self._possible_enemies = enemies
 
         self._activated = False
 
@@ -35,6 +40,16 @@ class Room(Node):
     @property
     def activated(self) -> bool:
         return self._activated
+
+    def add_enemies(self):
+        for enemy_type, count in self._possible_enemies.items(): 
+            for _ in range(count):
+                pos = (
+                    random.randint(self.bounding_rect.x + TILE_SIZE, self.bounding_rect.right - 2 * TILE_SIZE),
+                    random.randint(self.bounding_rect.y + TILE_SIZE, self.bounding_rect.bottom - 2 * TILE_SIZE)
+                )
+                
+                self.enemies.add(self.add_child(enemy_type(self, pos)))
 
     def gen_connections_random(self, forced_doors, blacklisted_doors):
         for dir in forced_doors:
@@ -111,6 +126,7 @@ class Room(Node):
 
     def activate(self):
         self._activated = True
+        self.add_enemies()
 
     def update(self):
         if not self._activated:
@@ -274,7 +290,15 @@ class FloorManager(Node):
                 else:
                     blacklisted_connections.append(direction)
 
-        room = Room(self, origin, self.room_size, forced_doors = forced_connections, blacklisted_doors = blacklisted_connections, tags = tags)
+        room = Room(
+            parent = self,
+            origin = origin,
+            room_size = self.room_size,
+            forced_doors = forced_connections,
+            blacklisted_doors = blacklisted_connections,
+            enemies = {Enemy: 3},
+            tags = tags,
+        )
         self.rooms[origin] = room
         self.add_child(room)
         return room
