@@ -12,7 +12,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
 import pygame
 pygame.init()
-from typing import Callable
+from typing import Type
 from util.constants import *
 from engine import Screen, Manager
 from screens import Level, Menu, Settings
@@ -37,7 +37,8 @@ class Game:
         pygame.display.set_icon(self.manager.get_image("menu/tree"))
 
         # dictionary to hold screens
-        self._screens: dict[str, Callable[[Game], None]] = {}
+        self._screens: dict[str, Type[Screen]] = {}
+
         self.current_screen: str = None
         self.current_screen_instance: Screen = None
 
@@ -50,7 +51,7 @@ class Game:
         "Quits program after current game loop finishes"
         self.running = False
 
-    def add_screen(self, name: str, screen: Callable[[Game], None]):
+    def add_screen(self, name: str, screen: Type[Screen]):
         "Add screen object to screen dictionary, key being screen.name"
         self._screens[name] = screen
 
