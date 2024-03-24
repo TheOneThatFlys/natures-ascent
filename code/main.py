@@ -20,15 +20,12 @@ from screens import Level, Menu, Settings
 class Game:
     # main game class that manages screens and pygame events
     def __init__(self):
-
-        self.running = True
-
-        self.dt = 1
-
         self.window = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
 
         pygame.display.set_caption("Nature's Ascent")
+
+        self.running = True
 
         self.manager = Manager(num_channels = 32)
         self.manager.set_pixel_scale(PIXEL_SCALE)
@@ -40,7 +37,7 @@ class Game:
         self._screens: dict[str, Type[Screen]] = {}
 
         self.current_screen: str = None
-        self.current_screen_instance: Screen = None
+        self.current_screen_instance: Screen
 
         self.add_screen("level", Level)
         self.add_screen("menu", Menu)
