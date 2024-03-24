@@ -1,7 +1,7 @@
 import pygame, random
 
 from .entity import Entity
-from .stats import EntityStats
+from .stats import EntityStats, enemy_stats
 
 from item import Coin
 
@@ -9,12 +9,7 @@ class Enemy(Entity):
     def __init__(self, parent, start_pos):
         super().__init__(
             parent,
-            stats = EntityStats(
-                health = 20,
-                iframes = 20,
-                contact_damage = 10,
-                walk_speed = 0.6
-            )
+            stats = enemy_stats["slime"]
         )
         
         self.add(self.manager.groups["enemy"])

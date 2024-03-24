@@ -5,7 +5,7 @@ from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 from item import MeleeWeaponAttack, WeaponStats
 from .entity import Entity
-from .stats import EntityStats, PlayerStats
+from .stats import PlayerStats, player_stats
 
 class LastFacing:
     "Class to store last facing direction data of player."
@@ -27,12 +27,7 @@ class Player(Entity):
     def __init__(self, parent, start_pos: pygame.Vector2):
         super().__init__(
             parent,
-            stats =  PlayerStats(
-                health = 100,
-                walk_speed = 1.5,
-                iframes = 60,
-                pickup_range = 128,
-            ),
+            stats = player_stats,
             health_bar_mode = "normal"
         )
 
