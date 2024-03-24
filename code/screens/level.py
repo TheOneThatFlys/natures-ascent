@@ -95,7 +95,7 @@ class Map(ui.Element):
     def _get_room_icon(self, room: Room):
         if "spawn" in room.tags:
             return self.spawn_icon
-        elif room.activated:
+        elif room.activated and len(room.enemies) == 0:
             return self.done_icon
         return pygame.Surface((0, 0))
 
@@ -273,11 +273,7 @@ class Level(Screen):
             self.debug_ui.style.visible = True
 
     def on_key_down(self, key):
-        if key == pygame.K_r:
-            # restart level
-            self.__init__(self.parent, self.debug_mode)
-
-        elif key == pygame.K_ESCAPE:
+        if key == pygame.K_ESCAPE:
             self.parent.set_screen("menu")
             
         elif key == pygame.K_F3:
