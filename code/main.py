@@ -19,7 +19,7 @@ from screens import Level, Menu, Settings
 
 class Game:
     # main game class that manages screens and pygame events
-    def __init__(self):
+    def __init__(self) -> None:
         self.window = pygame.display.set_mode(SCREEN_SIZE, pygame.RESIZABLE)
         self.clock = pygame.time.Clock()
 
@@ -44,21 +44,21 @@ class Game:
         self.add_screen("settings", Settings)
         self.set_screen("menu")
 
-    def queue_close(self):
+    def queue_close(self) -> None:
         "Quits program after current game loop finishes"
         self.running = False
 
-    def add_screen(self, name: str, screen: Type[Screen]):
+    def add_screen(self, name: str, screen: Type[Screen]) -> None:
         "Add screen object to screen dictionary, key being screen.name"
         self._screens[name] = screen
 
-    def set_screen(self, screen_name: str):
+    def set_screen(self, screen_name: str) -> None:
         "Sets the current screen based on screen name"
         if screen_name == self.current_screen: return
         self.current_screen = screen_name
         self.current_screen_instance = self._screens[screen_name](self)
 
-    def run(self):
+    def run(self) -> None:
         # main loop
         while self.running:
             # maintain constant fps
