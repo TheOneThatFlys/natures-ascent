@@ -4,6 +4,7 @@ if TYPE_CHECKING:
     from ..main import Game
 
 import pygame
+import util
 from util.constants import *
 from engine import Screen, Sprite, Node, ui
 from engine.types import *
@@ -338,6 +339,13 @@ class Level(Screen):
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_end.x, scaled_pos_start.y))
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_start.x, scaled_pos_end.y))
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_end.x, scaled_pos_start.y))
+
+        # draw enemy notice ranges
+        for enemy in self.manager.groups["enemy"].sprites():
+            radius = enemy.stats.notice_range
+            center = self.camera.convert_coords(pygame.Vector2(enemy.rect.center))
+
+            pygame.draw.circle(self.game_surface, (255, 0, 0, 100), center, radius, 2)
 
     def update(self) -> None:
         # update all sprites in update group
