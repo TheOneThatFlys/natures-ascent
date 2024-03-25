@@ -65,6 +65,26 @@ class HealthBar(ui.Element):
 
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
+class MapExplorerText(ui.Text):
+    def __init__(self, parent: Map) -> None:
+        super().__init__(parent, text = "0% explored", style = ui.Style(
+            position = "relative",
+            alignment = "bottom-left",
+            font = parent.manager.get_font("alagard", 16),
+            fore_colour = (255, 255, 255),
+            colour = (160, 160, 160),
+            offset = (parent.BORDER_SIZE * 2, parent.BORDER_SIZE * 2),
+            text_shadow = True,
+        ))
+
+        self.floor: FloorManager = self.manager.get_object_from_id("floor-manager")
+
+    def update(self) -> None:
+        super().update()
+        total_rooms = len(self.floor.rooms)
+        rooms_completed = len(list(filter(lambda coord_room: coord_room[1].activated and len(coord_room[1].enemies) == 0, self.floor.rooms.items())))
+        self.set_text(f"{rooms_completed}/{total_rooms} completed")
+
 class Map(ui.Element):
     BORDER_SIZE = 4
     def __init__(self, parent: Node, style: ui.Style, scale = 32) -> None:
@@ -82,6 +102,8 @@ class Map(ui.Element):
         self.player_icon = pygame.transform.scale_by(self.manager.get_image("map/player_icon"), 0.5)
         self.spawn_icon = self.manager.get_image("map/spawn")
         self.done_icon = self.manager.get_image("map/check")
+
+        self.explored_text = self.add_child(MapExplorerText(self))
 
         self.update_map()
 
@@ -157,6 +179,7 @@ class Map(ui.Element):
             self.scale = 4
 
     def update(self) -> None:
+        super().update()
         self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
         self.update_map()
         # draw borders
