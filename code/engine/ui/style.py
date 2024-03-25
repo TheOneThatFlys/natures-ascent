@@ -21,7 +21,7 @@ class Style:
     image: pygame.Surface = None
     stretch_type: StretchType = "none"
 
-    text_shadow: bool = False
+    text_shadow: int = 0
 
     @staticmethod
     def from_style(style: Style, **changes) -> Style:

@@ -39,7 +39,7 @@ class TextButtonMenu(Button):
                 fore_colour = fore_colour,
                 alignment = "center-center",
                 position = "relative",
-                text_shadow = True,
+                text_shadow = 2,
             ),
             text
         ))
@@ -101,7 +101,7 @@ class Menu(Screen):
                     offset = (0, 64),
                     fore_colour = (99, 169, 65),
                     colour = (23, 68, 41),
-                    text_shadow = True,
+                    text_shadow = 2,
                     font = self.manager.get_font("alagard", 72),
                 )
             )

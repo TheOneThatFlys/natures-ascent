@@ -74,7 +74,7 @@ class MapExplorerText(ui.Text):
             fore_colour = (255, 255, 255),
             colour = (160, 160, 160),
             offset = (parent.BORDER_SIZE * 2, parent.BORDER_SIZE * 2),
-            text_shadow = True,
+            text_shadow = 1,
         ))
 
         self.floor: FloorManager = self.manager.get_object_from_id("floor-manager")
