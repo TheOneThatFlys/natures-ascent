@@ -221,23 +221,35 @@ class DebugUI(ui.Element):
     def __init__(self, parent: Node) -> None:
         super().__init__(parent, style = ui.Style(alpha = 0, visible = False, size = parent.rect.size))
 
+        common_font = self.manager.get_font("alagard", 16)
+        text_colour = (255, 255, 255)
+
+        self.mode = self.add_child(ui.Text(
+            parent = self,
+            text = "loading mode...",
+            style = ui.Style(
+                font = common_font,
+                fore_colour = text_colour
+            )
+        ))
+
         self.fps = self.add_child(ui.Text(
             parent = self,
             text = "loading fps...",
             style = ui.Style(
-                font = self.manager.get_font("alagard", 16),
-                fore_colour = (255, 255, 255),
-                alignment= "top-left",
+                font = common_font,
+                fore_colour = text_colour,
+                offset = (0, self.mode.rect.bottom)
                 )
             )
         )
+
         self.position = self.add_child(ui.Text(
             parent = self,
             text = "loading position...",
             style = ui.Style(
-                font = self.manager.get_font("alagard", 16),
-                fore_colour = (255, 255, 255),
-                alignment = "top-left",
+                font = common_font,
+                fore_colour = text_colour,
                 offset = (0, self.fps.rect.bottom),
             )
         ))
@@ -245,14 +257,17 @@ class DebugUI(ui.Element):
         self.update_timer = 0
         
         self.player: Player = self.manager.get_object_from_id("player")
+        self.level: Level = self.manager.get_object_from_id("level")
 
     def update(self) -> None:
         self.update_timer += self.manager.dt
+
         if self.update_timer >= 20:
-            self.fps.set_text(f"{round(60 / self.manager.dt)} FPS")
+            self.fps.set_text(f"{round(60 / self.manager.dt)} fps")
             self.update_timer = 0
 
         self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
+        self.mode.set_text(f"mode: {self.level.debug_mode}")
 
 class PauseUI(ui.Element):
     def __init__(self, parent: Node) -> None:
