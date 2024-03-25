@@ -10,6 +10,7 @@ class EntityStats:
 @dataclass
 class EnemyStats(EntityStats):
     notice_range: float = 256
+    attention_span: float = 0
     value: int = 0
 
 @dataclass
@@ -31,6 +32,7 @@ enemy_stats = {
         walk_speed = 0.6,
         iframes = 10,
         notice_range = 256,
+        attention_span = 30,
         value = 3
     )
 }

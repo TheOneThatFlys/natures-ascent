@@ -1,4 +1,4 @@
-import pygame, random
+import pygame, random, math
 
 from .entity import Entity
 from .stats import EnemyStats, enemy_stats
@@ -23,6 +23,10 @@ class Enemy(Entity):
 
         self.rect = self.image.get_rect(topleft = position)
         self.pos.xy = self.rect.topleft
+
+        # some useful info for subclasses
+        self.time_since_seen_player = math.inf
+        self.has_seen_player = False
 
         self.player = self.manager.get_object_from_id("player")
 
@@ -69,13 +73,18 @@ class Enemy(Entity):
 
         Default behaviour is slime ai: follow player if line of sight
         """
-        if self.has_line_of_sight(self.player.rect.center):
+        if self.time_since_seen_player <= self.stats.attention_span:
             self.follow_player()
 
     def update(self) -> None:
+        self.time_since_seen_player += self.manager.dt
+        if self.has_line_of_sight(self.player.rect.center):
+            self.time_since_seen_player = 0
+
         self.update_ai()
         self.avoid_others()
         self.check_player_collision()
+        
         super().update()
 
 class Slime(Enemy):
@@ -83,13 +92,15 @@ class Slime(Enemy):
         super().__init__(parent, position, enemy_stats["slime"])
 
         rows = util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("enemy/slime_green"), 2), frame_count = 4, direction = "y")
-        for i, dir in enumerate(["down", "right", "up", "left"]):
+        directions = ["down", "right", "up", "left"]
+        for i, dir in enumerate(directions):
             self.animation_manager.add_animation(dir, util.parse_spritesheet(rows[i], frame_count = 2))
         
-        self.image = self.animation_manager.set_animation("down")
+        self.image = self.animation_manager.set_animation(random.choice(directions))
         self.rect = self.image.get_rect(topleft = position)
 
     def update(self) -> None:
         super().update()
 
-        self.animation_manager.set_animation(util.get_closest_direction(self.velocity))
+        if self.time_since_seen_player <= self.stats.attention_span:
+            self.animation_manager.set_animation(util.get_closest_direction(self.velocity))
