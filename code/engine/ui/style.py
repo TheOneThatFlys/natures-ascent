@@ -3,8 +3,6 @@ import pygame
 from dataclasses import dataclass, replace, fields
 from ..types import *
 
-IGNORED_DEFAULT_MERGE = ("image")
-
 @dataclass
 class Style:
     visible: bool = True
@@ -59,7 +57,7 @@ class Style:
             else:
                 # style 1 value is assigned if style 2 value is default (omitted)
                 # or is an ignored field
-                if style2_val == default_val and not field.name in IGNORED_DEFAULT_MERGE:
+                if style2_val == default_val:
                     setattr(new_style, field.name, style1_val)
                 else:
                     # style 2 value is assigned if style 2 is specified

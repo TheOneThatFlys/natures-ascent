@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pygame
 from typing import TypeVar
 from ..node import Node
@@ -6,14 +8,14 @@ from .style import Style
 T = TypeVar("T", bound = "Element")
 
 class Element(Node):
-    def __init__(self, parent: Node, style: Style):
+    def __init__(self, parent: Element | Node, style: Style) -> None:
         super().__init__(parent)
 
         self.style = style
 
         self.redraw_image()
 
-    def calculate_position(self):
+    def calculate_position(self) -> None:
         "Moves element rect based on style"
         if self.style.position == "relative":
             base_rect = self.parent.rect
@@ -42,7 +44,7 @@ class Element(Node):
         else:
             raise TypeError(f"Unknown y alignment type: {y_alignment}")
 
-    def redraw_image(self):
+    def redraw_image(self) -> None:
         self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
         self.image.set_alpha(self.style.alpha)
 
@@ -76,12 +78,12 @@ class Element(Node):
         self.rect = self.image.get_rect()
         self.calculate_position()
 
-    def set_style(self, new_style: Style):
+    def set_style(self, new_style: Style) -> None:
         if self.style != new_style:
             self.style = new_style
             self.redraw_image()
 
-    def render(self, window):
+    def render(self, window: pygame.Surface) -> None:
         # draw self then render children
         if not self.style.visible: return
         if self.style.alpha > 0:
@@ -90,7 +92,7 @@ class Element(Node):
         for child in self.children:
             child.render(window)
 
-    def update(self):
+    def update(self) -> None:
         for child in self.children:
             child.update()
 

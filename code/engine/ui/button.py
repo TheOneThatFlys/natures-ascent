@@ -4,7 +4,7 @@ from .element import Element
 from .style import Style
 
 class Button(Element):
-    def __init__(self, parent, style: Style, hover_style, on_click: Callable[..., None] = None, click_args: Iterable = []):
+    def __init__(self, parent: Element, style: Style, hover_style, on_click: Callable[..., None] = None, click_args: Iterable = []) -> None:
         super().__init__(parent, style)
 
         self.normal_style = self.style
@@ -19,10 +19,10 @@ class Button(Element):
         self.clicking = False
         self._prev_frame_click = False
 
-    def do_nothing(self):
+    def do_nothing(self) -> None:
         pass # do nothing
 
-    def update(self):
+    def update(self) -> None:
         super().update()
 
         mouse_pos = pygame.mouse.get_pos()

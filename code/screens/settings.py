@@ -1,10 +1,11 @@
 import pygame
-from engine import Screen
+from engine import Screen, Node
+from engine.types import *
 from engine.ui import Element, Style, Text, Button
 import util
 
 class SettingsUI(Element):
-    def __init__(self, parent):
+    def __init__(self, parent: Node) -> None:
         super().__init__(
             parent = parent,
             style = Style(
@@ -27,18 +28,18 @@ class SettingsUI(Element):
         ))
 
 class SettingsScreen(Screen):
-    def __init__(self, game):
+    def __init__(self, game) -> None:
         super().__init__(game)
         self.ui = SettingsUI(self)
 
-    def on_resize(self, new_res):
+    def on_resize(self, new_res: Vec2) -> None:
         self.ui.style.size = new_res
         self.ui.style.image = util.draw_background(new_res)
         for child in self.ui.get_all_children():
             child.redraw_image()
 
-    def update(self):
+    def update(self) -> None:
         self.ui.update()
 
-    def render(self, window):
+    def render(self, window: pygame.Surface) -> None:
         self.ui.render(window)

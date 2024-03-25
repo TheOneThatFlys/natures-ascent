@@ -6,7 +6,7 @@ from engine.ui import Element, Style, Text, Button
 import util
 
 class TextButtonMenu(Button):
-    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable = None, click_args: Iterable = [], text_hover: str = None, enabled = True):
+    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable = None, click_args: Iterable = [], text_hover: str = None, enabled: bool = True) -> None:
         super().__init__(
             parent = parent,
             style = Style(
@@ -47,11 +47,11 @@ class TextButtonMenu(Button):
         self.text_normal = text
         self.text_hover = text_hover if text_hover else text
 
-    def _on_click_with_sound(self, *args):
+    def _on_click_with_sound(self, *args) -> None:
         self.manager.play_sound(sound_name = "effect/button_click", volume = 0.3)
         self.click_func(*args)
 
-    def update(self):
+    def update(self) -> None:
         if not self.enabled: return
         super().update()
         if self.hovering and not self.last_hovering:
@@ -67,7 +67,7 @@ class TextButtonMenu(Button):
             self.text.redraw_image()
 
 class Menu(Screen):
-    def __init__(self, parent):
+    def __init__(self, parent) -> None:
         super().__init__(parent)
         
         self.master_container = Element(
@@ -155,21 +155,21 @@ class Menu(Screen):
 
         self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
             
-    def _toggle_secret(self):
+    def _toggle_secret(self) -> None:
         self.secret_activated = not self.secret_activated
         self.manager.play_sound("effect/hit_alt", 0.5)
 
-    def on_resize(self, new_res):
+    def on_resize(self, new_res) -> None:
         self.master_container.style.size = new_res
         self.master_container.style.image = util.draw_background(new_res)
 
         for item in self.master_container.get_all_children():
             item.redraw_image()
 
-    def render(self, window):
+    def render(self, window) -> None:
         self.master_container.render(window)
 
-    def update(self):
+    def update(self) -> None:
         self.master_container.update()
 
         if self.secret_activated:

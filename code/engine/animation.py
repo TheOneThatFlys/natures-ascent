@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pygame
 from util.constants import *
 from .node import Node
@@ -7,7 +9,7 @@ class AnimationManager(Node):
     """
     Component for adding animations to a sprite.
     """
-    def __init__(self, parent: Sprite, frame_time = ANIMATION_FRAME_TIME):
+    def __init__(self, parent: Sprite, frame_time = ANIMATION_FRAME_TIME) -> None:
         super().__init__(parent)
         self._animations: dict[str, list[pygame.Surface]] = {}
         self._current = ""
@@ -18,7 +20,7 @@ class AnimationManager(Node):
 
         self.finished = False
 
-    def _recenter_parent(self):
+    def _recenter_parent(self) -> None:
         # recalculate parent offset so its centered
         if self._current != "": # prevent first frame bugs
             rect_size = self.parent.rect.size
@@ -28,15 +30,15 @@ class AnimationManager(Node):
             self.parent.render_offset = (-change[0] / 2, -change[1] / 2)
 
     @property
-    def current(self):
+    def current(self) -> str:
         return self._current
 
-    def add_animation(self, key: str, animation: list[pygame.Surface]):
+    def add_animation(self, key: str, animation: list[pygame.Surface]) -> AnimationManager:
         "Add an animation. Can be chain called."
         self._animations[key] = animation
         return self
 
-    def set_animation(self, key: str):
+    def set_animation(self, key: str) -> pygame.Surface:
         "Plays the specified animation and returns first frame."
         if key != self._current:
             self._current = key
@@ -48,7 +50,7 @@ class AnimationManager(Node):
 
         return self._animations[key][0]
 
-    def update(self):
+    def update(self) -> None:
         self._counter += self.manager.dt
         if self._counter >= self._frame_time:
             self.parent.image = self._animations[self._current][self._current_index]

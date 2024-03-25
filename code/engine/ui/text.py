@@ -6,15 +6,15 @@ from .style import Style
 SHADOW_PADDING = 2
 
 class Text(Element):
-    def __init__(self, parent, style: Style, text: str = ""):
+    def __init__(self, parent: Element, style: Style, text: str = "") -> None:
         self.text = text
         super().__init__(parent, style)
 
-    def set_text(self, text: str):
+    def set_text(self, text: str) -> None:
         self.text = text
         self.redraw_image()
 
-    def redraw_image(self):
+    def redraw_image(self) -> None:
         self.image = self.style.font.render(self.text, False, self.style.fore_colour)
 
         if self.style.text_shadow:

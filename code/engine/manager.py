@@ -1,7 +1,13 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
 import pygame, time, os
 
+if TYPE_CHECKING:
+    from .node import Node
+
 class Font():
-    def __init__(self, font_path: str):
+    def __init__(self, font_path: str) -> None:
         self._fonts = {}
         self.path = font_path
 
@@ -16,7 +22,7 @@ class Font():
         return new_font
 
 class Manager():
-    def __init__(self, fps: int = 60, num_channels = 8):
+    def __init__(self, fps: int = 60, num_channels = 8) -> None:
         # stores groups
         self.groups: dict[str, pygame.sprite.Group] = {}
         # stores objects of interest
@@ -24,15 +30,15 @@ class Manager():
         # stores loaded assets
         self.assets: dict = {"image": {}, "sound": {}, "font": {}}
         # store current playing music
-        self.music_current = ""
+        self.music_current: str = ""
 
         self.fps: int = fps
-        self.dt = 1
+        self.dt: float = 1
 
-        self._last_time = time.time()
-        self._load_scale = 1
+        self._last_time: int = time.time()
+        self._load_scale: int = 1
 
-        self._current_cursor = pygame.SYSTEM_CURSOR_ARROW
+        self._current_curso: int = pygame.SYSTEM_CURSOR_ARROW
 
         pygame.mixer.set_num_channels(num_channels)
 
@@ -42,36 +48,36 @@ class Manager():
         self.dt = self.fps * (now_time - self._last_time)
         self._last_time = now_time
 
-    def add_object(self, id, node):
+    def add_object(self, id: str, node: Node) -> Node:
         self.objects[id] = node
         return node
     
-    def remove_object(self, id):
+    def remove_object(self, id: str) -> None:
         del self.objects[id]
 
-    def get_object_from_id(self, id: str):
+    def get_object_from_id(self, id: str) -> Node:
         return self.objects.get(id, None)
 
-    def add_groups(self, names: list[str]):
+    def add_groups(self, names: list[str]) -> None:
         for name in names:
             self.groups[name] = pygame.sprite.Group()
 
-    def cleanup(self):
+    def cleanup(self) -> None:
         "Call this when switching scenes to avoid memory buildup."
         self.groups = {}
         self.objects = {}
 
-    def set_pixel_scale(self, scale: int):
+    def set_pixel_scale(self, scale: int) -> None:
         "Set scale for loading assets"
         self._load_scale = scale
 
-    def set_cursor(self, cursor_enum):
+    def set_cursor(self, cursor_enum) -> None:
         self._current_cursor = cursor_enum
 
-    def load_cursor(self):
+    def load_cursor(self) -> None:
         pygame.mouse.set_cursor(self._current_cursor)
 
-    def load(self):
+    def load(self) -> None:
         """
         Loads all supported files in ./assets
 
@@ -137,14 +143,14 @@ class Manager():
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]
     
-    def stop_music(self):
+    def stop_music(self) -> None:
         # return if no music is playing
         if self.music_current == "": return
         
         self.get_sound(self.music_current).stop()
         self.music_current = ""
 
-    def play_sound(self, sound_name: str, volume: float = 1.0, loop = False):
+    def play_sound(self, sound_name: str, volume: float = 1.0, loop = False) -> None:
         if sound_name.startswith("music/"):
             # if trying to play the same track twice, just continue current
             if self.music_current == sound_name:
@@ -160,6 +166,3 @@ class Manager():
         s.set_volume(volume)
         n_loops = -1 if loop else 0
         s.play(n_loops)
-        
-
-

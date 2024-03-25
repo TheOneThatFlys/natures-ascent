@@ -1,12 +1,11 @@
 from __future__ import annotations
-import pygame
 from .manager import Manager
 from typing import TypeVar
 
 T = TypeVar("T", bound = "Node")
 
 class Node():
-    def __init__(self, parent: Node):
+    def __init__(self, parent: Node) -> None:
         self.parent: Node = parent
         self.manager: Manager = parent.manager
         self.children: list[Node] = []

@@ -1,13 +1,18 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..main import Game
 
 import pygame
 from util.constants import *
-from engine import Screen, Sprite, ui
+from engine import Screen, Sprite, Node, ui
+from engine.types import *
 from entity import Player
 from world import FloorManager, Tile, Room
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
-    def __init__(self, parent, health_colour, shadow_colour, border_colour, background_colour, text_colour):
+    def __init__(self, parent: Node, health_colour: Colour, shadow_colour: Colour, border_colour: Colour, background_colour: Colour, text_colour: Colour) -> None:
         super().__init__(
             parent = parent,
             style = ui.Style(
@@ -32,7 +37,7 @@ class HealthBar(ui.Element):
 
         self.player = self.manager.get_object_from_id("player")
 
-    def update(self):
+    def update(self) -> None:
         self.image = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
         border_rect = self.image.get_rect()
         
@@ -62,7 +67,7 @@ class HealthBar(ui.Element):
 
 class Map(ui.Element):
     BORDER_SIZE = 4
-    def __init__(self, parent, style, scale = 32):
+    def __init__(self, parent: Node, style: ui.Style, scale = 32) -> None:
         super().__init__(parent, style = style)
 
         self.floor_manager: FloorManager = self.manager.get_object_from_id("floor-manager")
@@ -80,26 +85,26 @@ class Map(ui.Element):
 
         self.update_map()
 
-    def scale_room_to_map(self, room_coord):
+    def scale_room_to_map(self, room_coord: Vec2) -> None:
         "Scale a room coord into map coordinates"
         scaled_room_coords = pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.map_surf.get_size()) / 2 - pygame.Vector2(0.5, 0.5) * self.scale
         scaled_player_position = (pygame.Vector2(self.player.rect.center) / TILE_SIZE // self.floor_manager.room_size) * (self.scale + self.scale / 4)
         return scaled_room_coords - scaled_player_position
 
-    def _get_room_colour(self, room: Room):
+    def _get_room_colour(self, room: Room) -> None:
         if room.activated:
             return self.room_colour
         else:
             return self.unactivated_colour
 
-    def _get_room_icon(self, room: Room):
+    def _get_room_icon(self, room: Room) -> None:
         if "spawn" in room.tags:
             return self.spawn_icon
         elif room.activated and len(room.enemies) == 0:
             return self.done_icon
         return pygame.Surface((0, 0))
 
-    def update_map(self):
+    def update_map(self) -> None:
         self.map_surf = pygame.Surface((self.style.size[0] - self.BORDER_SIZE * 2, self.style.size[1] - self.BORDER_SIZE * 2))
         self.map_surf.fill(self.background_colour)
 
@@ -141,17 +146,17 @@ class Map(ui.Element):
 
         self.map_surf.blit(self.player_icon, self.player_icon.get_rect(center = player_pos))
 
-    def increase_scale(self):
+    def increase_scale(self) -> None:
         self.scale *= 2
         if self.scale > 64:
             self.scale = 64
 
-    def decrease_scale(self):
+    def decrease_scale(self) -> None:
         self.scale /= 2
         if self.scale < 4:
             self.scale = 4
 
-    def update(self):
+    def update(self) -> None:
         self.image = pygame.Surface(self.style.size, pygame.SRCALPHA)
         self.update_map()
         # draw borders
@@ -160,7 +165,7 @@ class Map(ui.Element):
 
 class HudUI(ui.Element):
     BAR_PADDING = 4
-    def __init__(self, parent):
+    def __init__(self, parent: Node) -> None:
         super().__init__(parent, style = ui.Style(alpha = 0, visible = True, size = parent.rect.size))
 
         self.health_bar = self.add_child(
@@ -186,7 +191,7 @@ class HudUI(ui.Element):
         )
 
 class DebugUI(ui.Element):
-    def __init__(self, parent):
+    def __init__(self, parent: Node) -> None:
         super().__init__(parent, style = ui.Style(alpha = 0, visible = False, size = parent.rect.size))
 
         self.fps = self.add_child(ui.Text(
@@ -214,7 +219,7 @@ class DebugUI(ui.Element):
         
         self.player: Player = self.manager.get_object_from_id("player")
 
-    def update(self):
+    def update(self) -> None:
         self.update_timer += self.manager.dt
         if self.update_timer >= 20:
             self.fps.set_text(f"{round(60 / self.manager.dt)} FPS")
@@ -223,7 +228,7 @@ class DebugUI(ui.Element):
         self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
 
 class Level(Screen):
-    def __init__(self, game, debug_mode = 0):
+    def __init__(self, game: Game, debug_mode: int = 0) -> None:
         super().__init__(parent = game)
         self.game_surface = pygame.Surface(game.window.get_size())
 
@@ -245,7 +250,7 @@ class Level(Screen):
 
         self.manager.stop_music()
 
-    def _add_ui_components(self):
+    def _add_ui_components(self) -> None:
         self.master_ui = ui.Element(
             self,
             style = ui.Style(
@@ -257,7 +262,7 @@ class Level(Screen):
         self.debug_ui = self.master_ui.add_child(DebugUI(self.master_ui))
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
 
-    def cycle_debug(self):
+    def cycle_debug(self) -> None:
         """
         Cycles current debug mode.
 
@@ -272,7 +277,7 @@ class Level(Screen):
         else:
             self.debug_ui.style.visible = True
 
-    def on_key_down(self, key):
+    def on_key_down(self, key: int) -> None:
         if key == pygame.K_ESCAPE:
             self.parent.set_screen("menu")
             
@@ -285,7 +290,7 @@ class Level(Screen):
         elif key == pygame.K_MINUS:
             self.hud_ui.map.decrease_scale()
 
-    def on_resize(self, new_size):
+    def on_resize(self, new_size: Vec2) -> None:
         # remake game surface to new size
         self.game_surface = pygame.Surface(new_size)
         # recalibrate camera
@@ -296,7 +301,7 @@ class Level(Screen):
         for item in self.master_ui.get_all_children():
             item.redraw_image()
 
-    def debug(self):
+    def debug(self) -> None:
         # render hitboxes of anything that has a rect
         for item in self.get_all_children():
             if not hasattr(item, "rect"): continue
@@ -311,13 +316,13 @@ class Level(Screen):
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_start.x, scaled_pos_end.y))
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_end.x, scaled_pos_start.y))
 
-    def update(self):
+    def update(self) -> None:
         # update all sprites in update group
         self.manager.groups["update"].update()
         self.master_ui.update()
         self.floor_manager.update()
 
-    def render(self, surface: pygame.Surface):
+    def render(self, surface: pygame.Surface) -> None:
         # clear game surface
         self.game_surface.fill((51, 22, 31))
 
@@ -338,8 +343,8 @@ class Level(Screen):
         surface.blit(self.game_surface, (0, 0))
 
 class FollowCameraLayered(Sprite):
-    def __init__(self, level, target_sprite, follow_speed = 2, tolerence = 5):
-        super().__init__(parent = level, groups=["update"])
+    def __init__(self, parent: Node, target_sprite: Sprite, follow_speed: float = 2, tolerence: float = 5) -> None:
+        super().__init__(parent = parent, groups=["update"])
         self.id = "camera"
         self.window = pygame.display.get_surface()
 
@@ -352,11 +357,11 @@ class FollowCameraLayered(Sprite):
 
         self.offset = pygame.Vector2()
 
-    def update(self):
+    def update(self) -> None:
         # move camera closer to target
         self.pos += self.manager.dt * (self.target.rect.center - self.pos) / self.follow_divider
 
-    def set_screen_size(self, new_size):
+    def set_screen_size(self, new_size: Vec2) -> None:
         """Set new screen size to center camera on"""
         self.half_screen_size = pygame.Vector2(new_size[0] // 2, new_size[1] // 2)
 
@@ -367,12 +372,12 @@ class FollowCameraLayered(Sprite):
             old_coords.y - (self.pos.y - self.half_screen_size.y)
         )
 
-    def render(self, surface: pygame.Surface, sprite_group: pygame.sprite.Group):
+    def render(self, surface: pygame.Surface, sprite_group: pygame.sprite.Group) -> None:
         # render sprites centered on camera position
         self.offset.x = self.pos.x - self.half_screen_size.x
         self.offset.y = self.pos.y - self.half_screen_size.y
 
-        # render sprites based on y position
+        # render sprites sorted in y position and z index
         for sprite in sorted(sorted(sprite_group.sprites(), key = lambda s: s.rect.centery), key = lambda s: s.z_index):
             new_pos = (sprite.rect.x - self.offset.x + sprite.render_offset[0], sprite.rect.y - self.offset.y + sprite.render_offset[1])
             surface.blit(sprite.image, new_pos)

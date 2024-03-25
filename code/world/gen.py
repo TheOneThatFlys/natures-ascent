@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import pygame
 import random
 from typing import Literal, Type
 
-from engine.types import Direction
+from engine.types import *
 from engine import Node, Sprite
 from entity import Player, Enemy, Slime
 from util.constants import *
@@ -11,10 +13,10 @@ from .tile import Tile, TileSet
 
 room_directions: list[Direction] = ["left", "right", "up", "down"]
 opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
-direction_vector: dict[Direction, tuple[int, int]] = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
+direction_vector: dict[Direction, Vec2] = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
 
 class Room(Node):
-    def __init__(self, parent, origin: tuple[int, int], room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = [], tags = [], enemies: dict[Type[Enemy], int] = {}):
+    def __init__(self, parent: Node, origin: Vec2, room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = [], tags: list[str] = [], enemies: dict[Type[Enemy], int] = {}) -> None:
         super().__init__(parent)
 
         self.bounding_rect = pygame.Rect(origin[0] * TILE_SIZE * room_size, origin[1] * TILE_SIZE * room_size, TILE_SIZE * room_size, TILE_SIZE * room_size)
@@ -41,7 +43,7 @@ class Room(Node):
     def activated(self) -> bool:
         return self._activated
 
-    def add_enemies(self):
+    def add_enemies(self) -> None:
         for enemy_type, count in self._possible_enemies.items(): 
             for _ in range(count):
                 pos = (
@@ -51,7 +53,7 @@ class Room(Node):
                 
                 self.enemies.add(self.add_child(enemy_type(self, pos)))
 
-    def gen_connections_random(self, forced_doors, blacklisted_doors):
+    def gen_connections_random(self, forced_doors: list[Vec2], blacklisted_doors: list[Vec2]) -> None:
         for dir in forced_doors:
             self.connections.append(dir)
 
@@ -73,7 +75,7 @@ class Room(Node):
             if con in self.connections or con in blacklisted_doors: continue
             self.connections.append(con)  
 
-    def add_tiles(self):
+    def add_tiles(self) -> None:
         self.add_doors()
         temp = pygame.Surface((TILE_SIZE, TILE_SIZE))
         # add walls
@@ -90,7 +92,7 @@ class Room(Node):
         for pos in self.door_positions:
             self.add_tile(self.parent.grass_tileset.get(random.randint(0, 3)), pos, False)
 
-    def add_doors(self):
+    def add_doors(self) -> None:
         "Generate the relative positions of 'doors'"
         for connection in self.connections:
             second_offset = ()
@@ -115,7 +117,7 @@ class Room(Node):
             self.door_positions.append((x, y))
             self.door_positions.append((x + second_offset[0], y + second_offset[1]))
 
-    def add_tile(self, image: pygame.Surface, relative_position: tuple[int, int], collider: bool):
+    def add_tile(self, image: pygame.Surface, relative_position: Vec2, collider: bool) -> None:
         # convert relative grid coords to world coords
         position = pygame.Vector2(self.origin) * TILE_SIZE * self.room_size + pygame.Vector2(relative_position) * TILE_SIZE
         # check if position is in a door
@@ -124,18 +126,18 @@ class Room(Node):
         tile = Tile(self, image, position, collider)
         self.add_child(tile)
 
-    def activate(self):
+    def activate(self) -> None:
         self._activated = True
         self.add_enemies()
 
-    def update(self):
+    def update(self) -> None:
         if not self._activated:
             player: Player = self.manager.get_object_from_id("player")
             if player.rect.colliderect(self.bounding_rect):
                 self.activate()
 
 class SpawnRoom(Room):
-    def __init__(self, parent, origin, room_size):
+    def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:
         super().__init__(parent, origin, room_size, [], [], ["spawn"])
 
         portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
@@ -144,14 +146,14 @@ class SpawnRoom(Room):
         # render above floor and below player
         portal_sprite.z_index = -0.5
 
-    def gen_connections_random(self, __, ___):
+    def gen_connections_random(self, __, ___) -> None:
         for _ in range(4):
             con = random.choice(room_directions)
             if con in self.connections: continue
             self.connections.append(con)
 
 class FloorManager(Node):
-    def __init__(self, parent, room_size = 8, target_num = 8):
+    def __init__(self, parent: Node, room_size: int = 8, target_num: int = 8) -> None:
         super().__init__(parent)
         if room_size % 2 == 1:
             raise ValueError("Room size must be even.")
@@ -164,7 +166,7 @@ class FloorManager(Node):
 
         self.rooms: dict[tuple[int, int], Room] = {}
 
-    def generate(self):
+    def generate(self) -> None:
         "Generate a floor"
         connection_stack = []
 
@@ -192,10 +194,10 @@ class FloorManager(Node):
 
         self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE)))
 
-    def _get_type_of_tile(self, wall_tiles, all_tiles, coord: tuple[int, int]) -> Literal["wall", "floor", "world"]:
+    def _get_type_of_tile(self, wall_tiles: dict[Vec2, Tile], all_tiles: dict[Vec2, Tile] , coord: Vec2) -> Literal["wall", "floor", "world"]:
         return "wall" if coord in wall_tiles else "floor" if coord in all_tiles else "world"
 
-    def calculate_textures(self):
+    def calculate_textures(self) -> None:
         # not proud of this code, but it works(?)
         all_tiles = {}
         wall_tiles = {}
@@ -277,7 +279,7 @@ class FloorManager(Node):
 
             tile.image = self.wall_tileset.get(tile_index)
 
-    def _gen_1x1(self, origin, tags = []) -> Room:
+    def _gen_1x1(self, origin: Vec2, tags: list[str] = []) -> Room:
         # look through neighbours and force connections with them
         forced_connections = []
         blacklisted_connections = []
@@ -303,6 +305,6 @@ class FloorManager(Node):
         self.add_child(room)
         return room
     
-    def update(self):
+    def update(self) -> None:
         for _, room in self.rooms.items():
             room.update()

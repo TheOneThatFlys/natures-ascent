@@ -1,10 +1,11 @@
 import pygame, random
 
-from engine import Sprite, AnimationManager
+from engine import Sprite, AnimationManager, Node
+from engine.types import *
 from util import parse_spritesheet
 
 class Coin(Sprite):
-    def __init__(self, parent, position, randomness: int = 16):
+    def __init__(self, parent: Node, position: Vec2, randomness: int = 16) -> None:
         super().__init__(parent, ["render", "update"])
 
         self.am = AnimationManager(self)
@@ -15,11 +16,11 @@ class Coin(Sprite):
 
         self.player = self.manager.get_object_from_id("player")
 
-    def kill(self):
+    def kill(self) -> None:
         self.manager.play_sound("effect/coin", 0.05)
         super().kill()
 
-    def update(self):
+    def update(self) -> None:
         self.am.update()
 
         # vector from player to coin

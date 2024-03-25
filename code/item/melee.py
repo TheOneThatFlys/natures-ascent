@@ -16,7 +16,7 @@ class WeaponStats:
     knockback: float = 4.0
 
 class MeleeWeaponAttack(Sprite):
-    def __init__(self, parent: Node, stats: WeaponStats, direction: Direction):
+    def __init__(self, parent: Node, stats: WeaponStats, direction: Direction) -> None:
         super().__init__(parent, groups = ["update"])
 
         self.rect = pygame.Rect(0, 0, *stats.size)
@@ -33,14 +33,14 @@ class MeleeWeaponAttack(Sprite):
         self.life = stats.attack_time
         self.stats = stats
 
-    def _check_enemy_collisions(self):
+    def _check_enemy_collisions(self) -> None:
         # check if hitting enemy
         for enemy in self.manager.groups["enemy"].sprites():
             if self.rect.colliderect(enemy.rect) and not enemy in self._hit_enemies:
                 enemy.hit(self.manager.get_object_from_id("player"), damage = self.stats.damage, kb_magnitude = self.stats.knockback)
                 self._hit_enemies.append(enemy)
 
-    def _stick_to_parent_position(self):
+    def _stick_to_parent_position(self) -> None:
         # stick hitbox to a side based on direction of attack
         if self.direction == "left":
             self.rect.right = self.parent.rect.left
@@ -55,7 +55,7 @@ class MeleeWeaponAttack(Sprite):
             self.rect.bottom = self.parent.rect.top
             self.rect.centerx = self.parent.rect.centerx
 
-    def update(self):
+    def update(self) -> None:
         self._stick_to_parent_position()
         self._check_enemy_collisions()
         self.life -= self.manager.dt

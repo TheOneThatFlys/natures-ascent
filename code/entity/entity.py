@@ -1,6 +1,6 @@
 import pygame
 from typing import Literal
-from engine import Sprite, AnimationManager
+from engine import Sprite, AnimationManager, Node
 from util.constants import *
 
 from .stats import EntityStats
@@ -9,7 +9,7 @@ from .bar import HealthBar
 HealthBarMode = Literal["normal", "always-show", "always-hide"]
 
 class Entity(Sprite):
-    def __init__(self, parent, stats: EntityStats, health_bar_mode: HealthBarMode = "normal"):
+    def __init__(self, parent: Node, stats: EntityStats, health_bar_mode: HealthBarMode = "normal") -> None:
         super().__init__(parent, groups = ["render", "update"])
         self.velocity = pygame.Vector2()
         self.pos = pygame.Vector2()
@@ -42,7 +42,7 @@ class Entity(Sprite):
     # and check if it intersects with an obstical
     # if this is true, then move the player hitbox so that it is touching the 
     # edge of the obstical
-    def check_collision_vertical(self):
+    def check_collision_vertical(self) -> None:
         future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in self.manager.groups["collide"].sprites():
             if sprite == self: continue
@@ -56,7 +56,7 @@ class Entity(Sprite):
                     self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish) 
                     return
 
-    def check_collision_horizontal(self):
+    def check_collision_horizontal(self) -> None:
         future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in self.manager.groups["collide"].sprites():
             if sprite == self: continue
@@ -70,11 +70,11 @@ class Entity(Sprite):
                     self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
                     return
 
-    def add_velocity(self, velocity: pygame.Vector2):
+    def add_velocity(self, velocity: pygame.Vector2) -> None:
         "Adds velocity to entity, i.e a force in an instant."
         self.velocity += velocity
 
-    def hit(self, other, damage = 0, kb_magnitude = 0):
+    def hit(self, other: Sprite, damage = 0, kb_magnitude = 0) -> None:
         if self.iframes == 0:
             kbv = self.pos - other.pos
             kbv.scale_to_length(kb_magnitude)
@@ -91,10 +91,10 @@ class Entity(Sprite):
 
             self.on_hit(other)
 
-    def on_hit(self, other):
+    def on_hit(self, other: Sprite) -> None:
         pass
 
-    def move(self):
+    def move(self) -> None:
         # checking collisions of one direction at a time
         # ensures that an overlap of bounds is due to the
         # movement of one direction
@@ -113,7 +113,7 @@ class Entity(Sprite):
         # readjust hitbox to precise position
         self.rect.topleft = self.pos
 
-    def update(self):
+    def update(self) -> None:
         super().update()
         self.move()
         self.animation_manager.update()

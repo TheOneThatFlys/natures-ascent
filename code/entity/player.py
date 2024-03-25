@@ -1,20 +1,23 @@
 import pygame
-import random
+
+from engine import Node, Sprite
 from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
+
 from item import MeleeWeaponAttack, WeaponStats
+
 from .entity import Entity
 from .stats import PlayerStats, player_stats
 
 class LastFacing:
     "Class to store last facing direction data of player."
-    def __init__(self):
+    def __init__(self) -> None:
         self.walk: Direction = "right"
         self.attack: Direction = "right"
         self.overall: Direction = "right"
 
-    def set(self, type: str, direction: Direction):
+    def set(self, type: str, direction: Direction) -> None:
         self.overall = direction
         if type == "walk":
             self.walk = direction
@@ -24,7 +27,7 @@ class LastFacing:
             raise TypeError("Unknown facing type: " + type)
 
 class Player(Entity):
-    def __init__(self, parent, start_pos: pygame.Vector2):
+    def __init__(self, parent: Node, start_pos: pygame.Vector2) -> None:
         super().__init__(
             parent,
             stats = player_stats,
@@ -57,7 +60,7 @@ class Player(Entity):
             knockback = 10,
         )
 
-    def _load_animations(self):
+    def _load_animations(self) -> None:
         types = ["idle", "damage", "walk"]
         directions = ["right", "left", "down", "up"]
         for type in types:
@@ -71,7 +74,7 @@ class Player(Entity):
             anim = parse_spritesheet(attack_rows[i], frame_size = (32 * PIXEL_SCALE * 3, 32 * PIXEL_SCALE * 3))
             self.animation_manager.add_animation("sword_attack" + "-" + dir, anim)
 
-    def get_inputs(self):
+    def get_inputs(self) -> None:
         # movement
         keys = pygame.key.get_pressed()
 
@@ -118,7 +121,7 @@ class Player(Entity):
 
         self.eval_anim()
 
-    def eval_anim(self):
+    def eval_anim(self) -> None:
         if self.walking:
             # use last attack direction if in attack anim, else use walk direction
             direction = self.last_facing.attack if self.attack_cd > 0 else self.last_facing.walk
@@ -126,7 +129,7 @@ class Player(Entity):
         else:
             self.animation_manager.set_animation("idle-" + self.last_facing.overall)
 
-    def on_hit(self, other):
+    def on_hit(self, other: Sprite) -> None:
         self.manager.play_sound(sound_name = "effect/hit", volume = 0.2)
         hit_direction = get_closest_direction(pygame.Vector2(other.rect.center) - pygame.Vector2(self.rect.center))
         if not "attack" in self.animation_manager.current: 
@@ -150,7 +153,7 @@ class Player(Entity):
             return True
         return False
         
-    def update(self):
+    def update(self) -> None:
         super().update()
         self.get_inputs()
         self.attack_cd -= self.manager.dt
