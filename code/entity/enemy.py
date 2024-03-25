@@ -1,7 +1,7 @@
 import pygame, random
 
 from .entity import Entity
-from .stats import EntityStats, enemy_stats
+from .stats import EnemyStats, enemy_stats
 
 from engine import Node
 from engine.types import *
@@ -9,11 +9,12 @@ from item import Coin
 import util
 
 class Enemy(Entity):
-    def __init__(self, parent: Node, position: Vec2, stats: EntityStats) -> None:
+    def __init__(self, parent: Node, position: Vec2, stats: EnemyStats) -> None:
         super().__init__(
             parent,
             stats = stats
         )
+        self.stats: EnemyStats
         
         self.add(self.manager.groups["enemy"])
 
@@ -34,6 +35,15 @@ class Enemy(Entity):
 
         self.add_velocity(velocity)
 
+    def has_line_of_sight(self, target_position: Vec2) -> bool:
+        if (pygame.Vector2(target_position) - self.rect.center).magnitude() > self.stats.notice_range:
+            return False
+        
+        for blocking_sprite in self.manager.groups["collide"].sprites():
+            if blocking_sprite.rect.clipline(self.rect.center, target_position):
+                return False
+        return True
+
     def check_player_collision(self) -> None:
         if self.rect.colliderect(self.player.rect):
             self.player.hit(self, kb_magnitude = 10, damage = self.stats.contact_damage)
@@ -48,12 +58,22 @@ class Enemy(Entity):
     def kill(self) -> None:
         self.manager.play_sound(sound_name = "effect/squelch", volume = 0.5)
         level = self.manager.get_object_from_id("level")
-        for _ in range(3):
+        # add coins
+        for _ in range(self.stats.value):
             level.add_child(Coin(level, (self.rect.centerx, self.rect.bottom)))
         super().kill()
 
+    def update_ai(self) -> None:
+        """
+        Override this function to add custom behaviour to subclass.
+
+        Default behaviour is slime ai: follow player if line of sight
+        """
+        if self.has_line_of_sight(self.player.rect.center):
+            self.follow_player()
+
     def update(self) -> None:
-        self.follow_player()
+        self.update_ai()
         self.avoid_others()
         self.check_player_collision()
         super().update()
