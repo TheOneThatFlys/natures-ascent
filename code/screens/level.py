@@ -4,7 +4,8 @@ if TYPE_CHECKING:
     from ..main import Game
 
 import pygame
-import util
+from PIL import Image, ImageFilter
+
 from util.constants import *
 from engine import Screen, Sprite, Node, ui
 from engine.types import *
@@ -63,6 +64,7 @@ class HealthBar(ui.Element):
         pygame.draw.rect(self.image, self.background_colour, shading_rect, border_radius = 4)
         pygame.draw.rect(self.image, self.health_colour, health_rect, border_bottom_left_radius = 4, border_top_left_radius = 4, border_bottom_right_radius = right_radius, border_top_right_radius = right_radius)
         pygame.draw.rect(self.image, self.shadow_colour, shadow_rect, border_bottom_left_radius = 4, border_bottom_right_radius = right_radius)
+        self.style.image = self.image
 
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
@@ -186,6 +188,7 @@ class Map(ui.Element):
         # draw borders
         pygame.draw.rect(self.image, self.border_colour, [0, 0, *self.style.size], border_radius = 4)
         self.image.blit(self.map_surf, (self.BORDER_SIZE, self.BORDER_SIZE))
+        self.style.image = self.image
 
 class HudUI(ui.Element):
     BAR_PADDING = 4
@@ -251,6 +254,63 @@ class DebugUI(ui.Element):
 
         self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
 
+class PauseUI(ui.Element):
+    def __init__(self, parent: Node) -> None:
+        # store the image of the frame paused on when this menu was opened
+        self.pause_frame = None
+
+        super().__init__(parent, style = ui.Style(
+            position = "absolute",
+            size = parent.rect.size,
+            visible = False
+        ))
+
+        self.main_element = self.add_child(ui.Element(
+            parent = self,
+            style = ui.Style(
+                size = (TILE_SIZE * 16 / 2, TILE_SIZE * 9 / 2),
+                alignment = "center-center",
+            )
+        ))
+
+        self.pause_text = self.main_element.add_child(ui.Text(
+            parent = self.main_element,
+            text = "Paused",
+            style = ui.Style(
+                alignment = "top-center",
+                offset = (0, TILE_SIZE / 8),
+                font = self.manager.get_font("alagard", 40),
+                fore_colour = (255, 255, 255),
+            )
+        ))
+
+
+    def toggle(self, pause_frame: pygame.Surface) -> None:
+        self.style.visible = not self.style.visible
+        self.pause_frame = pause_frame
+        if self.style.visible:
+            self.redraw_image()
+
+    def redraw_image(self) -> None:
+        super().redraw_image()
+
+        if self.pause_frame:
+            self.image = self._blur_image(self.pause_frame)
+
+    def _blur_image(self, image: pygame.Surface, strength: int = 2) -> pygame.Surface:
+        image_data = pygame.image.tobytes(image, "RGBA", False)
+        pil_image = Image.frombytes("RGBA", image.get_size(), image_data)
+        pil_image = pil_image.filter(ImageFilter.GaussianBlur(radius = strength))
+
+        blurred_image = pygame.image.frombytes(pil_image.tobytes(), image.get_size(), "RGBA")
+
+        return blurred_image
+    
+    def render(self, surface: pygame.Surface) -> None:
+        # save what the screen looks like without me
+        self.pause_frame = surface.copy()
+        super().render(surface)
+
 class Level(Screen):
     def __init__(self, game: Game, debug_mode: int = 0) -> None:
         super().__init__(parent = game)
@@ -265,9 +325,9 @@ class Level(Screen):
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
 
         self.debug_mode = 0
+        self.paused = False
 
         self._add_ui_components()
-        # self._gen_test_map()
 
         for _ in range(debug_mode):
             self.cycle_debug()
@@ -285,6 +345,7 @@ class Level(Screen):
 
         self.debug_ui = self.master_ui.add_child(DebugUI(self.master_ui))
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
+        self.pause_ui = self.add_child(PauseUI(self))
 
     def cycle_debug(self) -> None:
         """
@@ -301,9 +362,13 @@ class Level(Screen):
         else:
             self.debug_ui.style.visible = True
 
+    def toggle_pause(self) -> None:
+        self.paused = not self.paused
+        self.pause_ui.toggle(self.game_surface)
+
     def on_key_down(self, key: int) -> None:
         if key == pygame.K_ESCAPE:
-            self.parent.set_screen("menu")
+            self.toggle_pause()
             
         elif key == pygame.K_F3:
             self.cycle_debug()
@@ -319,11 +384,20 @@ class Level(Screen):
         self.game_surface = pygame.Surface(new_size)
         # recalibrate camera
         self.camera.set_screen_size(new_size)
+
         self.master_ui.style.size = new_size
-        self.debug_ui.style.size = new_size
-        self.hud_ui.style.size = new_size
+        for sub_menu in self.master_ui.children:
+            sub_menu.style.size = new_size
+
         for item in self.master_ui.get_all_children():
             item.redraw_image()
+
+        if self.paused:
+            self.pause_ui.style.size = new_size
+            # extra render step to sync up menu
+            self.render(pygame.Surface((1, 1)))
+            for item in self.pause_ui.get_all_children():
+                item.redraw_image()
 
     def debug(self) -> None:
         # render hitboxes of anything that has a rect
@@ -348,6 +422,11 @@ class Level(Screen):
             pygame.draw.circle(self.game_surface, (255, 0, 0, 100), center, radius, 2)
 
     def update(self) -> None:
+        # check for pause override
+        if self.paused:
+            self.pause_ui.update()
+            return
+        
         # update all sprites in update group
         self.manager.groups["update"].update()
         self.master_ui.update()
@@ -369,6 +448,10 @@ class Level(Screen):
 
         # render GUI elements
         self.master_ui.render(self.game_surface)
+
+        # render pause ui
+        if self.paused:
+            self.pause_ui.render(self.game_surface)
 
         # render to window
         surface.blit(self.game_surface, (0, 0))
