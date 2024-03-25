@@ -37,7 +37,6 @@ class Room(Node):
         self._activated = False
 
         self.gen_connections_random(forced_doors, blacklisted_doors)
-        self.add_tiles()
 
     @property
     def activated(self) -> bool:
@@ -52,6 +51,11 @@ class Room(Node):
                 )
                 
                 self.enemies.add(self.add_child(enemy_type(self, pos)))
+
+    def place_in_world(self) -> None:
+        "Adds the room's tiles and enemies into the world"
+        self.add_tiles()
+        self.add_enemies()
 
     def gen_connections_random(self, forced_doors: list[Vec2], blacklisted_doors: list[Vec2]) -> None:
         for dir in forced_doors:
@@ -128,7 +132,6 @@ class Room(Node):
 
     def activate(self) -> None:
         self._activated = True
-        self.add_enemies()
 
     def update(self) -> None:
         if not self._activated:
@@ -190,9 +193,12 @@ class FloorManager(Node):
             for con in new_room.connections:
                 connection_stack.append((new_room.origin, con))
 
-        self.calculate_textures()
-
         self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE)))
+
+        for _, room in self.rooms.items():
+            room.place_in_world()
+
+        self.calculate_textures()
 
     def _get_type_of_tile(self, wall_tiles: dict[Vec2, Tile], all_tiles: dict[Vec2, Tile] , coord: Vec2) -> Literal["wall", "floor", "world"]:
         return "wall" if coord in wall_tiles else "floor" if coord in all_tiles else "world"
