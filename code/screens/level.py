@@ -221,7 +221,7 @@ class HudUI(ui.Element):
 
         self.explored_text = self.add_child(IconText(
             parent = self,
-            text = "wow",
+            text = "0/0",
             icon = self.manager.get_image("map/explored"),
             icon_alignment = "right",
             padding = 4,
@@ -233,7 +233,22 @@ class HudUI(ui.Element):
             )
         ))
 
+        self.coin_text = self.add_child(IconText(
+            parent = self,
+            text = "0",
+            icon = self.manager.get_image("map/coin"),
+            icon_alignment = "right",
+            padding = 4,
+            style = ui.Style(
+                font = self.manager.get_font("alagard", 16),
+                fore_colour = (218, 224, 234),
+                alignment = "top-right",
+                offset = (self.health_bar.style.offset[0], self.explored_text.rect.bottom + TILE_SIZE / 8)
+            )
+        ))
+
         self.floor: FloorManager = self.manager.get_object_from_id("floor-manager")
+        self.player: Player = self.manager.get_object_from_id("player")
 
     def update(self) -> None:
         super().update()
@@ -241,6 +256,9 @@ class HudUI(ui.Element):
         total_rooms = len(self.floor.rooms)
         rooms_completed = len(list(filter(lambda coord_room: coord_room[1].activated and coord_room[1].completed, self.floor.rooms.items())))
         self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
+
+        # coin text
+        self.coin_text.set_text(str(self.player.money))
 
 class DebugUI(ui.Element):
     def __init__(self, parent: Node) -> None:
