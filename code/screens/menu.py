@@ -5,66 +5,7 @@ from engine import Screen
 from engine.ui import Element, Style, Text, Button
 import util
 
-class TextButtonMenu(Button):
-    def __init__(self, parent: Element, yoffset: int, text: str, on_click: Callable = None, click_args: Iterable = [], text_hover: str = None, enabled: bool = True) -> None:
-        super().__init__(
-            parent = parent,
-            style = Style(
-                alignment = "top-center",
-                offset = (0, yoffset),
-                size = (1, 1),
-                alpha = 0
-            ),
-            hover_style=None,
-            on_click = self._on_click_with_sound,
-            click_args = click_args
-            )
-
-        self.click_func = on_click if on_click else self.do_nothing
-        self.enabled = enabled
-
-        text_size = self.manager.get_font("alagard", 32).size(text)
-        self.style.size = text_size[0] + 4, text_size[1] + 4
-        self.hover_style.size = self.style.size
-        self.redraw_image()
-
-        fore_colour = (99, 169, 65) if self.enabled else (100, 100, 100)
-        shadow_colour = (23, 68, 41) if self.enabled else (10, 10, 10)
-
-        self.text = self.add_child(Text(
-            self,
-            Style(
-                font = self.manager.get_font("alagard", 32),
-                colour = shadow_colour,
-                fore_colour = fore_colour,
-                alignment = "center-center",
-                position = "relative",
-                text_shadow = 2,
-            ),
-            text
-        ))
-
-        self.text_normal = text
-        self.text_hover = text_hover if text_hover else text
-
-    def _on_click_with_sound(self, *args) -> None:
-        self.manager.play_sound(sound_name = "effect/button_click", volume = 0.3)
-        self.click_func(*args)
-
-    def update(self) -> None:
-        if not self.enabled: return
-        super().update()
-        if self.hovering and not self.last_hovering:
-            self.manager.play_sound(sound_name = "effect/button_hover", volume = 0.1)
-            self.text.style.colour = (51, 22, 31)
-            self.text.style.fore_colour = (95, 41, 46)
-            self.text.set_text(self.text_hover)
-            self.text.redraw_image()
-        elif not self.hovering and self.last_hovering:
-            self.text.style.colour = (23, 68, 41)
-            self.text.style.fore_colour = (99, 169, 65)
-            self.text.set_text(self.text_normal)
-            self.text.redraw_image()
+from .common import TextButton, TextButtonColours
 
 class Menu(Screen):
     def __init__(self, parent) -> None:
@@ -107,35 +48,46 @@ class Menu(Screen):
             )
         )
 
-        self.play_button = self.master_container.add_child(TextButtonMenu(
+        button_colours = TextButtonColours(
+            colour = (99, 169, 65),
+            colour_shadow = (23, 68, 41),
+            hover_colour = (95, 41, 46),
+            hover_colour_shadow = (51, 22, 31)
+        )
+
+        self.play_button = self.master_container.add_child(TextButton(
             parent = self.master_container,
             yoffset = self.title.rect.bottom + 16,
             text = "New Run",
             on_click = self.parent.set_screen,
-            click_args = ["level"]
+            click_args = ["level"],
+            colours = button_colours
         ))
 
-        self.leaderboard_button = self.master_container.add_child(TextButtonMenu(
+        self.leaderboard_button = self.master_container.add_child(TextButton(
             parent = self.master_container,
             yoffset = self.play_button.rect.bottom,
             text = "Leaderboard",
-            enabled = False
+            enabled = False,
+            colours = button_colours
         ))
 
-        self.settings_button = self.master_container.add_child(TextButtonMenu(
+        self.settings_button = self.master_container.add_child(TextButton(
             parent = self.master_container,
             yoffset = self.leaderboard_button.rect.bottom,
             text = "Settings",
             on_click = self.parent.set_screen,
-            click_args = ["settings"]
+            click_args = ["settings"],
+            colours = button_colours
         ))
         
-        self.exit_button = self.master_container.add_child(TextButtonMenu(
+        self.exit_button = self.master_container.add_child(TextButton(
             parent = self.master_container,
             yoffset = self.settings_button.rect.bottom,
             text = "Exit",
             text_hover = ":c",
-            on_click = self.parent.queue_close
+            on_click = self.parent.queue_close,
+            colours = button_colours
         ))
 
         self.secret_button = self.tree_img.add_child(Button(

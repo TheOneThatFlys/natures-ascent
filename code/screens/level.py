@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from ..main import Game
 
@@ -7,10 +8,13 @@ import pygame
 from PIL import Image, ImageFilter
 
 from util.constants import *
+from util import draw_background
 from engine import Screen, Sprite, Node, ui
 from engine.types import *
 from entity import Player
 from world import FloorManager, Tile, Room
+
+from .common import TextButtonColours, TextButton
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
@@ -283,20 +287,44 @@ class PauseUI(ui.Element):
         self.main_element = self.add_child(ui.Element(
             parent = self,
             style = ui.Style(
-                size = (TILE_SIZE * 16 / 2, TILE_SIZE * 9 / 2),
+                image = draw_background((TILE_SIZE * 16 / 2, TILE_SIZE * 9 / 2), pixel_scale = 2, border_radius = 8, line_thickness = 14),
                 alignment = "center-center",
             )
         ))
 
-        self.pause_text = self.main_element.add_child(ui.Text(
-            parent = self.main_element,
+        button_colours = TextButtonColours()
+
+        self.pause_text = self.add_child(ui.Text(
+            parent = self,
             text = "Paused",
             style = ui.Style(
                 alignment = "top-center",
-                offset = (0, TILE_SIZE / 8),
-                font = self.manager.get_font("alagard", 40),
-                fore_colour = (255, 255, 255),
+                offset = (0, self.main_element.rect.top - TILE_SIZE),
+                font = self.manager.get_font("alagard", 54),
+                fore_colour = (37, 44, 55),
+                colour = (26, 30, 36),
+                text_shadow = 2
             )
+        ))
+        self.resume_button = self.main_element.add_child(TextButton(
+            parent = self.main_element,
+            yoffset = self.pause_text.style.offset[1] + self.pause_text.rect.height,
+            colours = button_colours,
+            text = "Resume",
+        ))
+
+        self.options_button = self.main_element.add_child(TextButton(
+            parent = self.main_element,
+            yoffset = self.pause_text.style.offset[1] + self.pause_text.rect.height,
+            colours = button_colours,
+            text = "Options",
+        ))
+
+        self.exit_button = self.main_element.add_child(TextButton(
+            parent = self.main_element,
+            yoffset = self.pause_text.style.offset[1] + self.pause_text.rect.height,
+            colours = button_colours,
+            text = "Exit",
         ))
 
 
