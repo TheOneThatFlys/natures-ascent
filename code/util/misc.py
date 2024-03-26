@@ -12,8 +12,8 @@ def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thi
     COLOUR_TWO = (26, 30, 36)
 
     bg = pygame.Surface((screen_size[0] / pixel_scale, screen_size[1] / pixel_scale), pygame.SRCALPHA)
-    pygame.draw.rect(bg, COLOUR_TWO, [0, 0, *bg.get_size()])
-    pygame.draw.rect(bg, COLOUR_ONE, [line_thickness / 2, line_thickness / 2, bg.get_width() - line_thickness, bg.get_height() - line_thickness])
+    bg.fill(COLOUR_ONE)
+    pygame.draw.rect(bg, COLOUR_TWO, [0, 0, *bg.get_size()], width = line_thickness // 2)
 
     n_lines = int((max(screen_size[0], screen_size[1]) + min(screen_size[0], screen_size[1])) / pixel_scale / line_thickness)
     for x in range(n_lines):
