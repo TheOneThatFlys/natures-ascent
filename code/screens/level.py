@@ -369,9 +369,10 @@ class Level(Screen):
         - 0: off
         - 1: draw hitboxes
         - 2: draw hitboxes including tiles
+        - 3: draw z-indexes
         """
         self.debug_mode += 1
-        if self.debug_mode == 3:
+        if self.debug_mode == 4:
             self.debug_mode = 0
             self.debug_ui.style.visible = False
         else:
@@ -420,8 +421,18 @@ class Level(Screen):
             if not hasattr(item, "rect"): continue
             # ignore self
             if item == self: continue
+            # ignore ui elements
+            if isinstance(item, ui.Element): continue
+
+            # draw z indexes on debug 3
+            if self.debug_mode == 3 and hasattr(item, "z_index"):
+                z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (255, 255, 0))
+                self.game_surface.blit(z_text, z_text.get_rect(center = self.camera.convert_coords(pygame.Vector2(item.rect.center))))
+
+            # ignore tiles unless on debug 2
             if isinstance(item, Tile) and self.debug_mode != 2: continue
 
+            # draw hitboxes
             scaled_pos_start = self.camera.convert_coords(pygame.Vector2(item.rect.topleft))
             scaled_pos_end = scaled_pos_start + pygame.Vector2(item.rect.size)
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_start.x, scaled_pos_end.y))
@@ -430,11 +441,12 @@ class Level(Screen):
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_end.x, scaled_pos_start.y))
 
         # draw enemy notice ranges
-        for enemy in self.manager.groups["enemy"].sprites():
-            radius = enemy.stats.notice_range
-            center = self.camera.convert_coords(pygame.Vector2(enemy.rect.center))
+        if self.debug_mode == 2:
+            for enemy in self.manager.groups["enemy"].sprites():
+                radius = enemy.stats.notice_range
+                center = self.camera.convert_coords(pygame.Vector2(enemy.rect.center))
 
-            pygame.draw.circle(self.game_surface, (255, 0, 0, 100), center, radius, 2)
+                pygame.draw.circle(self.game_surface, (255, 0, 0, 100), center, radius, 2)
 
     def update(self) -> None:
         # check for pause override
@@ -497,14 +509,14 @@ class FollowCameraLayered(Sprite):
     def convert_coords(self, old_coords: pygame.Vector2) -> pygame.Vector2:
         """Converts absolute world coords to scaled coords on screen"""
         return pygame.Vector2(
-            old_coords.x - (self.pos.x - self.half_screen_size.x),
-            old_coords.y - (self.pos.y - self.half_screen_size.y)
+            old_coords.x - (int(self.pos.x) - self.half_screen_size.x),
+            old_coords.y - (int(self.pos.y) - self.half_screen_size.y)
         )
 
     def render(self, surface: pygame.Surface, sprite_group: pygame.sprite.Group) -> None:
         # render sprites centered on camera position
-        self.offset.x = self.pos.x - self.half_screen_size.x
-        self.offset.y = self.pos.y - self.half_screen_size.y
+        self.offset.x = int(self.pos.x) - self.half_screen_size.x
+        self.offset.y = int(self.pos.y) - self.half_screen_size.y
 
         # render sprites sorted in y position and z index
         for sprite in sorted(sorted(sprite_group.sprites(), key = lambda s: s.rect.centery), key = lambda s: s.z_index):

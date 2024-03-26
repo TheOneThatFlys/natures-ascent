@@ -15,8 +15,75 @@ room_directions: list[Direction] = ["left", "right", "up", "down"]
 opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
 direction_vector: dict[Direction, Vec2] = {"left": (-1, 0), "right": (1, 0), "up": (0, -1), "down": (0, 1)}
 
+class DarkOverlay(Sprite):
+    def __init__(self, parent: Room, death_time: int = 10) -> None:
+        super().__init__(parent, groups = ["render", "update"])
+        self.parent: Room
+        self.z_index = 1
+        self.image = pygame.Surface(parent.bounding_rect.size, pygame.SRCALPHA)
+        self.starting_alpha = 200
+        self.fade_steps = TILE_SIZE
+        self.rect = parent.bounding_rect.copy()
+
+        self.dying = False
+        self.death_timer = 0
+        self.max_time = death_time
+
+        self.draw_image()
+
+    def draw_image(self) -> None:
+        new_alpha = (1 - (self.death_timer / self.max_time)) * self.starting_alpha
+        self.image.fill((0, 0, 0, max(new_alpha, 0)))
+
+        # draw door fades
+        for direction in self.parent.connections:
+            room_offset = direction_vector[direction]
+            neighbour_room = self.parent.parent.rooms[(self.parent.origin[0] + room_offset[0], self.parent.origin[1] + room_offset[1])]
+            if not neighbour_room.activated: continue
+
+            doors = self.parent.get_door_position(direction)
+            for door in doors:
+                fade_size = (
+                    TILE_SIZE if direction_vector[direction][0] == 0 else TILE_SIZE / self.fade_steps,
+                    TILE_SIZE if direction_vector[direction][1] == 0 else TILE_SIZE / self.fade_steps,
+                )
+                for i in range(self.fade_steps):
+                    step_alpha = (1 - i / self.fade_steps) * (new_alpha)
+                    offset = pygame.Vector2(direction_vector[direction]) * TILE_SIZE * (i / self.fade_steps)
+
+                    x = door[0] * (TILE_SIZE) + offset[0]
+                    y = door[1] * (TILE_SIZE) + offset[1]
+
+                    # error correction for left and up faces
+                    if direction == "left":
+                        x = (door[0] + 1) * TILE_SIZE + offset[0] - TILE_SIZE / self.fade_steps
+                        y = door[1] * TILE_SIZE + offset[1]
+                    elif direction == "up":
+                        y = (door[1] + 1) * TILE_SIZE + offset[1] - TILE_SIZE / self.fade_steps
+
+                    self.image.fill((0, 0, 0, max(step_alpha, 0)), [x, y, *fade_size])
+
+        # remove tile spaces
+        for x, y in self.parent.wall_tiles.keys():
+            self.image.fill((0, 0, 0, 0), [x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE])
+
+    def queue_death(self) -> None:
+        self.dying = True
+
+    def update(self) -> None:
+        if self.dying:
+            self.death_timer += self.manager.dt
+            self.draw_image()
+            if self.death_timer >= self.max_time:
+                self.kill()
+
+                # update neighbour rooms to new overlay fades
+                for neighbour in self.parent.get_neighbours():
+                    if neighbour.dark_overlay:
+                        neighbour.dark_overlay.draw_image()
+
 class Room(Node):
-    def __init__(self, parent: Node, origin: Vec2, room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = [], tags: list[str] = [], enemies: dict[Type[Enemy], int] = {}) -> None:
+    def __init__(self, parent: FloorManager, origin: Vec2, room_size: int, forced_doors: list[Direction] = [], blacklisted_doors: list[Direction] = [], tags: list[str] = [], enemies: dict[Type[Enemy], int] = {}) -> None:
         super().__init__(parent)
 
         self.bounding_rect = pygame.Rect(origin[0] * TILE_SIZE * room_size, origin[1] * TILE_SIZE * room_size, TILE_SIZE * room_size, TILE_SIZE * room_size)
@@ -27,6 +94,9 @@ class Room(Node):
 
         self.connections: list[Direction] = []
         self.door_positions: list[tuple[int, int]] = []
+
+        # store reference to each wall tile
+        self.wall_tiles: dict[Vec2, Tile] = {}
 
         # store each alive enemy
         self.enemies = pygame.sprite.Group()
@@ -56,6 +126,8 @@ class Room(Node):
         "Adds the room's tiles and enemies into the world"
         self.add_tiles()
         self.add_enemies()
+
+        self.dark_overlay = self.add_child(DarkOverlay(self))
 
     def gen_connections_random(self, forced_doors: list[Vec2], blacklisted_doors: list[Vec2]) -> None:
         for dir in forced_doors:
@@ -90,36 +162,47 @@ class Room(Node):
             self.add_tile(temp, (self.room_size - 1, n), True)
 
         # add floors
-        for x in range(1, self.room_size - 1):
-            for y in range(1, self.room_size - 1):
+        for x in range(self.room_size):
+            for y in range(self.room_size):
                 self.add_tile(self.parent.grass_tileset.get(random.randint(0, 3)), (x, y), False)
-        for pos in self.door_positions:
-            self.add_tile(self.parent.grass_tileset.get(random.randint(0, 3)), pos, False)
+
+    def get_door_position(self, direction: Direction) -> tuple[Vec2, Vec2]:
+        """Get the relative room coordinates of the doors in the specified direction"""
+        second_offset = ()
+        x = y = 0
+        if direction == "up":
+            x = self.room_size // 2
+            second_offset = (-1, 0)
+        elif direction == "down":
+            x = self.room_size // 2
+            y = self.room_size - 1
+            second_offset = (-1, 0)
+        elif direction == "left":
+            y = self.room_size // 2
+            second_offset = (0, -1)
+        elif direction == "right":
+            x = self.room_size - 1
+            y = self.room_size // 2
+            second_offset = (0, -1)
+
+        return (x, y), (x + second_offset[0], y + second_offset[1])
 
     def add_doors(self) -> None:
         "Generate the relative positions of 'doors'"
         for connection in self.connections:
-            second_offset = ()
+            door1, door2 = self.get_door_position(connection)
 
-            x = y = 0
-            # bunch of hard coding
-            if connection == "up":
-                x = self.room_size // 2
-                second_offset = (-1, 0)
-            elif connection == "down":
-                x = self.room_size // 2
-                y = self.room_size - 1
-                second_offset = (-1, 0)
-            elif connection == "left":
-                y = self.room_size // 2
-                second_offset = (0, -1)
-            elif connection == "right":
-                x = self.room_size - 1
-                y = self.room_size // 2
-                second_offset = (0, -1)
+            self.door_positions.append(door1)
+            self.door_positions.append(door2)
 
-            self.door_positions.append((x, y))
-            self.door_positions.append((x + second_offset[0], y + second_offset[1]))
+    def get_neighbours(self) -> list[Room]:
+        rooms = []
+        for connection in self.connections:
+            dv = direction_vector[connection]
+            neighbour_pos = self.origin[0] + dv[0], self.origin[1] + dv[1]
+            if neighbour_pos in self.parent.rooms:
+                rooms.append(self.parent.rooms[neighbour_pos])
+        return rooms
 
     def add_tile(self, image: pygame.Surface, relative_position: Vec2, collider: bool) -> None:
         # convert relative grid coords to world coords
@@ -128,10 +211,12 @@ class Room(Node):
         if relative_position in self.door_positions and collider == True: return
         # add tile
         tile = Tile(self, image, position, collider)
+        if collider: self.wall_tiles[relative_position] = tile
         self.add_child(tile)
 
     def activate(self) -> None:
         self._activated = True
+        self.dark_overlay.queue_death()
 
     def update(self) -> None:
         if not self._activated:
@@ -155,6 +240,12 @@ class SpawnRoom(Room):
             if con in self.connections: continue
             self.connections.append(con)
 
+    def place_in_world(self) -> None:
+        super().place_in_world()
+        # remove dark overlay in spawn room
+        self.dark_overlay.kill()
+        self._activated = True
+
 class FloorManager(Node):
     def __init__(self, parent: Node, room_size: int = 8, target_num: int = 8) -> None:
         super().__init__(parent)
@@ -167,7 +258,7 @@ class FloorManager(Node):
         self.wall_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("tiles/wall_tiles"), 2), TILE_SIZE)
         self.grass_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("tiles/grass_tiles"), 2), TILE_SIZE)
 
-        self.rooms: dict[tuple[int, int], Room] = {}
+        self.rooms: dict[Vec2, Room] = {}
 
     def generate(self) -> None:
         "Generate a floor"
