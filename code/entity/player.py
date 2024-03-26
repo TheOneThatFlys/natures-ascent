@@ -60,6 +60,8 @@ class Player(Entity):
             knockback = 10,
         )
 
+        self.money = 0
+
     def _load_animations(self) -> None:
         types = ["idle", "damage", "walk"]
         directions = ["right", "left", "down", "up"]
@@ -99,15 +101,14 @@ class Player(Entity):
             self.last_facing.set("walk", "right")
             self.walking = True
 
-        attacking = False
         if keys[pygame.K_RIGHT]:
-            attacking = self.try_attack("right")
+            self.try_attack("right")
         elif keys[pygame.K_LEFT]:
-            attacking = self.try_attack("left")
+            self.try_attack("left")
         elif keys[pygame.K_UP]:
-            attacking = self.try_attack("up")
+            self.try_attack("up")
         elif keys[pygame.K_DOWN]:
-            attacking = self.try_attack("down")
+            self.try_attack("down")
 
         # normalise vector so that diagonal movement is the
         # same speed as horizontal
@@ -120,6 +121,9 @@ class Player(Entity):
         if "death" in current_animation or "damage" in current_animation or "attack" in current_animation: return
 
         self.eval_anim()
+
+    def add_money(self, value: int) -> None:
+        self.money += value
 
     def eval_anim(self) -> None:
         if self.walking:
