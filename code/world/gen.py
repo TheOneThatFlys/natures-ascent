@@ -105,12 +105,17 @@ class Room(Node):
         self._possible_enemies = enemies
 
         self._activated = False
+        self._completed = False
 
         self.gen_connections_random(forced_doors, blacklisted_doors)
 
     @property
     def activated(self) -> bool:
         return self._activated
+    
+    @property
+    def completed(self) -> bool:
+        return self._completed
 
     def add_enemies(self) -> None:
         for enemy_type, count in self._possible_enemies.items(): 
@@ -223,6 +228,10 @@ class Room(Node):
             player: Player = self.manager.get_object_from_id("player")
             if player.rect.colliderect(self.bounding_rect):
                 self.activate()
+
+        if not self._completed and self._activated:
+            if len(self.enemies) == 0:
+                self._completed = True
 
 class SpawnRoom(Room):
     def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:

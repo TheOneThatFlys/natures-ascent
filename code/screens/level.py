@@ -14,7 +14,7 @@ from engine.types import *
 from entity import Player
 from world import FloorManager, Tile, Room
 
-from .common import TextButtonColours, TextButton
+from .common import TextButtonColours, TextButton, IconText
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
@@ -72,8 +72,8 @@ class HealthBar(ui.Element):
 
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
-class MapExplorerText(ui.Text):
-    def __init__(self, parent: Map) -> None:
+class MapExplorerText(IconText):
+    def __init__(self, parent: Node, style: ui.Style) -> None:
         super().__init__(parent, text = "0% explored", style = ui.Style(
             position = "relative",
             alignment = "bottom-left",
@@ -109,8 +109,6 @@ class Map(ui.Element):
         self.player_icon = pygame.transform.scale_by(self.manager.get_image("map/player_icon"), 0.5)
         self.spawn_icon = self.manager.get_image("map/spawn")
         self.done_icon = self.manager.get_image("map/check")
-
-        self.explored_text = self.add_child(MapExplorerText(self))
 
         self.update_map()
 
@@ -220,6 +218,29 @@ class HudUI(ui.Element):
                 )
             )
         )
+
+        self.explored_text = self.add_child(IconText(
+            parent = self,
+            text = "wow",
+            icon = self.manager.get_image("map/explored"),
+            icon_alignment = "right",
+            padding = 4,
+            style = ui.Style(
+                font = self.manager.get_font("alagard", 16),
+                fore_colour = (218, 224, 234),
+                alignment = "top-right",
+                offset = (self.health_bar.style.offset[0], self.map.rect.bottom + TILE_SIZE / 8)
+            )
+        ))
+
+        self.floor: FloorManager = self.manager.get_object_from_id("floor-manager")
+
+    def update(self) -> None:
+        super().update()
+        # explored text
+        total_rooms = len(self.floor.rooms)
+        rooms_completed = len(list(filter(lambda coord_room: coord_room[1].activated and coord_room[1].completed, self.floor.rooms.items())))
+        self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
 
 class DebugUI(ui.Element):
     def __init__(self, parent: Node) -> None:

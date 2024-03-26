@@ -88,3 +88,38 @@ class TextButton(Button):
             self.text.style.colour = self.colours.colour_shadow
             self.text.set_text(self.text_normal)
             self.text.redraw_image()
+
+class IconText(Element):
+    def __init__(self, parent: Element, style: Style, text: str, icon: pygame.Surface, icon_alignment: Literal["left", "right"] = "left", padding: int = 0) -> None:
+        self.text = text
+        self.icon = icon
+        self.icon_alignment = icon_alignment
+        self.padding = padding
+        super().__init__(parent, style)
+
+    def set_text(self, new_text: str) -> None:
+        self.text = new_text
+        self.redraw_image()
+
+    def redraw_image(self) -> None:
+        text_size = self.style.font.size(self.text)
+        icon_size = self.icon.get_size()
+
+        self.image = pygame.Surface(
+            (text_size[0] + icon_size[0] + self.padding, max(text_size[1], icon_size[1])),
+            pygame.SRCALPHA
+        )
+        self.rect = self.image.get_rect()
+
+        text_surf = self.style.font.render(self.text, False, self.style.fore_colour)
+
+        if self.icon_alignment == "left":
+            icon_rect = self.icon.get_rect(centery = self.rect.height / 2, x = 0)
+            self.image.blit(self.icon, icon_rect)
+            self.image.blit(text_surf, text_surf.get_rect(left = icon_rect.right + self.padding, bottom = self.rect.height))
+        else:
+            text_rect = text_surf.get_rect(x = 0, bottom = self.rect.height)
+            self.image.blit(text_surf, text_rect)
+            self.image.blit(self.icon, self.icon.get_rect(left = text_rect.right + self.padding, centery = self.rect.height / 2))
+
+        self.calculate_position()
