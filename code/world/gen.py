@@ -398,6 +398,7 @@ class FloorManager(Node):
             enemies = {Slime: 3},
             tags = tags,
         )
+
         self.rooms[origin] = room
         self.add_child(room)
         return room

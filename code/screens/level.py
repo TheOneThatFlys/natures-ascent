@@ -367,12 +367,13 @@ class Level(Screen):
         Cycles current debug mode.
 
         - 0: off
-        - 1: draw hitboxes
-        - 2: draw hitboxes including tiles
-        - 3: draw z-indexes
+        - 1: render debug text
+        - 2: draw hitboxes
+        - 3: draw hitboxes including tiles and notice ranges
+        - 4: draw z-indexes
         """
         self.debug_mode += 1
-        if self.debug_mode == 4:
+        if self.debug_mode > 4:
             self.debug_mode = 0
             self.debug_ui.style.visible = False
         else:
@@ -416,6 +417,8 @@ class Level(Screen):
                 item.redraw_image()
 
     def debug(self) -> None:
+        if self.debug_mode == 0 or self.debug_mode == 1: return
+
         # render hitboxes of anything that has a rect
         for item in self.get_all_children():
             if not hasattr(item, "rect"): continue
@@ -424,13 +427,13 @@ class Level(Screen):
             # ignore ui elements
             if isinstance(item, ui.Element): continue
 
-            # draw z indexes on debug 3
-            if self.debug_mode == 3 and hasattr(item, "z_index"):
+            # draw z indexes on debug 4
+            if self.debug_mode == 4 and hasattr(item, "z_index"):
                 z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (255, 255, 0))
                 self.game_surface.blit(z_text, z_text.get_rect(center = self.camera.convert_coords(pygame.Vector2(item.rect.center))))
 
-            # ignore tiles unless on debug 2
-            if isinstance(item, Tile) and self.debug_mode != 2: continue
+            # ignore tiles unless on debug 3
+            if isinstance(item, Tile) and self.debug_mode != 3: continue
 
             # draw hitboxes
             scaled_pos_start = self.camera.convert_coords(pygame.Vector2(item.rect.topleft))
@@ -441,7 +444,7 @@ class Level(Screen):
             pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_end.x, scaled_pos_start.y))
 
         # draw enemy notice ranges
-        if self.debug_mode == 2:
+        if self.debug_mode == 3:
             for enemy in self.manager.groups["enemy"].sprites():
                 radius = enemy.stats.notice_range
                 center = self.camera.convert_coords(pygame.Vector2(enemy.rect.center))
@@ -470,8 +473,7 @@ class Level(Screen):
         )
 
         # draw debug elements
-        if self.debug_mode:
-            self.debug()
+        self.debug()
 
         # render GUI elements
         self.master_ui.render(self.game_surface)
