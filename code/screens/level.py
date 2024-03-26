@@ -287,30 +287,32 @@ class PauseUI(ui.Element):
         self.main_element = self.add_child(ui.Element(
             parent = self,
             style = ui.Style(
-                # image = draw_background((TILE_SIZE * 16 / 2, TILE_SIZE * 9 / 2), pixel_scale = 2, border_radius = 8, line_thickness = 14),
+                image = draw_background((TILE_SIZE * 3.5, TILE_SIZE * 3.5), pixel_scale = 4, line_thickness = 7),
                 alignment = "center-center",
             )
         ))
 
         button_colours = TextButtonColours()
 
-        self.pause_text = self.add_child(ui.Text(
-            parent = self,
+        self.pause_text = self.main_element.add_child(ui.Text(
+            parent = self.main_element,
             text = "Paused",
             style = ui.Style(
                 alignment = "top-center",
-                offset = (0, self.main_element.rect.top - TILE_SIZE),
                 font = self.manager.get_font("alagard", 54),
-                fore_colour = (37, 44, 55),
-                colour = (26, 30, 36),
+                offset = (0, TILE_SIZE / 3),
+                fore_colour = button_colours.colour,
+                colour = button_colours.colour_shadow,
                 text_shadow = 2
             )
         ))
+
         self.resume_button = self.main_element.add_child(TextButton(
             parent = self.main_element,
-            yoffset = TILE_SIZE,
+            yoffset = self.pause_text.style.offset[1] + self.pause_text.rect.height + TILE_SIZE / 4,
             colours = button_colours,
             text = "Resume",
+            on_click = self._on_resume_click
         ))
 
         self.options_button = self.main_element.add_child(TextButton(
@@ -318,6 +320,7 @@ class PauseUI(ui.Element):
             yoffset = self.resume_button.style.offset[1] + self.resume_button.rect.height,
             colours = button_colours,
             text = "Options",
+            on_click = self._on_options_click
         ))
 
         self.exit_button = self.main_element.add_child(TextButton(
@@ -325,8 +328,17 @@ class PauseUI(ui.Element):
             yoffset = self.options_button.style.offset[1] + self.options_button.rect.height,
             colours = button_colours,
             text = "Exit",
+            on_click = self._on_exit_click
         ))
 
+    def _on_resume_click(self) -> None:
+        self.parent.toggle_pause()
+
+    def _on_options_click(self) -> None:
+        pass
+
+    def _on_exit_click(self) -> None:
+        self.parent.parent.set_screen("menu")
 
     def toggle(self, pause_frame: pygame.Surface) -> None:
         self.style.visible = not self.style.visible
@@ -457,7 +469,7 @@ class Level(Screen):
 
             # draw z indexes on debug 4
             if self.debug_mode == 4 and hasattr(item, "z_index"):
-                z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (255, 255, 0))
+                z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (0, 255, 0))
                 self.game_surface.blit(z_text, z_text.get_rect(center = self.camera.convert_coords(pygame.Vector2(item.rect.center))))
 
             # ignore tiles unless on debug 3
