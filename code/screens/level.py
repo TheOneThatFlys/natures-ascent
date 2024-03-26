@@ -287,7 +287,7 @@ class PauseUI(ui.Element):
         self.main_element = self.add_child(ui.Element(
             parent = self,
             style = ui.Style(
-                image = draw_background((TILE_SIZE * 16 / 2, TILE_SIZE * 9 / 2), pixel_scale = 2, border_radius = 8, line_thickness = 14),
+                # image = draw_background((TILE_SIZE * 16 / 2, TILE_SIZE * 9 / 2), pixel_scale = 2, border_radius = 8, line_thickness = 14),
                 alignment = "center-center",
             )
         ))
@@ -308,21 +308,21 @@ class PauseUI(ui.Element):
         ))
         self.resume_button = self.main_element.add_child(TextButton(
             parent = self.main_element,
-            yoffset = self.pause_text.style.offset[1] + self.pause_text.rect.height,
+            yoffset = TILE_SIZE,
             colours = button_colours,
             text = "Resume",
         ))
 
         self.options_button = self.main_element.add_child(TextButton(
             parent = self.main_element,
-            yoffset = self.pause_text.style.offset[1] + self.pause_text.rect.height,
+            yoffset = self.resume_button.style.offset[1] + self.resume_button.rect.height,
             colours = button_colours,
             text = "Options",
         ))
 
         self.exit_button = self.main_element.add_child(TextButton(
             parent = self.main_element,
-            yoffset = self.pause_text.style.offset[1] + self.pause_text.rect.height,
+            yoffset = self.options_button.style.offset[1] + self.options_button.rect.height,
             colours = button_colours,
             text = "Exit",
         ))
