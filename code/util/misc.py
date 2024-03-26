@@ -6,13 +6,14 @@ def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Sur
     new_size = surface.get_width() * scale_factor, surface.get_height() * scale_factor
     return pygame.transform.scale(surface, new_size)
 
-def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7, offset = 0) -> pygame.Surface:
+def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7, offset: int = 0, border_radius: int = 0) -> pygame.Surface:
     "Draw a striped background of given sized and scale onto surface"
     COLOUR_ONE = (37, 44, 55)
     COLOUR_TWO = (26, 30, 36)
 
-    bg = pygame.Surface((screen_size[0] / pixel_scale, screen_size[1] / pixel_scale))
-    bg.fill(COLOUR_ONE)
+    bg = pygame.Surface((screen_size[0] / pixel_scale, screen_size[1] / pixel_scale), pygame.SRCALPHA)
+    pygame.draw.rect(bg, COLOUR_TWO, [0, 0, *bg.get_size()])
+    pygame.draw.rect(bg, COLOUR_ONE, [line_thickness / 2, line_thickness / 2, bg.get_width() - line_thickness, bg.get_height() - line_thickness])
 
     n_lines = int((max(screen_size[0], screen_size[1]) + min(screen_size[0], screen_size[1])) / pixel_scale / line_thickness)
     for x in range(n_lines):
@@ -21,11 +22,12 @@ def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thi
             e = line_thickness
             pygame.draw.line(bg, COLOUR_TWO, (d + e, -e), (-e, d + e), line_thickness)
 
-    width, height = bg.get_size()
-    pygame.draw.line(bg, COLOUR_TWO, (0, 0), (width, 0), line_thickness)
-    pygame.draw.line(bg, COLOUR_TWO, (0, 0), (0, height), line_thickness)
-    pygame.draw.line(bg, COLOUR_TWO, (width - 1, 0), (width - 1, height), line_thickness)
-    pygame.draw.line(bg, COLOUR_TWO, (0, height - 1), (width, height - 1), line_thickness)
+    if border_radius > 0:
+        mask = pygame.Surface(bg.get_size())
+        pygame.draw.rect(mask, (255, 255, 255), [0, 0, *mask.get_size()], border_radius = border_radius)
+        mask.set_colorkey((0, 0, 0))
+        mask = pygame.mask.from_surface(mask)
+        bg = mask.to_surface(setsurface = bg, unsetcolor = None)
 
     return pygame.transform.scale(bg, screen_size)
 
