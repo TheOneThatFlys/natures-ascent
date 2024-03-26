@@ -10,6 +10,7 @@ class HealthBar(Sprite):
 
     def __init__(self, parent: Node, border_colour: Colour, border_size: int, health_colour: Colour) -> None:
         super().__init__(parent, ["render", "update"])
+        self.z_index = 1
 
         self.border_colour = border_colour
         self.border_size = border_size
@@ -43,6 +44,7 @@ class HealthBar(Sprite):
 
     def update(self) -> None:
         self._redraw_image()
+
         # render bar below parent with a little padding
         self.rect.bottom = self.parent.rect.top - 16
         self.rect.centerx = self.parent.rect.centerx
