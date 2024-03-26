@@ -258,7 +258,7 @@ class HudUI(ui.Element):
         self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
 
         # coin text
-        self.coin_text.set_text(str(self.player.money))
+        self.coin_text.set_text(f"{self.player.money:,}")
 
 class DebugUI(ui.Element):
     def __init__(self, parent: Node) -> None:
