@@ -2,12 +2,12 @@ import pygame
 from engine.types import *
 
 def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Surface:
-    "Scales a pygame surface by a given factor and returns it (NOT IN PLACE)"
+    """Scales a pygame surface by a given factor and returns it (NOT IN PLACE)"""
     new_size = surface.get_width() * scale_factor, surface.get_height() * scale_factor
     return pygame.transform.scale(surface, new_size)
 
 def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7, offset: int = 0, border_radius: int = 0) -> pygame.Surface:
-    "Draw a striped background of given sized and scale onto surface"
+    """Draw a striped background of given sized and scale onto surface"""
     COLOUR_ONE = (37, 44, 55)
     COLOUR_TWO = (26, 30, 36)
 
@@ -32,7 +32,8 @@ def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thi
     return pygame.transform.scale(bg, screen_size)
 
 def get_closest_direction(vector: pygame.Vector2) -> Direction:
-    "Returns the closest cardinal direction of a vector"
+    """Returns the closest cardinal direction of a vector"""
+
     # return right if its a 0 vector
     if vector.magnitude() == 0: return "right"
 
@@ -50,3 +51,9 @@ def get_closest_direction(vector: pygame.Vector2) -> Direction:
             return "down"
         else:
             return "up"
+        
+def sign(n: float) -> Literal[1, -1, 0]:
+    """Returns 1 if n is positive, -1 if negative, and 0 if 0"""
+    if n > 0: return 1
+    if n < 0: return -1
+    return 0
