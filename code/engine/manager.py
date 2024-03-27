@@ -5,6 +5,7 @@ import pygame, time, os
 
 if TYPE_CHECKING:
     from .node import Node
+    from ..main import Game
 
 class Font():
     def __init__(self, font_path: str) -> None:
@@ -22,7 +23,9 @@ class Font():
         return new_font
 
 class Manager():
-    def __init__(self, fps: int = 60, num_channels = 8) -> None:
+    def __init__(self, game: Game, fps: int = 60, num_channels = 8) -> None:
+        self.game = game
+
         # stores groups
         self.groups: dict[str, pygame.sprite.Group] = {}
         # stores objects of interest
@@ -33,20 +36,18 @@ class Manager():
         self.music_current: str = ""
 
         self.fps: int = fps
+        self._fpms: float = fps / 1000 # frames per millisecond
         self.dt: float = 1
 
-        self._last_time: int = time.time()
         self._load_scale: int = 1
 
-        self._current_curso: int = pygame.SYSTEM_CURSOR_ARROW
+        self._current_cursor: int = pygame.SYSTEM_CURSOR_ARROW
 
         pygame.mixer.set_num_channels(num_channels)
 
     def update_dt(self) -> None:
         "Updates delta time for current frame. Should be called every frame"
-        now_time = time.time()
-        self.dt = self.fps * (now_time - self._last_time)
-        self._last_time = now_time
+        self.dt = self._fpms * self.game.clock.get_time()
 
     def add_object(self, id: str, node: Node) -> Node:
         self.objects[id] = node
