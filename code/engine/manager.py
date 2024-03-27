@@ -36,7 +36,7 @@ class Manager():
         self.music_current: str = ""
 
         self.fps: int = fps
-        self._fpms: float = fps / 1000 # frames per millisecond
+        self._dt_constant: float = 60 / 1000 # makes dt values backwards compatible
         self.dt: float = 1
 
         self._load_scale: int = 1
@@ -47,7 +47,7 @@ class Manager():
 
     def update_dt(self) -> None:
         "Updates delta time for current frame. Should be called every frame"
-        self.dt = self._fpms * self.game.clock.get_time()
+        self.dt = self._dt_constant * self.game.clock.get_time()
 
     def add_object(self, id: str, node: Node) -> Node:
         self.objects[id] = node

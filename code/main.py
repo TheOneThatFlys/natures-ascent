@@ -27,7 +27,7 @@ class Game:
 
         self.running = True
 
-        self.manager = Manager(self, num_channels = 32)
+        self.manager = Manager(self, fps = FPS, num_channels = 32)
         self.manager.set_pixel_scale(PIXEL_SCALE)
         self.manager.load()
 
