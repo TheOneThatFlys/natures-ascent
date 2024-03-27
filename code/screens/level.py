@@ -5,7 +5,6 @@ if TYPE_CHECKING:
     from ..main import Game
 
 import pygame
-from PIL import Image, ImageFilter
 
 from util.constants import *
 from util import draw_background
@@ -389,13 +388,7 @@ class PauseUI(ui.Element):
             self.image = self._blur_image(self.pause_frame)
 
     def _blur_image(self, image: pygame.Surface, strength: int = 2) -> pygame.Surface:
-        image_data = pygame.image.tobytes(image, "RGBA", False)
-        pil_image = Image.frombytes("RGBA", image.get_size(), image_data)
-        pil_image = pil_image.filter(ImageFilter.GaussianBlur(radius = strength))
-
-        blurred_image = pygame.image.frombytes(pil_image.tobytes(), image.get_size(), "RGBA")
-
-        return blurred_image
+        return pygame.transform.gaussian_blur(image, strength)
     
     def render(self, surface: pygame.Surface) -> None:
         # save what the screen looks like without me
