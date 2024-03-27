@@ -72,26 +72,6 @@ class HealthBar(ui.Element):
 
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
-class MapExplorerText(IconText):
-    def __init__(self, parent: Node, style: ui.Style) -> None:
-        super().__init__(parent, text = "0% explored", style = ui.Style(
-            position = "relative",
-            alignment = "bottom-left",
-            font = parent.manager.get_font("alagard", 16),
-            fore_colour = (255, 255, 255),
-            colour = (160, 160, 160),
-            offset = (parent.BORDER_SIZE * 2, parent.BORDER_SIZE * 2),
-            text_shadow = 1,
-        ))
-
-        self.floor: FloorManager = self.manager.get_object_from_id("floor-manager")
-
-    def update(self) -> None:
-        super().update()
-        total_rooms = len(self.floor.rooms)
-        rooms_completed = len(list(filter(lambda coord_room: coord_room[1].activated and len(coord_room[1].enemies) == 0, self.floor.rooms.items())))
-        self.set_text(f"{rooms_completed}/{total_rooms} completed")
-
 class Map(ui.Element):
     BORDER_SIZE = 4
     def __init__(self, parent: Node, style: ui.Style, scale = 32) -> None:
@@ -313,7 +293,7 @@ class DebugUI(ui.Element):
         self.mode.set_text(f"mode: {self.level.debug_mode}")
 
 class PauseUI(ui.Element):
-    def __init__(self, parent: Node) -> None:
+    def __init__(self, parent: Level) -> None:
         # store the image of the frame paused on when this menu was opened
         self.pause_frame = None
 
@@ -326,7 +306,8 @@ class PauseUI(ui.Element):
         self.main_element = self.add_child(ui.Element(
             parent = self,
             style = ui.Style(
-                image = draw_background((TILE_SIZE * 3.5, TILE_SIZE * 3.5), pixel_scale = 4, line_thickness = 7),
+                image = self._draw_background((TILE_SIZE * 3.5, TILE_SIZE * 3.5)),
+                # image = draw_background((TILE_SIZE * 3.5, TILE_SIZE * 3.5), pixel_scale = 4, line_thickness = 0),
                 alignment = "center-center",
             )
         ))
@@ -343,6 +324,16 @@ class PauseUI(ui.Element):
                 fore_colour = button_colours.colour,
                 colour = button_colours.colour_shadow,
                 text_shadow = 2
+            )
+        ))
+
+        self.divider = self.pause_text.add_child(ui.Element(
+            parent = self.pause_text,
+            style = ui.Style(
+                alignment = "bottom-center",
+                offset = (0, - TILE_SIZE / 8),
+                colour = (26, 30, 36),
+                size = (self.main_element.rect.width * 0.8, 4),
             )
         ))
 
@@ -378,6 +369,12 @@ class PauseUI(ui.Element):
 
     def _on_exit_click(self) -> None:
         self.parent.parent.set_screen("menu")
+
+    def _draw_background(self, size: Vec2, border_width: int = 8) -> pygame.Surface:
+        surf = pygame.Surface(size)
+        surf.fill((37, 44, 55))
+        pygame.draw.rect(surf, (26, 30, 36), [0, 0, *size], width = border_width)
+        return surf
 
     def toggle(self, pause_frame: pygame.Surface) -> None:
         self.style.visible = not self.style.visible
@@ -475,21 +472,21 @@ class Level(Screen):
         elif key == pygame.K_MINUS:
             self.hud_ui.map.decrease_scale()
 
-    def on_resize(self, new_size: Vec2) -> None:
+    def on_resize(self, new_res: Vec2) -> None:
         # remake game surface to new size
-        self.game_surface = pygame.Surface(new_size)
+        self.game_surface = pygame.Surface(new_res)
         # recalibrate camera
-        self.camera.set_screen_size(new_size)
+        self.camera.set_screen_size(new_res)
 
-        self.master_ui.style.size = new_size
+        self.master_ui.style.size = new_res
         for sub_menu in self.master_ui.children:
-            sub_menu.style.size = new_size
+            sub_menu.style.size = new_res
 
         for item in self.master_ui.get_all_children():
             item.redraw_image()
 
         if self.paused:
-            self.pause_ui.style.size = new_size
+            self.pause_ui.style.size = new_res
             # extra render step to sync up menu
             self.render(pygame.Surface((1, 1)))
             for item in self.pause_ui.get_all_children():
