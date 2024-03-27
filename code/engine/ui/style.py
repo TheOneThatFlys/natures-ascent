@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Optional
 import pygame
 from dataclasses import dataclass, replace, fields
 from ..types import *
@@ -6,19 +7,19 @@ from ..types import *
 @dataclass
 class Style:
     visible: bool = True
-    size: tuple[int, int] = (0, 0)
+    size: Vec2 = (0, 0)
 
     position: Position = "relative"
     alignment: Alignment = "top-left"
-    offset: tuple[int, int] = (0, 0)
+    offset: Vec2 = (0, 0)
 
     colour: Colour = (0, 0, 0)
     fore_colour: Colour = (0, 0, 0)
     alpha: int = 255
 
-    font: pygame.font.Font = None
+    font: Optional[pygame.font.Font] = None
 
-    image: pygame.Surface = None
+    image: Optional[pygame.Surface] = None
     stretch_type: StretchType = "none"
 
     text_shadow: int = 0
