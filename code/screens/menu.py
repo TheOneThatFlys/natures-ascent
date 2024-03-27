@@ -1,6 +1,3 @@
-import pygame
-import random
-from typing import Callable, Iterable
 from engine import Screen
 from engine.ui import Element, Style, Text, Button
 import util
@@ -16,7 +13,6 @@ class Menu(Screen):
             style = Style(
                 size = self.rect.size,
                 image = util.draw_background(self.rect.size),
-                stretch_type = "skew",
                 colour = (78, 173, 245)
             )
         )
