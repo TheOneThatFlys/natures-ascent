@@ -103,9 +103,9 @@ class Entity(Sprite):
         self.pos.y += self.velocity.y * self.manager.dt
         self.check_collision_vertical()
 
-        # exponentially reduce entity speed
-        self.velocity.x /= SURFACE_FRICTION_COEFFICIENT
-        self.velocity.y /= SURFACE_FRICTION_COEFFICIENT
+        # reduce entity speed
+        self.velocity += -self.velocity * SURFACE_FRICTION_COEFFICIENT * self.manager.dt
+
         # prevent really small numbers
         if -0.01 < self.velocity.x < 0.01: self.velocity.x = 0
         if -0.01 < self.velocity.y < 0.01: self.velocity.y = 0

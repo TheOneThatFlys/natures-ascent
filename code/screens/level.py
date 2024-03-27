@@ -562,7 +562,7 @@ class FollowCameraLayered(Sprite):
 
         self.target = target_sprite
         self.pos = pygame.Vector2(target_sprite.rect.center)
-        self.follow_divider = 1 / follow_speed
+        self.follow_speed = follow_speed
         self.tolerence = tolerence
 
         self.set_screen_size(self.window.get_size())
@@ -571,7 +571,7 @@ class FollowCameraLayered(Sprite):
 
     def update(self) -> None:
         # move camera closer to target
-        self.pos += self.manager.dt * (self.target.rect.center - self.pos) / self.follow_divider
+        self.pos += self.manager.dt * (self.target.rect.center - self.pos) * self.follow_speed
 
     def set_screen_size(self, new_size: Vec2) -> None:
         """Set new screen size to center camera on"""
