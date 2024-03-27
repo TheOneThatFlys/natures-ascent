@@ -62,7 +62,7 @@ class Game:
         # main loop
         while self.running:
             # maintain constant fps
-            self.clock.tick(FPS)
+            self.clock.tick(self.manager.fps)
             # calculate dt
             self.manager.update_dt()
 

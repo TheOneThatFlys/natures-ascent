@@ -38,15 +38,13 @@ class Entity(Sprite):
         else:
             self.health_bar.show()
 
-    # both collision functions take the future position of the hitbox
-    # and check if it intersects with an obstical
-    # if this is true, then move the player hitbox so that it is touching the 
-    # edge of the obstical
     def check_collision_vertical(self) -> None:
+        # get future position of hitbox
         future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in self.manager.groups["collide"].sprites():
             if sprite == self: continue
             if sprite.rect.colliderect(future_player_rect):
+                # move self so that it no longer colliding
                 if self.velocity.y > 0:
                     future_player_rect.bottom = sprite.rect.top
                     self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
@@ -57,6 +55,7 @@ class Entity(Sprite):
                     return
 
     def check_collision_horizontal(self) -> None:
+        # see Entity.check_collision_vertical()
         future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in self.manager.groups["collide"].sprites():
             if sprite == self: continue
@@ -74,7 +73,7 @@ class Entity(Sprite):
         "Adds velocity to entity, i.e a force in an instant."
         self.velocity += velocity
 
-    def hit(self, other: Sprite, damage = 0, kb_magnitude = 0) -> None:
+    def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
         if self.iframes == 0:
             kbv = self.pos - other.pos
             kbv.scale_to_length(kb_magnitude)
@@ -104,9 +103,9 @@ class Entity(Sprite):
         self.check_collision_vertical()
 
         # reduce entity speed
-        self.velocity += -self.velocity * SURFACE_FRICTION_COEFFICIENT * self.manager.dt
+        self.velocity *= SURFACE_FRICTION_COEFFICIENT * self.manager.dt
 
-        # prevent really small numbers
+        # prevent small values of velocity
         if -0.01 < self.velocity.x < 0.01: self.velocity.x = 0
         if -0.01 < self.velocity.y < 0.01: self.velocity.y = 0
 
