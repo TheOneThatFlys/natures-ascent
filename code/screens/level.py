@@ -490,7 +490,7 @@ class Level(Screen):
 
         # render hitboxes of anything that has a rect
         for item in self.get_all_children():
-            if not hasattr(item, "rect"): continue
+            if not hasattr(item, "rect") or item.rect == None: continue
             # ignore self
             if item == self: continue
             # ignore ui elements
@@ -555,7 +555,7 @@ class Level(Screen):
         surface.blit(self.game_surface, (0, 0))
 
 class FollowCameraLayered(Sprite):
-    def __init__(self, parent: Node, target_sprite: Sprite, follow_speed: float = 2, tolerence: float = 5) -> None:
+    def __init__(self, parent: Node, target_sprite: Sprite, follow_speed: float = 0.1, tolerence: float = 5) -> None:
         super().__init__(parent = parent, groups=["update"])
         self.id = "camera"
         self.window = pygame.display.get_surface()
