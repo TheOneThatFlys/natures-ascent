@@ -1,10 +1,12 @@
 import pygame
-from typing import Iterable, Callable
+from typing import Iterable, Callable, Optional
+
+from ..types import *
 from .element import Element
 from .style import Style
 
 class Button(Element):
-    def __init__(self, parent: Element, style: Style, hover_style, on_click: Callable[..., None] = None, click_args: Iterable = []) -> None:
+    def __init__(self, parent: Element, style: Style, hover_style, on_click: Callable[..., None] = None, click_args: Iterable = [], hover_sound: Optional[str] = "effect/button_hover", click_sound: Optional[str] = "effect/button_click") -> None:
         super().__init__(parent, style)
 
         self.normal_style = self.style
@@ -14,19 +16,25 @@ class Button(Element):
         self.on_click = on_click if on_click else self.do_nothing
         self.click_args = click_args
 
+        self.hover_sound = hover_sound
+        self.click_sound = click_sound
+
         self.hovering = False
         self.last_hovering = self.hovering
-        self.clicking = False
-        self._prev_frame_click = False
 
     def do_nothing(self) -> None:
         pass # do nothing
+
+    def on_mouse_down(self, mouse_button: int, mouse_pos: Vec2) -> None:
+        super().on_mouse_down(mouse_button, mouse_pos)
+        if self.rect.collidepoint(mouse_pos):
+            if self.click_sound: self.manager.play_sound(self.click_sound, 0.3)
+            self.on_click(*self.click_args)
 
     def update(self) -> None:
         super().update()
 
         mouse_pos = pygame.mouse.get_pos()
-        left_clicking = pygame.mouse.get_pressed()[0]
         self.last_hovering = self.hovering
         self.clicking = False
         self.hovering = False
@@ -35,14 +43,8 @@ class Button(Element):
             self.hovering = True
             self.set_style(self.hover_style)
             self.manager.set_cursor(pygame.SYSTEM_CURSOR_HAND)
-
-            if left_clicking:
-                self.clicking = True
-                if not self._prev_frame_click:
-                    self.on_click(*self.click_args)
-
         else:
             self.set_style(self.normal_style)
 
-        self._prev_frame_click = left_clicking
+        if not self.last_hovering and self.hovering and self.hover_sound: self.manager.play_sound(self.hover_sound, 0.1)
         

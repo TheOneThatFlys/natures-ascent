@@ -1,3 +1,5 @@
+import pygame
+
 from engine import Screen
 from engine.ui import Element, Style, Text, Button
 import util
@@ -96,6 +98,8 @@ class Menu(Screen):
             ),
             hover_style = None,
             on_click = self._toggle_secret,
+            hover_sound = None,
+            click_sound = "effect/hit_alt"
         ))
 
         self.bg_offset = 0
@@ -105,7 +109,6 @@ class Menu(Screen):
             
     def _toggle_secret(self) -> None:
         self.secret_activated = not self.secret_activated
-        self.manager.play_sound("effect/hit_alt", 0.5)
 
     def on_resize(self, new_res) -> None:
         self.master_container.style.size = new_res
@@ -113,6 +116,9 @@ class Menu(Screen):
 
         for item in self.master_container.get_all_children():
             item.redraw_image()
+
+    def on_mouse_down(self, button: int) -> None:
+        self.master_container.on_mouse_down(button, pygame.mouse.get_pos())
 
     def render(self, window) -> None:
         self.master_container.render(window)

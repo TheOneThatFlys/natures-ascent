@@ -63,6 +63,11 @@ class SettingsScreen(Screen):
         for child in self.ui.get_all_children():
             child.redraw_image()
 
+    def on_mouse_down(self, button: int) -> None:
+        pos = pygame.mouse.get_pos()
+        self.ui.on_mouse_down(button, pos)
+        self.exit_button.on_mouse_down(button, pos)
+
     def update(self) -> None:
         for child in self.children:
             child.update()

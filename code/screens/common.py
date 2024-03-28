@@ -3,7 +3,7 @@ from dataclasses import dataclass
 
 from engine.ui import Element, Text, Style, Button
 from engine.types import *
-from typing import Any, Callable, Iterable
+from typing import Callable, Iterable, Optional
 
 @dataclass
 class TextButtonColours:
@@ -22,9 +22,9 @@ class TextButton(Button):
         text: str,
         colours: TextButtonColours,
         font_size: int = 32,
-        on_click: Callable = None,
-        click_args: Iterable[Any] = [],
-        text_hover: str = None,
+        on_click: Optional[Callable] = None,
+        click_args: Iterable = [],
+        text_hover: Optional[str] = None,
         enabled: bool = True
         ) -> None:
 
@@ -37,7 +37,7 @@ class TextButton(Button):
                 alpha = 0
             ),
             hover_style=None,
-            on_click = self._on_click_with_sound,
+            on_click = on_click,
             click_args = click_args
             )
 
@@ -70,15 +70,10 @@ class TextButton(Button):
         self.text_normal = text
         self.text_hover = text_hover if text_hover else text
 
-    def _on_click_with_sound(self, *args) -> None:
-        self.manager.play_sound(sound_name = "effect/button_click", volume = 0.3)
-        self.click_func(*args)
-
     def update(self) -> None:
         if not self.enabled: return
         super().update()
         if self.hovering and not self.last_hovering:
-            self.manager.play_sound(sound_name = "effect/button_hover", volume = 0.1)
             self.text.style.fore_colour = self.colours.hover_colour
             self.text.style.colour = self.colours.hover_colour_shadow
             self.text.set_text(self.text_hover)

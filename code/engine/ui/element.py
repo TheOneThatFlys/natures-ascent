@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame
 from typing import TypeVar
 from ..node import Node
+from ..types import *
 from .style import Style
 
 T = TypeVar("T", bound = "Element")
@@ -77,6 +78,10 @@ class Element(Node):
 
         self.rect = self.image.get_rect()
         self.calculate_position()
+
+    def on_mouse_down(self, mouse_button: int, mouse_pos: Vec2) -> None:
+        for child in self.children:
+            child.on_mouse_down(mouse_button, mouse_pos)
 
     def set_style(self, new_style: Style) -> None:
         if self.style != new_style:

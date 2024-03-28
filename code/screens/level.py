@@ -485,6 +485,12 @@ class Level(Screen):
             for item in self.pause_ui.get_all_children():
                 item.redraw_image()
 
+    def on_mouse_down(self, button: int) -> None:
+        if self.paused:
+            self.pause_ui.on_mouse_down(button, pygame.mouse.get_pos())
+        else:
+            self.master_ui.on_mouse_down(button, pygame.mouse.get_pos())
+
     def debug(self) -> None:
         if self.debug_mode == 0 or self.debug_mode == 1: return
 
