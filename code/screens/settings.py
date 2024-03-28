@@ -1,8 +1,14 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..main import Game
+
 import pygame
 from engine import Screen, Node
 from engine.types import *
 from engine.ui import Element, Style, Text, Button
-import util
+from util import draw_background
+from util.constants import *
 
 from .common import TextButton, TextButtonColours
 
@@ -11,7 +17,7 @@ class SettingsUI(Element):
         super().__init__(
             parent = parent,
             style = Style(
-                image = util.draw_background(size),
+                image = draw_background(size),
                 alignment = "center-center"
             )
         )
@@ -31,19 +37,36 @@ class SettingsUI(Element):
             )
         ))
 
+    def redraw_image(self) -> None:
+        self.style.size = self.parent.rect.size
+        self.style.image = draw_background(self.style.size)
+        super().redraw_image()
+
 class SettingsScreen(Screen):
-    def __init__(self, game) -> None:
+    def __init__(self, game: Game) -> None:
         super().__init__(game)
-        self.ui = SettingsUI(self, self.rect.size)
+        self.ui = self.add_child(SettingsUI(self, self.rect.size))
+        self.exit_button = self.add_child(Button(
+            parent = self,
+            on_click = game.set_screen,
+            click_args = ["menu"],
+            style = Style(
+                image = pygame.Surface((TILE_SIZE, TILE_SIZE)),
+                alignment = "top-left",
+                offset = (TILE_SIZE, TILE_SIZE)
+            ),
+            hover_style = None
+        ))
 
     def on_resize(self, new_res: Vec2) -> None:
         self.ui.style.size = new_res
-        self.ui.style.image = util.draw_background(new_res)
         for child in self.ui.get_all_children():
             child.redraw_image()
 
     def update(self) -> None:
-        self.ui.update()
+        for child in self.children:
+            child.update()
 
     def render(self, window: pygame.Surface) -> None:
-        self.ui.render(window)
+        for child in self.children:
+            child.render(window)
