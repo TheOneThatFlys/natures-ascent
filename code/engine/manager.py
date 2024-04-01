@@ -36,8 +36,9 @@ class Manager():
         self.music_current: str = ""
 
         self.fps: int = fps
-        self._dt_constant: float = 60 / 1000 # makes dt values backwards compatible
-        self.dt: float = 1
+        self._dt_constant: float = 60 / 1000
+        self._dt_adjusted: float = 1
+        self._dt_raw: float = 1 / fps
 
         self._load_scale: int = 1
 
@@ -45,9 +46,18 @@ class Manager():
 
         pygame.mixer.set_num_channels(num_channels)
 
+    @property
+    def dt(self) -> None:
+        return self._dt_adjusted
+    
+    @property
+    def dt_raw(self) -> None:
+        return self._dt_raw
+
     def update_dt(self) -> None:
-        "Updates delta time for current frame. Should be called every frame"
-        self.dt = self._dt_constant * self.game.clock.get_time()
+        """Updates delta time for current frame. Should be called every frame"""
+        self._dt_raw = self.game.clock.get_time()
+        self._dt_adjusted = self._dt_constant * self.game.clock.get_time()
 
     def add_object(self, id: str, node: Node) -> Node:
         self.objects[id] = node
@@ -64,12 +74,12 @@ class Manager():
             self.groups[name] = pygame.sprite.Group()
 
     def cleanup(self) -> None:
-        "Call this when switching scenes to avoid memory buildup."
+        """Call this when switching scenes to avoid memory buildup."""
         self.groups = {}
         self.objects = {}
 
     def set_pixel_scale(self, scale: int) -> None:
-        "Set scale for loading assets"
+        """Set scale for loading assets"""
         self._load_scale = scale
 
     def set_cursor(self, cursor_enum) -> None:
