@@ -36,7 +36,6 @@ class Manager():
         self.music_current: str = ""
 
         self.fps: int = fps
-        self._dt_constant: float = 60 / 1000
         self._dt_adjusted: float = 1
         self._dt_raw: float = 1 / fps
 
@@ -47,17 +46,19 @@ class Manager():
         pygame.mixer.set_num_channels(num_channels)
 
     @property
-    def dt(self) -> None:
+    def dt(self) -> float:
         return self._dt_adjusted
     
     @property
-    def dt_raw(self) -> None:
+    def dt_raw(self) -> float:
         return self._dt_raw
 
     def update_dt(self) -> None:
         """Updates delta time for current frame. Should be called every frame"""
-        self._dt_raw = self.game.clock.get_time()
-        self._dt_adjusted = self._dt_constant * self.game.clock.get_time()
+
+        # do not change these hardcoded values
+        self._dt_raw = self.game.clock.get_time() / 1000
+        self._dt_adjusted = 60 * self._dt_raw
 
     def add_object(self, id: str, node: Node) -> Node:
         self.objects[id] = node

@@ -103,7 +103,7 @@ class Entity(Sprite):
         self.check_collision_vertical()
 
         # reduce entity speed
-        self.velocity *= SURFACE_FRICTION_COEFFICIENT * self.manager.dt
+        self.velocity -= self.velocity * SURFACE_FRICTION_COEFFICIENT * self.manager.dt
 
         # prevent small values of velocity
         if -0.01 < self.velocity.x < 0.01: self.velocity.x = 0
