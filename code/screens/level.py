@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
     from ..main import Game
@@ -14,6 +14,7 @@ from entity import Player
 from world import FloorManager, Tile, Room
 
 from .common import TextButtonColours, TextButton, IconText
+from .settings import SettingsUI
 
 class HealthBar(ui.Element):
     BAR_PADDING = 4
@@ -360,11 +361,23 @@ class PauseUI(ui.Element):
             on_click = self._on_exit_click
         ))
 
+        self.settings_ui = self.add_child(SettingsUI(self, pygame.Vector2(self.rect.size) / 100))
+        print(self.settings_ui.style.size)
+        self.in_settings = False
+        self.toggle_settings(False)
+    
+    def toggle_settings(self, override: Optional[bool] = None) -> None:
+        """Toggles visibility of settings menu. Will use override value if provided"""
+        self.settings_ui.style.visible = override if override != None else not self.settings_ui.style.visible
+        self.in_settings = self.settings_ui.style.visible
+        if self.settings_ui.style.visible == True:
+            self.settings_ui.redraw_image()
+
     def _on_resume_click(self) -> None:
         self.parent.toggle_pause()
 
     def _on_options_click(self) -> None:
-        pass
+        self.toggle_settings()
 
     def _on_exit_click(self) -> None:
         self.parent.parent.set_screen("menu")
@@ -375,21 +388,31 @@ class PauseUI(ui.Element):
         pygame.draw.rect(surf, (26, 30, 36), [0, 0, *size], width = border_width)
         return surf
 
+    def _blur_image(self, image: pygame.Surface, strength: int = 2) -> pygame.Surface:
+        return pygame.transform.gaussian_blur(image, strength)
+
     def toggle(self, pause_frame: pygame.Surface) -> None:
+        self.toggle_settings(False)
         self.style.visible = not self.style.visible
         self.pause_frame = pause_frame
+        self.style.size = pause_frame.get_size()
+        self.redraw_image()
         if self.style.visible:
-            self.redraw_image()
+            for item in self.get_all_children():
+                item.redraw_image()
 
     def redraw_image(self) -> None:
         super().redraw_image()
 
         if self.pause_frame:
             self.image = self._blur_image(self.pause_frame)
-
-    def _blur_image(self, image: pygame.Surface, strength: int = 2) -> pygame.Surface:
-        return pygame.transform.gaussian_blur(image, strength)
     
+    def update(self) -> None:
+        if not self.in_settings:
+            super().update()
+        else:
+            self.settings_ui.update()
+
     def render(self, surface: pygame.Surface) -> None:
         # save what the screen looks like without me
         self.pause_frame = surface.copy()
