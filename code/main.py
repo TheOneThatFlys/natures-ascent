@@ -16,6 +16,7 @@ from typing import Type
 from util.constants import *
 from engine import Screen, Manager
 from screens import Level, Menu, Settings
+from util import Logger
 
 class Game:
     # main game class that manages screens and pygame events
@@ -29,7 +30,7 @@ class Game:
 
         self.manager = Manager(self, fps = FPS, num_channels = 32)
         self.manager.set_pixel_scale(PIXEL_SCALE)
-        self.manager.load()
+        self.load_assets()
 
         pygame.display.set_icon(self.manager.get_image("menu/tree"))
 
@@ -43,6 +44,10 @@ class Game:
         self.add_screen("menu", Menu)
         self.add_screen("settings", Settings)
         self.set_screen("menu")
+
+    @Logger.time(msg = "Loaded assets in %t seconds")
+    def load_assets(self):
+        self.manager.load()
 
     def queue_close(self) -> None:
         "Quits program after current game loop finishes"
@@ -74,8 +79,8 @@ class Game:
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F9:
-                        print("[DEBUG] Reloading...")
-                        self.manager.load()
+                        Logger.debug("Reloading...")
+                        self.load_assets()
                         self.current_screen_instance = self._screens[self.current_screen](self)
                     self.current_screen_instance.on_key_down(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -101,4 +106,8 @@ class Game:
         pygame.quit()
 
 if __name__ == "__main__":
+    # initialise logging
+    Logger.allow_all()
+    Logger.info("Starting game.")
     Game().run()
+    Logger.info("Game closed successfully.")

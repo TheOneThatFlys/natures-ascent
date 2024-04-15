@@ -54,7 +54,7 @@ class Logger:
             def wrapper(*args, **kwargs):
                 start_time = time.perf_counter()
                 a = func(*args, **kwargs)
-                Logger.info(msg.replace("%t", str(round(time.perf_counter() - start_time, 2))))
+                Logger.debug(msg.replace("%t", str(round(time.perf_counter() - start_time, 3))))
                 return a
             return wrapper
         return outer
