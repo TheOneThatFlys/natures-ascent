@@ -14,6 +14,9 @@ class Node():
         pass
 
     def add_child(self, child: T) -> T:
+        if child.parent != self:
+            raise TypeError(f"Type mismatch: child must be initialised with correct parent ({self} : {child.parent})")
+        
         self.children.append(child)
         if hasattr(child, "id"):
             self.manager.add_object(child.id, child)
