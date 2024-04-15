@@ -361,8 +361,7 @@ class PauseUI(ui.Element):
             on_click = self._on_exit_click
         ))
 
-        self.settings_ui = self.add_child(SettingsUI(self, pygame.Vector2(self.rect.size) / 100))
-        print(self.settings_ui.style.size)
+        self.settings_ui = self.add_child(SettingsUI(self, self.calculate_settings_size()))
         self.in_settings = False
         self.toggle_settings(False)
     
@@ -371,7 +370,14 @@ class PauseUI(ui.Element):
         self.settings_ui.style.visible = override if override != None else not self.settings_ui.style.visible
         self.in_settings = self.settings_ui.style.visible
         if self.settings_ui.style.visible == True:
-            self.settings_ui.redraw_image()
+            self.settings_ui.style.size = self.calculate_settings_size()
+            for item in self.settings_ui.get_all_children():
+                item.redraw_image()
+
+    def calculate_settings_size(self) -> pygame.Vector2:
+        if self.pause_frame == None:
+            return pygame.Vector2()
+        return pygame.Vector2(self.pause_frame.get_size()) / 1.8
 
     def _on_resume_click(self) -> None:
         self.parent.toggle_pause()
@@ -391,12 +397,17 @@ class PauseUI(ui.Element):
     def _blur_image(self, image: pygame.Surface, strength: int = 2) -> pygame.Surface:
         return pygame.transform.gaussian_blur(image, strength)
 
+    def on_mouse_down(self, mouse_button: int, mouse_pos: Vec2) -> None:
+        if self.in_settings:
+            self.settings_ui.on_mouse_down(mouse_button, mouse_pos)
+        else:
+            super().on_mouse_down(mouse_button, mouse_pos)
+
     def toggle(self, pause_frame: pygame.Surface) -> None:
         self.toggle_settings(False)
         self.style.visible = not self.style.visible
         self.pause_frame = pause_frame
         self.style.size = pause_frame.get_size()
-        self.redraw_image()
         if self.style.visible:
             for item in self.get_all_children():
                 item.redraw_image()
@@ -406,6 +417,9 @@ class PauseUI(ui.Element):
 
         if self.pause_frame:
             self.image = self._blur_image(self.pause_frame)
+
+        if hasattr(self, "settings_ui") and self.in_settings:
+            self.settings_ui.style.size = self.calculate_settings_size()
     
     def update(self) -> None:
         if not self.in_settings:
@@ -452,7 +466,7 @@ class Level(Screen):
 
         self.debug_ui = self.master_ui.add_child(DebugUI(self.master_ui))
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
-        self.pause_ui = self.add_child(PauseUI(self))
+        self.pause_ui = PauseUI(self)
 
     def cycle_debug(self) -> None:
         """

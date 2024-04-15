@@ -45,7 +45,7 @@ class Game:
         self.add_screen("settings", Settings)
         self.set_screen("menu")
 
-    @Logger.time(msg = "Loaded assets in %t seconds")
+    @Logger.time(msg = "Loaded assets in %t seconds.")
     def load_assets(self):
         self.manager.load()
 
@@ -79,7 +79,6 @@ class Game:
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_F9:
-                        Logger.debug("Reloading...")
                         self.load_assets()
                         self.current_screen_instance = self._screens[self.current_screen](self)
                     self.current_screen_instance.on_key_down(event.key)

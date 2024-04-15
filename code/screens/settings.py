@@ -18,6 +18,7 @@ class SettingsUI(Element):
             parent = parent,
             style = Style(
                 image = draw_background(size),
+                size = size,
                 alignment = "center-center"
             )
         )
@@ -38,7 +39,6 @@ class SettingsUI(Element):
         ))
 
     def redraw_image(self) -> None:
-        self.style.size = self.parent.rect.size
         self.style.image = draw_background(self.style.size)
         super().redraw_image()
 
