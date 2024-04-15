@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 import pygame
 
 from util.constants import *
-from util import draw_background
+from util import draw_background, Logger
 from engine import Screen, Sprite, Node, ui
 from engine.types import *
 from entity import Player
@@ -394,8 +394,8 @@ class PauseUI(ui.Element):
         pygame.draw.rect(surf, (26, 30, 36), [0, 0, *size], width = border_width)
         return surf
 
-    def _blur_image(self, image: pygame.Surface, strength: int = 2) -> pygame.Surface:
-        return pygame.transform.gaussian_blur(image, strength)
+    def _blur_image(self, image: pygame.Surface, strength: int = 4) -> pygame.Surface:
+        return pygame.transform.box_blur(image, strength)
 
     def on_mouse_down(self, mouse_button: int, mouse_pos: Vec2) -> None:
         if self.in_settings:
