@@ -36,15 +36,13 @@ class TextButton(Button):
                 size = (1, 1),
                 alpha = 0
             ),
-            hover_style=None,
             on_click = on_click,
-            click_args = click_args
+            click_args = click_args,
+            enabled = enabled
             )
 
-        self.click_func = on_click if on_click else self.do_nothing
         self.colours = colours
         self.font_size = font_size
-        self.enabled = enabled
 
         text_size = self.manager.get_font("alagard", 32).size(text)
         self.style.size = text_size[0] + 4, text_size[1] + 4
