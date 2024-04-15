@@ -1,9 +1,11 @@
 from __future__ import annotations
-from typing import Literal
+from typing import Literal, Callable, TypeVar
 
-import datetime
+import datetime, time
 
 _logger_instance: Logger = None
+
+T = TypeVar("T")
 
 class Logger:
     INFO = "INFO"
@@ -47,6 +49,17 @@ class Logger:
         Logger.get()._log(msg, Logger.ERROR)
 
     @staticmethod
+    def time(msg: str = "%t"):
+        def outer(func):
+            def wrapper(*args, **kwargs):
+                start_time = time.perf_counter()
+                a = func(*args, **kwargs)
+                Logger.info(msg.replace("%t", str(round(time.perf_counter() - start_time, 2))))
+                return a
+            return wrapper
+        return outer
+
+    @staticmethod
     def get() -> Logger:
         global _logger_instance
         if not _logger_instance:
@@ -65,3 +78,16 @@ class Logger:
         else:
             with open(self.out_path, "a") as f:
                 f.write(logged_msg)
+
+
+if __name__ == "__main__":
+    # test timing
+    @Logger.time("executed in %t seconds")
+    def foo(test: int) -> int:
+        time.sleep(test)
+        return test
+    
+    Logger.allow_all()
+
+    a = foo(5)
+    print("return: " + str(a))
