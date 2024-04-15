@@ -106,3 +106,6 @@ class Element(Node):
         if c.parent != self:
             raise TypeError(f"Type mismatch: child must be initialised with correct parent ({self} : {c.parent})")
         return c
+    
+    def get_all_children(self) -> list[Element]:
+        return super().get_all_children()
