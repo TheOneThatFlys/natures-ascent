@@ -24,9 +24,8 @@ class Game:
     # main game class that manages screens and pygame events
     def __init__(self) -> None:
         
-        # set mode to keep image loader happy, then create an sdl window
-        # pygame.display.set_mode((1, 1))
-        self.window = pygame.Window("Nature's Ascent", SCREEN_SIZE)
+        self.window = pygame.Window("Nature's Ascent", STARTUP_SCREEN_SIZE)
+        self.display_surface: pygame.Surface = self.window.get_surface()
         self.clock = pygame.time.Clock()
 
         self.running = True
@@ -68,10 +67,12 @@ class Game:
 
     def set_windowed(self, new_size: Vec2) -> None:
         """Resizes the active window to the new resolution provided."""
-        Logger.info(f"Set video mode to WINDOWED ({new_size[0]}, {new_size[1]})")
         self.window.size = new_size
         self.window.borderless = False
         self.window.set_windowed()
+
+        self.current_screen_instance.on_resize(new_size)
+        Logger.info(f"Set video mode to WINDOWED ({new_size[0]}, {new_size[1]})")
 
     def set_fullscreen(self, *, borderless: bool = False) -> None:
         """Sets the active window to fullscreen (or borderless fullscreen if specified)."""
@@ -81,8 +82,9 @@ class Game:
             self.window.size = pygame.display.get_desktop_sizes()[0]
             Logger.info(f"Set video mode to BORDERLESS_WINDOW {self.window.size}")
         else:
-            Logger.info("Set video mode to FULLSCREEN")
             self.window.set_fullscreen(True)
+            Logger.info("Set video mode to FULLSCREEN")
+
         self.current_screen_instance.on_resize(self.window.size)
 
     def run(self) -> None:
@@ -100,14 +102,17 @@ class Game:
 
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_F9:
+                    if event.key == pygame.K_F9 and IN_DEBUG:
                         # debug hot reload
                         self.load_assets()
                         self.current_screen_instance = self._screens[self.current_screen](self)
 
-                    elif event.key == pygame.K_F11:
-                        # true fullscreen
-                        self.set_fullscreen(borderless=True)
+                    elif event.key == pygame.K_KP1:
+                        self.set_windowed(STARTUP_SCREEN_SIZE)
+                    elif event.key == pygame.K_KP2:
+                        self.set_fullscreen()
+                    elif event.key == pygame.K_KP3:
+                        self.set_fullscreen(borderless = True)
 
                     self.current_screen_instance.on_key_down(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -125,9 +130,9 @@ class Game:
             self.manager.load_cursor()
 
             # clear the window
-            self.window.get_surface().fill((0, 0, 0))
+            self.display_surface.fill((0, 0, 0))
             # draw screen to window
-            self.current_screen_instance.render(self.window.get_surface())
+            self.current_screen_instance.render(self.display_surface)
             self.window.flip()
 
         pygame.quit()

@@ -478,6 +478,7 @@ class Level(Screen):
         - 3: draw hitboxes including tiles and notice ranges
         - 4: draw z-indexes
         """
+        if not IN_DEBUG: return
         self.debug_mode += 1
         if self.debug_mode > 4:
             self.debug_mode = 0
@@ -601,14 +602,13 @@ class FollowCameraLayered(Sprite):
     def __init__(self, parent: Node, target_sprite: Sprite, follow_speed: float = 0.1, tolerence: float = 5) -> None:
         super().__init__(parent = parent, groups=["update"])
         self.id = "camera"
-        self.window = pygame.display.get_surface()
 
         self.target = target_sprite
         self.pos = pygame.Vector2(target_sprite.rect.center)
         self.follow_speed = follow_speed
         self.tolerence = tolerence
 
-        self.set_screen_size(self.window.get_size())
+        self.set_screen_size(self.parent.rect.size)
 
         self.offset = pygame.Vector2()
 

@@ -21,7 +21,7 @@ class Element(Node):
         if self.style.position == "relative":
             base_rect = self.parent.rect
         elif self.style.position == "absolute":
-            base_rect = pygame.display.get_surface().get_rect()
+            base_rect = self.manager.game.display_surface.get_rect()
         else:
             raise TypeError(f"Unknown position type: {self.style.position}")
 

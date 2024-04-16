@@ -69,7 +69,7 @@ class Manager():
         del self.objects[id]
 
     def get_object_from_id(self, id: str) -> Node:
-        return self.objects.get(id, None)
+        return self.objects[id]
 
     def add_groups(self, names: list[str]) -> None:
         for name in names:
