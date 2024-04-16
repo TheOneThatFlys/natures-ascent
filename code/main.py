@@ -1,6 +1,7 @@
 # TODO:
-# Settings: config loader
+# Rooms block player in
 # Enemies spawn randomly in rooms
+# Settings: config loader
 # Different rooms - shop etc
 # Weapon system - equip & inv
 # Weapon upgrades
@@ -139,7 +140,6 @@ class Game:
 
 def main():
     # initialise logging
-    random.seed(12323)
     Logger.allow_all()
     Logger.info("Starting game.")
     Game().run()

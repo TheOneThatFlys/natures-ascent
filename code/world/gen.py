@@ -100,6 +100,8 @@ class Room(Node):
 
         # store each alive enemy
         self.enemies = pygame.sprite.Group()
+        # store doors that appear when player arrives
+        self.temp_doors = pygame.sprite.Group()
 
         # store possible enemies which will be spawned upon room activation
         self._possible_enemies = enemies
@@ -210,9 +212,13 @@ class Room(Node):
                 rooms.append(self.parent.rooms[neighbour_pos])
         return rooms
 
+    def room_to_world_coord(self, room_coord: Vec2) -> Vec2:
+        """Convert a room based coord into a world pixel coordinate."""
+        return pygame.Vector2(self.origin) * TILE_SIZE * self.room_size + pygame.Vector2(room_coord) * TILE_SIZE
+
     def add_tile(self, image: pygame.Surface, relative_position: Vec2, collider: bool) -> None:
         # convert relative grid coords to world coords
-        position = pygame.Vector2(self.origin) * TILE_SIZE * self.room_size + pygame.Vector2(relative_position) * TILE_SIZE
+        position = self.room_to_world_coord(relative_position)
         # check if position is in a door
         if relative_position in self.door_positions and collider == True: return
         # add tile
@@ -224,6 +230,10 @@ class Room(Node):
         self._activated = True
         self.dark_overlay.queue_death()
 
+        # add doors
+        for pos in self.door_positions:
+            self.temp_doors.add(Tile(self, pygame.Surface((TILE_SIZE, TILE_SIZE)), self.room_to_world_coord(pos), True))
+
     def update(self) -> None:
         if not self._activated:
             player: Player = self.manager.get_object_from_id("player")
@@ -233,6 +243,7 @@ class Room(Node):
         if not self._completed and self._activated:
             if len(self.enemies) == 0:
                 self._completed = True
+                # remove doors
             self.enemies.update()
 
 class SpawnRoom(Room):

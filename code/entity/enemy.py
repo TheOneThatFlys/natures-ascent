@@ -19,8 +19,8 @@ class Enemy(Entity):
         self.add(self.manager.groups["enemy"])
         self.remove(self.manager.groups["update"])
 
-        self.animation_manager.add_animation("TEMP", [self.manager.get_image("error")])
-        self.image = self.animation_manager.set_animation("TEMP")
+        self.animation_manager.add_animation("__TEMP", [self.manager.get_image("error")])
+        self.image = self.animation_manager.set_animation("__TEMP")
 
         self.rect = self.image.get_frect(topleft = position)
 
@@ -81,9 +81,10 @@ class Enemy(Entity):
         if self.has_line_of_sight(self.player.rect.center):
             self.time_since_seen_player = 0
 
-        self.update_ai()
-        self.avoid_others()
-        self.check_player_collision()
+        if self.time_since_seen_player <= self.stats.attention_span:
+            self.update_ai()
+            self.avoid_others()
+            self.check_player_collision()
         
         super().update()
 
@@ -97,7 +98,7 @@ class Slime(Enemy):
             self.animation_manager.add_animation(dir, util.parse_spritesheet(rows[i], frame_count = 2))
         
         self.image = self.animation_manager.set_animation(random.choice(directions))
-        self.rect = self.image.get_rect(topleft = position)
+        self.rect = self.image.get_frect(topleft = position)
 
     def update(self) -> None:
         super().update()
