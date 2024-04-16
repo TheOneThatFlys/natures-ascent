@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Literal, Callable, TypeVar
 
-import datetime, time
+import datetime, time, traceback
 
 _logger_instance: Logger = None
 
@@ -45,8 +45,8 @@ class Logger:
         Logger.get()._log(msg, Logger.WARNING)
 
     @staticmethod
-    def error(msg: str) -> None:
-        Logger.get()._log(msg, Logger.ERROR)
+    def error(msg: str, e: Exception) -> None:
+        Logger.get()._log(f"{msg} ({e})", Logger.ERROR)
 
     @staticmethod
     def time(msg: str = "%t"):

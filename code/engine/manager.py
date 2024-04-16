@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame, time, os
+from util.logger import Logger
 
 if TYPE_CHECKING:
     from .node import Node
@@ -120,7 +121,11 @@ class Manager():
                 loaded_asset = None
 
                 if extension == "png":
-                    loaded_asset = pygame.image.load(fullpath).convert_alpha()
+                    try:
+                        loaded_asset = pygame.image.load(fullpath).convert_alpha()
+                    except pygame.error as e:
+                        Logger.error(f"Could not load image file at {fullpath}.", e)
+
                     # scale asset up
                     loaded_asset = pygame.transform.scale(
                         loaded_asset,

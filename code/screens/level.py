@@ -435,7 +435,7 @@ class PauseUI(ui.Element):
 class Level(Screen):
     def __init__(self, game: Game, debug_mode: int = 0) -> None:
         super().__init__(parent = game)
-        self.game_surface = pygame.Surface(game.window.get_size())
+        self.game_surface = pygame.Surface(self.rect.size)
 
         self.manager.add_groups(["render", "update", "collide", "enemy"])
         self.manager.add_object("level", self)

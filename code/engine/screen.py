@@ -5,7 +5,7 @@ from .types import *
 class Screen(Node):
     def __init__(self, parent: Node) -> None:
         super().__init__(parent)
-        self.rect = parent.window.get_rect()
+        self.rect = parent.window.get_surface().get_rect()
         
     def on_key_down(self, key: int) -> None:
         pass
