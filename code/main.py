@@ -137,10 +137,13 @@ class Game:
 
         pygame.quit()
 
-if __name__ == "__main__":
+def main():
     # initialise logging
     random.seed(12323)
     Logger.allow_all()
     Logger.info("Starting game.")
     Game().run()
     Logger.info("Game closed successfully.")
+
+if __name__ == "__main__":
+    main()

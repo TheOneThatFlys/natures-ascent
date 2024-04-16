@@ -43,8 +43,7 @@ class Player(Entity):
         self._load_animations()
         self.image = self.animation_manager.set_animation("idle-right")
 
-        self.rect = self.image.get_rect(topleft = start_pos)
-        self.pos.xy = self.rect.topleft
+        self.rect = self.image.get_frect(topleft = start_pos)
 
         self.health_bar.health_colour = (60, 222, 34)
 

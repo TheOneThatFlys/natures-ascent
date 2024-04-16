@@ -289,7 +289,7 @@ class DebugUI(ui.Element):
             self.fps.set_text(f"{round(60 / self.manager.dt)} fps")
             self.update_timer = 0
 
-        self.position.set_text(f"x: {round(self.player.pos.x)} y: {round(self.player.pos.y)}")
+        self.position.set_text(f"x: {round(self.player.rect.x)} y: {round(self.player.rect.y)}")
         self.mode.set_text(f"mode: {self.level.debug_mode}")
 
 class PauseUI(ui.Element):

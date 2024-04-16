@@ -17,12 +17,12 @@ class Enemy(Entity):
         self.stats: EnemyStats
         
         self.add(self.manager.groups["enemy"])
+        self.remove(self.manager.groups["update"])
 
         self.animation_manager.add_animation("TEMP", [self.manager.get_image("error")])
         self.image = self.animation_manager.set_animation("TEMP")
 
-        self.rect = self.image.get_rect(topleft = position)
-        self.pos.xy = self.rect.topleft
+        self.rect = self.image.get_frect(topleft = position)
 
         # some useful info for subclasses
         self.time_since_seen_player = math.inf

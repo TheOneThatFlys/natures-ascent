@@ -233,6 +233,7 @@ class Room(Node):
         if not self._completed and self._activated:
             if len(self.enemies) == 0:
                 self._completed = True
+            self.enemies.update()
 
 class SpawnRoom(Room):
     def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:

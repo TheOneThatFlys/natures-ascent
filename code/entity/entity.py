@@ -12,7 +12,6 @@ class Entity(Sprite):
     def __init__(self, parent: Node, stats: EntityStats, health_bar_mode: HealthBarMode = "normal") -> None:
         super().__init__(parent, groups = ["render", "update"])
         self.velocity = pygame.Vector2()
-        self.pos = pygame.Vector2()
         self.stats = stats
 
         self.animation_manager: AnimationManager = self.add_child(AnimationManager(self))
@@ -38,35 +37,32 @@ class Entity(Sprite):
         else:
             self.health_bar.show()
 
-    def check_collision_vertical(self) -> None:
+    def check_collision_vertical(self, collide_group: list[Sprite]) -> None:
         # get future position of hitbox
-        future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
-        for sprite in self.manager.groups["collide"].sprites():
+        future_player_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
+        for sprite in collide_group:
             if sprite == self: continue
             if sprite.rect.colliderect(future_player_rect):
                 # move self so that it no longer colliding
                 if self.velocity.y > 0:
-                    future_player_rect.bottom = sprite.rect.top
-                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
+                    self.rect.bottom = sprite.rect.top
                     return
                 elif self.velocity.y < 0:
                     future_player_rect.top = sprite.rect.bottom
-                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish) 
+                    self.rect.bottom = future_player_rect.bottom
                     return
 
-    def check_collision_horizontal(self) -> None:
+    def check_collision_horizontal(self, collide_group: list[Sprite]) -> None:
         # see Entity.check_collision_vertical()
-        future_player_rect = pygame.Rect(self.pos.x, self.pos.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
-        for sprite in self.manager.groups["collide"].sprites():
+        future_player_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
+        for sprite in collide_group:
             if sprite == self: continue
             if sprite.rect.colliderect(future_player_rect):
                 if self.velocity.x > 0:
-                    future_player_rect.right = sprite.rect.left
-                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
+                    self.rect.right = sprite.rect.left
                     return
                 elif self.velocity.x < 0:
-                    future_player_rect.left = sprite.rect.right
-                    self.pos = pygame.Vector2(future_player_rect.x, future_player_rect.y - self.rect.height / self.hitbox_squish)
+                    self.rect.left = sprite.rect.right
                     return
 
     def add_velocity(self, velocity: pygame.Vector2) -> None:
@@ -75,7 +71,7 @@ class Entity(Sprite):
 
     def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
         if self.iframes == 0:
-            kbv = self.pos - other.pos
+            kbv = pygame.Vector2(self.rect.center) - other.rect.center
             kbv.scale_to_length(kb_magnitude)
             self.add_velocity(kbv)
 
@@ -97,10 +93,10 @@ class Entity(Sprite):
         # checking collisions of one direction at a time
         # ensures that an overlap of bounds is due to the
         # movement of one direction
-        self.pos.x += self.velocity.x * self.manager.dt
-        self.check_collision_horizontal()
-        self.pos.y += self.velocity.y * self.manager.dt
-        self.check_collision_vertical()
+        self.rect.x += self.velocity.x * self.manager.dt
+        self.check_collision_horizontal(self.manager.groups["collide"])
+        self.rect.y += self.velocity.y * self.manager.dt
+        self.check_collision_vertical(self.manager.groups["collide"])
 
         # reduce entity speed
         self.velocity -= self.velocity * SURFACE_FRICTION_COEFFICIENT * self.manager.dt
@@ -108,9 +104,6 @@ class Entity(Sprite):
         # prevent small values of velocity
         if -0.01 < self.velocity.x < 0.01: self.velocity.x = 0
         if -0.01 < self.velocity.y < 0.01: self.velocity.y = 0
-
-        # readjust hitbox to precise position
-        self.rect.topleft = self.pos
 
     def update(self) -> None:
         super().update()
