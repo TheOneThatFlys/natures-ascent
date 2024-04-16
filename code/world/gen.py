@@ -169,6 +169,7 @@ class Room(Node):
         # add floors
         for x in range(self.room_size):
             for y in range(self.room_size):
+                if (x, y) in self.wall_tiles: continue
                 self.add_tile(self.parent.grass_tileset.get(random.randint(0, 3)), (x, y), False)
 
     def get_door_position(self, direction: Direction) -> tuple[Vec2, Vec2]:

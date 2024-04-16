@@ -10,7 +10,7 @@ from __future__ import annotations
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
-import pygame
+import pygame, random
 pygame.init()
 from typing import Type
 from engine import Screen, Manager
@@ -139,6 +139,7 @@ class Game:
 
 if __name__ == "__main__":
     # initialise logging
+    random.seed(12323)
     Logger.allow_all()
     Logger.info("Starting game.")
     Game().run()

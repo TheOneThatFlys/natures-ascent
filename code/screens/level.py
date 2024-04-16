@@ -575,6 +575,8 @@ class Level(Screen):
         self.master_ui.update()
         self.floor_manager.update()
 
+        ### print(f"update: {len(self.manager.groups['update'])} render: {len(self.manager.groups['render'])}")
+
     def render(self, surface: pygame.Surface) -> None:
         # clear game surface
         self.game_surface.fill((51, 22, 31))
@@ -633,6 +635,7 @@ class FollowCameraLayered(Sprite):
         self.offset.y = int(self.pos.y) - self.half_screen_size.y
 
         # render sprites sorted in y position and z index
-        for sprite in sorted(sprite_group.sprites(), key = lambda s: (s.z_index, s.rect.centery)):
-            new_pos = (sprite.rect.x - self.offset.x + sprite.render_offset[0], sprite.rect.y - self.offset.y + sprite.render_offset[1])
-            surface.blit(sprite.image, new_pos)
+        surface.blits(
+            (s.image, (s.rect.x - self.offset.x + s.render_offset[0], s.rect.y - self.offset.y + s.render_offset[1]))
+            for s in sorted(sprite_group.sprites(), key = lambda x: (x.z_index, x.rect.centery))
+        )

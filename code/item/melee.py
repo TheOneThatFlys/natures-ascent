@@ -18,6 +18,7 @@ class WeaponStats:
 class MeleeWeaponAttack(Sprite):
     def __init__(self, parent: Node, stats: WeaponStats, direction: Direction) -> None:
         super().__init__(parent, groups = ["update"])
+        self.z_index = 1
 
         self.rect = pygame.Rect(0, 0, *stats.size)
         self._hit_enemies = [] # keep track of hit enemies
