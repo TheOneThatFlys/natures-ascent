@@ -14,9 +14,9 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import pygame, random
 pygame.init()
 from typing import Type
-from engine import Screen, Manager
+from engine import Screen, Manager, Logger
 from screens import Level, Menu, Settings
-from util import Logger
+from util import DebugWindow
 
 from engine.types import *
 from util.constants import *
@@ -36,6 +36,12 @@ class Game:
         self.load_assets()
 
         self.window.set_icon(self.manager.get_image("menu/tree"))
+
+        self.manager.add_window(self.window, "main")
+
+        if IN_DEBUG:
+            self.debug_window = DebugWindow(self)
+            self.manager.add_window(self.debug_window.window, "debug")
 
         # dictionary to hold screens
         self._screens: dict[str, Type[Screen]] = {}
@@ -63,6 +69,7 @@ class Game:
     def set_screen(self, screen_name: str) -> None:
         "Sets the current screen based on screen name"
         if screen_name == self.current_screen: return
+        self.manager.cleanup()
         self.current_screen = screen_name
         self.current_screen_instance = self._screens[screen_name](self)
 
@@ -98,8 +105,11 @@ class Game:
 
             # poll events
             for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.queue_close()
+                if event.type == pygame.WINDOWCLOSE:
+                    if event.window == self.window:
+                        self.queue_close()
+                    elif IN_DEBUG and event.window == self.manager.get_window("debug"):
+                        self.debug_window.kill()
 
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:

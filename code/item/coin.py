@@ -14,7 +14,7 @@ class Coin(Sprite):
         self.rect = self.image.get_rect(center = (position[0] + random.randint(-randomness, randomness), position[1] + random.randint(-randomness, randomness)))
         self.pos = pygame.Vector2(self.rect.center)
 
-        self.player = self.manager.get_object_from_id("player")
+        self.player = self.manager.get_object("player")
 
     def kill(self) -> None:
         self.manager.play_sound("effect/coin", 0.05)

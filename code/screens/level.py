@@ -7,8 +7,8 @@ if TYPE_CHECKING:
 import pygame
 
 from util.constants import *
-from util import draw_background, Logger
-from engine import Screen, Sprite, Node, ui
+from util import draw_background
+from engine import Screen, Sprite, Node, Logger, ui
 from engine.types import *
 from entity import Player
 from world import FloorManager, Tile, Room
@@ -41,7 +41,7 @@ class HealthBar(ui.Element):
         self.background_colour = background_colour
         self.text_colour = text_colour
 
-        self.player = self.manager.get_object_from_id("player")
+        self.player = self.manager.get_object("player")
 
     def update(self) -> None:
         self.image = pygame.Surface(self.image.get_size(), pygame.SRCALPHA)
@@ -77,8 +77,8 @@ class Map(ui.Element):
     def __init__(self, parent: Node, style: ui.Style, scale = 32) -> None:
         super().__init__(parent, style = style)
 
-        self.floor_manager: FloorManager = self.manager.get_object_from_id("floor-manager")
-        self.player: Player = self.manager.get_object_from_id("player")
+        self.floor_manager: FloorManager = self.manager.get_object("floor-manager")
+        self.player: Player = self.manager.get_object("player")
         self.scale = scale
 
         self.border_colour = (51, 22, 31)
@@ -227,8 +227,8 @@ class HudUI(ui.Element):
             )
         ))
 
-        self.floor: FloorManager = self.manager.get_object_from_id("floor-manager")
-        self.player: Player = self.manager.get_object_from_id("player")
+        self.floor: FloorManager = self.manager.get_object("floor-manager")
+        self.player: Player = self.manager.get_object("player")
 
     def update(self) -> None:
         super().update()
@@ -279,8 +279,8 @@ class DebugUI(ui.Element):
 
         self.update_timer = 0
         
-        self.player: Player = self.manager.get_object_from_id("player")
-        self.level: Level = self.manager.get_object_from_id("level")
+        self.player: Player = self.manager.get_object("player")
+        self.level: Level = self.manager.get_object("level")
 
     def update(self) -> None:
         self.update_timer += self.manager.dt
@@ -442,7 +442,7 @@ class Level(Screen):
 
         self.floor_manager = self.add_child(FloorManager(self, room_size = 12))
         self.floor_manager.generate()
-        self.player = self.manager.get_object_from_id("player")
+        self.player = self.manager.get_object("player")
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
 
         self.debug_mode = 0

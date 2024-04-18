@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import pygame, time, os
-from util.logger import Logger
+from .logger import Logger
 
 if TYPE_CHECKING:
     from .node import Node
@@ -31,6 +31,8 @@ class Manager():
         self.groups: dict[str, pygame.sprite.Group] = {}
         # stores objects of interest
         self.objects: dict = {}
+        # stores windows
+        self.windows: dict[str, pygame.Window] = {}
         # stores loaded assets
         self.assets: dict = {"image": {}, "sound": {}, "font": {}}
         # store current playing music
@@ -65,10 +67,16 @@ class Manager():
         self.objects[id] = node
         return node
     
+    def add_window(self, window: pygame.Window, id: str) -> pygame.Window:
+        self.windows[id] = window
+
+    def get_window(self, id: str) -> pygame.Window:
+        return self.windows[id]
+    
     def remove_object(self, id: str) -> None:
         del self.objects[id]
 
-    def get_object_from_id(self, id: str) -> Node:
+    def get_object(self, id: str) -> Node:
         return self.objects[id]
 
     def add_groups(self, names: list[str]) -> None:

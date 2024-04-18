@@ -28,7 +28,7 @@ class Enemy(Entity):
         self.time_since_seen_player = math.inf
         self.has_seen_player = False
 
-        self.player = self.manager.get_object_from_id("player")
+        self.player = self.manager.get_object("player")
 
     def follow_player(self) -> None:
         if (pygame.Vector2(self.rect.center) - pygame.Vector2(self.player.rect.center)).magnitude() < 12: return
@@ -61,7 +61,7 @@ class Enemy(Entity):
 
     def kill(self) -> None:
         self.manager.play_sound(sound_name = "effect/squelch", volume = 0.5)
-        level = self.manager.get_object_from_id("level")
+        level = self.manager.get_object("level")
         # add coins
         for _ in range(self.stats.value):
             level.add_child(Coin(level, (self.rect.centerx, self.rect.bottom)))

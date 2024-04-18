@@ -38,7 +38,7 @@ class MeleeWeaponAttack(Sprite):
         # check if hitting enemy
         for enemy in self.manager.groups["enemy"].sprites():
             if self.rect.colliderect(enemy.rect) and not enemy in self._hit_enemies:
-                enemy.hit(self.manager.get_object_from_id("player"), damage = self.stats.damage, kb_magnitude = self.stats.knockback)
+                enemy.hit(self.manager.get_object("player"), damage = self.stats.damage, kb_magnitude = self.stats.knockback)
                 self._hit_enemies.append(enemy)
 
     def _stick_to_parent_position(self) -> None:

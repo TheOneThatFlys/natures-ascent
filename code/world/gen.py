@@ -236,7 +236,7 @@ class Room(Node):
 
     def update(self) -> None:
         if not self._activated:
-            player: Player = self.manager.get_object_from_id("player")
+            player: Player = self.manager.get_object("player")
             if player.rect.colliderect(self.bounding_rect):
                 self.activate()
 
