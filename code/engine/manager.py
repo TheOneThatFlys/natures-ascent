@@ -29,12 +29,19 @@ class Manager():
 
         # stores groups
         self.groups: dict[str, pygame.sprite.Group] = {}
+
         # stores objects of interest
         self.objects: dict = {}
+
         # stores windows
         self.windows: dict[str, pygame.Window] = {}
+
+        # stores mouse positions of windows
+        self._window_mouse_positions: dict[str, tuple[int, int]] = {}
+
         # stores loaded assets
         self.assets: dict = {"image": {}, "sound": {}, "font": {}}
+
         # store current playing music
         self.music_current: str = ""
 
@@ -69,6 +76,7 @@ class Manager():
     
     def add_window(self, window: pygame.Window, id: str) -> pygame.Window:
         self.windows[id] = window
+        self._window_mouse_positions[id] = (-1, -1)
 
     def get_window(self, id: str) -> pygame.Window:
         return self.windows[id]
@@ -82,6 +90,13 @@ class Manager():
     def add_groups(self, names: list[str]) -> None:
         for name in names:
             self.groups[name] = pygame.sprite.Group()
+
+    def get_mouse_pos(self, window_id: str = "main") -> tuple[int, int]:
+        """Get mouse position in the given window"""
+        return self._window_mouse_positions[window_id]
+    
+    def on_mouse_motion(self, position: tuple[int, int], window_id: str) -> None:
+        self._window_mouse_positions[window_id] = position
 
     def cleanup(self) -> None:
         """Call this when switching scenes to avoid memory buildup."""

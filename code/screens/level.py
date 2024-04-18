@@ -525,9 +525,9 @@ class Level(Screen):
 
     def on_mouse_down(self, button: int) -> None:
         if self.paused:
-            self.pause_ui.on_mouse_down(button, pygame.mouse.get_pos())
+            self.pause_ui.on_mouse_down(button, self.manager.get_mouse_pos())
         else:
-            self.master_ui.on_mouse_down(button, pygame.mouse.get_pos())
+            self.master_ui.on_mouse_down(button, self.manager.get_mouse_pos())
 
     def debug(self) -> None:
         if self.debug_mode == 0 or self.debug_mode == 1: return

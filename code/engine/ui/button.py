@@ -46,7 +46,7 @@ class Button(Element):
     def update(self) -> None:
         super().update()
 
-        mouse_pos = pygame.mouse.get_pos()
+        mouse_pos = self.manager.get_mouse_pos()
         self.last_hovering = self.hovering
         self.clicking = False
         self.hovering = False

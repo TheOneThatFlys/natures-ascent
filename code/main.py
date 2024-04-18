@@ -78,6 +78,9 @@ class Game:
         self.window.size = new_size
         self.window.borderless = False
         self.window.set_windowed()
+        # place window in the middle of the monitor
+        desktop_size = pygame.display.get_desktop_sizes()[0]
+        self.window.position = (desktop_size[0] / 2 - self.window.size[0] / 2, desktop_size[1] / 2 - self.window.size[1] / 2)
 
         self.current_screen_instance.on_resize(new_size)
         Logger.info(f"Set video mode to WINDOWED ({new_size[0]}, {new_size[1]})")
@@ -111,12 +114,24 @@ class Game:
                     elif IN_DEBUG and event.window == self.manager.get_window("debug"):
                         self.debug_window.kill()
 
+                if event.type == pygame.MOUSEMOTION:
+                    self.manager.on_mouse_motion(event.pos, list(self.manager.windows.keys())[list(self.manager.windows.values()).index(event.window)])
+
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_F9 and IN_DEBUG:
-                        # debug hot reload
-                        self.load_assets()
-                        self.current_screen_instance = self._screens[self.current_screen](self)
+                    # debug hotkeys
+                    if IN_DEBUG:
+                        # hot reload
+                        if event.key == pygame.K_F9:
+                            self.load_assets()
+                            self.current_screen_instance = self._screens[self.current_screen](self)
+                        # screen changes
+                        elif event.key == pygame.K_F10:
+                            self.set_windowed(STARTUP_SCREEN_SIZE)
+                        elif event.key == pygame.K_F11:
+                            self.set_fullscreen(borderless = True)
+                        elif event.key == pygame.K_F12:
+                            self.set_fullscreen()
 
                     elif event.key == pygame.K_KP1:
                         self.set_windowed(STARTUP_SCREEN_SIZE)
@@ -145,6 +160,9 @@ class Game:
             # draw screen to window
             self.current_screen_instance.render(self.display_surface)
             self.window.flip()
+
+            if IN_DEBUG:
+                self.debug_window.update()
 
         pygame.quit()
 
