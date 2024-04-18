@@ -64,9 +64,8 @@ class SettingsScreen(Screen):
             child.redraw_image()
 
     def on_mouse_down(self, button: int) -> None:
-        pos = self.manager.get_mouse_pos()
-        self.ui.on_mouse_down(button, pos)
-        self.exit_button.on_mouse_down(button, pos)
+        self.ui.on_mouse_down(button)
+        self.exit_button.on_mouse_down(button)
 
     def update(self) -> None:
         for child in self.children:

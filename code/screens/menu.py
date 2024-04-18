@@ -118,7 +118,7 @@ class Menu(Screen):
             item.redraw_image()
 
     def on_mouse_down(self, button: int) -> None:
-        self.master_container.on_mouse_down(button, self.manager.get_mouse_pos())
+        self.master_container.on_mouse_down(button)
 
     def render(self, window) -> None:
         self.master_container.render(window)

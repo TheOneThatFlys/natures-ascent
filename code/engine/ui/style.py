@@ -4,7 +4,7 @@ import pygame
 from dataclasses import dataclass, replace, fields
 from ..types import *
 
-@dataclass
+@dataclass(unsafe_hash = True)
 class Style:
     visible: bool = True
     size: Vec2 = (0, 0)

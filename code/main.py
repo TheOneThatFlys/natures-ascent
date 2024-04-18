@@ -109,12 +109,10 @@ class Game:
             # poll events
             for event in pygame.event.get():
                 if event.type == pygame.WINDOWCLOSE:
-                    if event.window == self.window:
-                        self.queue_close()
-                    elif IN_DEBUG and event.window == self.manager.get_window("debug"):
-                        self.debug_window.kill()
+                    self.queue_close()
 
                 if event.type == pygame.MOUSEMOTION:
+                    # ------------------------------------- vvvvvv little hack to get key from a value in a dict
                     self.manager.on_mouse_motion(event.pos, list(self.manager.windows.keys())[list(self.manager.windows.values()).index(event.window)])
 
                 # delegate certain events to current screen
@@ -143,8 +141,11 @@ class Game:
                     self.current_screen_instance.on_key_down(event.key)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     self.current_screen_instance.on_mouse_down(event.button)
-                elif event.type == pygame.VIDEORESIZE:
-                    self.current_screen_instance.on_resize(event.size)
+                elif event.type == pygame.WINDOWRESIZED:
+                    if event.window == "main":
+                        self.current_screen_instance.on_resize((event.x, event.y))
+                    elif event.window == "debug":
+                        self.debug_window.on_resize((event.x, event.y))
 
             # reset cursor image
             self.manager.set_cursor(pygame.SYSTEM_CURSOR_ARROW)

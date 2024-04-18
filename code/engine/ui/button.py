@@ -37,9 +37,9 @@ class Button(Element):
     def __do_nothing(self) -> None:
         pass # do nothing
 
-    def on_mouse_down(self, mouse_button: int, mouse_pos: Vec2) -> None:
-        super().on_mouse_down(mouse_button, mouse_pos)
-        if self.rect.collidepoint(mouse_pos) and self.enabled:
+    def on_mouse_down(self, mouse_button: int) -> None:
+        super().on_mouse_down(mouse_button)
+        if self.rect.collidepoint(self.manager.get_mouse_pos()) and self.enabled:
             if self.click_sound: self.manager.play_sound(self.click_sound, 0.3)
             self.on_click(*self.click_args)
 

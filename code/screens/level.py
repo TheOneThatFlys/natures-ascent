@@ -397,11 +397,11 @@ class PauseUI(ui.Element):
     def _blur_image(self, image: pygame.Surface, strength: int = 4) -> pygame.Surface:
         return pygame.transform.box_blur(image, strength)
 
-    def on_mouse_down(self, mouse_button: int, mouse_pos: Vec2) -> None:
+    def on_mouse_down(self, mouse_button: int) -> None:
         if self.in_settings:
-            self.settings_ui.on_mouse_down(mouse_button, mouse_pos)
+            self.settings_ui.on_mouse_down(mouse_button)
         else:
-            super().on_mouse_down(mouse_button, mouse_pos)
+            super().on_mouse_down(mouse_button)
 
     def toggle(self, pause_frame: pygame.Surface) -> None:
         self.toggle_settings(False)
@@ -525,9 +525,9 @@ class Level(Screen):
 
     def on_mouse_down(self, button: int) -> None:
         if self.paused:
-            self.pause_ui.on_mouse_down(button, self.manager.get_mouse_pos())
+            self.pause_ui.on_mouse_down(button)
         else:
-            self.master_ui.on_mouse_down(button, self.manager.get_mouse_pos())
+            self.master_ui.on_mouse_down(button)
 
     def debug(self) -> None:
         if self.debug_mode == 0 or self.debug_mode == 1: return

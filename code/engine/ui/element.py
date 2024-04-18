@@ -79,9 +79,9 @@ class Element(Node):
         self.rect = self.image.get_rect()
         self.calculate_position()
 
-    def on_mouse_down(self, mouse_button: int, mouse_pos: Vec2) -> None:
+    def on_mouse_down(self, mouse_button: int) -> None:
         for child in self.children:
-            child.on_mouse_down(mouse_button, mouse_pos)
+            child.on_mouse_down(mouse_button)
 
     def set_style(self, new_style: Style) -> None:
         if self.style != new_style:
