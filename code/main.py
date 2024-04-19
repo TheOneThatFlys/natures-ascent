@@ -144,7 +144,7 @@ class Game:
                 elif event.type == pygame.WINDOWRESIZED:
                     if event.window == "main":
                         self.current_screen_instance.on_resize((event.x, event.y))
-                    elif event.window == "debug":
+                    elif IN_DEBUG and event.window == "debug":
                         self.debug_window.on_resize((event.x, event.y))
 
             # reset cursor image

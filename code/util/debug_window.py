@@ -2,7 +2,7 @@ import pygame
 
 from typing import TYPE_CHECKING, Any
 
-from engine import Node, Logger
+from engine import Node, Logger, Manager
 from engine.ui import *
 from engine.types import *
 
@@ -40,21 +40,33 @@ class DebugWindow(Node):
         self.render_surface.blit(text_surf, position)
         self.current_line += 1
 
-    def render_lists(self) -> None:
+    def get_game_dict(self) -> dict:
+        ALLOWED_REC = (Node, Manager)
         seen = []
-        def __rec_render(d: dict, tab_index: int) -> None:
+        def __rec_get_dict(d: dict) -> None:
+            a = {}
             for k, v in d.items():
                 if k == "parent" or k == "manager" or v in seen: continue
-                if isinstance(v, Node):
+                if isinstance(v, ALLOWED_REC):
                     seen.append(v)
-                    if v == self.manager: print("a")
-                    self.render_line(f"----FOLDER----({v})", tab_index)
-                    __rec_render(v.__dict__, tab_index + 1)
+                    a[k] = __rec_get_dict(v.__dict__)
                 else:
-                    self.render_line(f"{k}: {v}", tab_index)
+                    a[k] = v
+            return a
+
+        return __rec_get_dict(self.manager.game.__dict__)
+
+    def render_lists(self) -> None:
+        def __rec_render(d: dict, tab_index: int):
+            for k, v in d.items():
+                if isinstance(v, dict):
+                    self.render_line(f"----folder---- ({k})", tab_index)
+                    __rec_render(v, tab_index + 1)
+                else:
+                    self.render_line(f"{k} = {v}", tab_index)
 
         self.current_line = 0
-        __rec_render(self.manager.game.__dict__, 0)
+        __rec_render(self.get_game_dict(), 0)
 
     def update(self) -> None:
         self.render_surface.fill((255, 255, 255))

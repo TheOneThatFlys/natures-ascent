@@ -1,7 +1,9 @@
+import sys
+
 STARTUP_SCREEN_SIZE = 1280, 720
 FPS = 60
 
-IN_DEBUG = True
+IN_DEBUG = "-debug" in sys.argv
 
 TILE_SIZE = 64
 PIXEL_SCALE = 2
