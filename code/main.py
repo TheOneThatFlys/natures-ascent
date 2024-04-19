@@ -162,6 +162,9 @@ class Game:
             # update screen instance
             self.current_screen_instance.update()
 
+            if IN_DEBUG:
+                self.debug_window.update()
+
             # call os to change cursor
             self.manager.load_cursor()
 
@@ -170,9 +173,6 @@ class Game:
             # draw screen to window
             self.current_screen_instance.render(self.display_surface)
             self.window.flip()
-
-            if IN_DEBUG:
-                self.debug_window.update()
 
         pygame.quit()
 
