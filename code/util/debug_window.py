@@ -30,49 +30,58 @@ class DebugWindow(Node):
         self.line_colour_1 = (255, 255, 255)
         self.line_colour_2 = (200, 200, 200)
 
+        self.expanded_folders: set[Node] = set()
+        self.folder_buttons: dict[Node, pygame.Rect] = []
+
+        self.scroll_offset = 0
+
     def get_game_data(self) -> dict:
         """Traverse through the whole game and extract every node and its values"""
         raise NotImplementedError()
 
-    def render_line(self, text: str, tab_index) -> None:
-        position = pygame.Vector2(tab_index * self.tab_length, self.current_line * self.line_height)
+    def render_line(self, text: str, tab_index) -> pygame.Rect:
+        position = pygame.Vector2(tab_index * self.tab_length, self.current_line * self.line_height + self.scroll_offset)
+        self.current_line += 1
+        if position.y < -50 or position.y > self.window.size[1]:
+            return None
         text_surf = self.font.render(text, True, self.text_colour)
         self.render_surface.blit(text_surf, position)
-        self.current_line += 1
+        return text_surf.get_rect(topleft = position)
 
-    def get_game_dict(self) -> dict:
+    def render_lists(self) -> dict:
         ALLOWED_REC = (Node, Manager)
         seen = []
-        def __rec_get_dict(d: dict) -> None:
-            a = {}
+        def __rec_render(d: dict, tab_index) -> None:
             for k, v in d.items():
                 if k == "parent" or k == "manager" or v in seen: continue
                 if isinstance(v, ALLOWED_REC):
                     seen.append(v)
-                    a[k] = __rec_get_dict(v.__dict__)
-                else:
-                    a[k] = v
-            return a
-
-        return __rec_get_dict(self.manager.game.__dict__)
-
-    def render_lists(self) -> None:
-        def __rec_render(d: dict, tab_index: int):
-            for k, v in d.items():
-                if isinstance(v, dict):
-                    self.render_line(f"----folder---- ({k})", tab_index)
-                    __rec_render(v, tab_index + 1)
+                    bounding_rect = self.render_line(f"----folder---- ({k})", tab_index)
+                    if bounding_rect: self.folder_buttons[v] = bounding_rect
+                    if v in self.expanded_folders:
+                        __rec_render(v.__dict__, tab_index + 1)
                 else:
                     self.render_line(f"{k} = {v}", tab_index)
 
         self.current_line = 0
-        __rec_render(self.get_game_dict(), 0)
+        self.folder_buttons = {}
+        __rec_render(self.manager.game.__dict__, 0)
+
+    def on_mouse_down(self, button: int) -> None:
+        mouse_pos = self.manager.get_mouse_pos("debug")
+        for node, rect in self.folder_buttons.items():
+            if rect.collidepoint(mouse_pos):
+                if node in self.expanded_folders:
+                    self.expanded_folders.remove(node)
+                else:
+                    self.expanded_folders.add(node)
+
+    def on_scroll(self, dx: int, dy: int) -> None:
+        self.scroll_offset += dy * 20
 
     def update(self) -> None:
         self.render_surface.fill((255, 255, 255))
-
         self.render_lists()
-
         self.window.flip()
 
     def on_resize(self, new_size: Vec2):

@@ -139,12 +139,21 @@ class Game:
                         self.set_fullscreen(borderless = True)
 
                     self.current_screen_instance.on_key_down(event.key)
+
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    self.current_screen_instance.on_mouse_down(event.button)
+                    if event.window == self.manager.get_window("main"):
+                        self.current_screen_instance.on_mouse_down(event.button)
+                    elif IN_DEBUG and event.window == self.manager.get_window("debug"):
+                        self.debug_window.on_mouse_down(event.button)
+
+                elif event.type == pygame.MOUSEWHEEL:
+                    if IN_DEBUG and event.window == self.manager.get_window("debug"):
+                        self.debug_window.on_scroll(event.x, event.y)
+
                 elif event.type == pygame.WINDOWRESIZED:
-                    if event.window == "main":
+                    if event.window == self.manager.get_window("main"):
                         self.current_screen_instance.on_resize((event.x, event.y))
-                    elif IN_DEBUG and event.window == "debug":
+                    elif IN_DEBUG and event.window == self.manager.get_window("debug"):
                         self.debug_window.on_resize((event.x, event.y))
 
             # reset cursor image
