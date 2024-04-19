@@ -13,7 +13,7 @@ class Screen(Node):
     def on_mouse_down(self, button: int) -> None:
         pass
 
-    def on_mouse_scroll(self, dy: int) -> None:
+    def on_scroll(self, dx: int, dy: int) -> None:
         pass
 
     def on_resize(self, new_res: Vec2) -> None:

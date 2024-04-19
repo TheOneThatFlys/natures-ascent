@@ -2,11 +2,11 @@ import pygame
 
 from typing import TYPE_CHECKING, Any
 
-from engine import Node, Logger, Manager
+from engine import Node, Logger, Manager, Screen
 from engine.ui import *
 from engine.types import *
 
-class DebugWindow(Node):
+class DebugWindow(Screen):
     def __init__(self, parent: Node) -> None:
         super().__init__(parent)
         self.window = pygame.Window("Nature's Ascent - Debug", (640, 480))

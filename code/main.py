@@ -108,6 +108,13 @@ class Game:
 
             # poll events
             for event in pygame.event.get():
+                screen_instance: Screen = self.current_screen_instance
+
+                # send events to debug window if focused
+                window = getattr(event, "window", None)
+                if IN_DEBUG and window == self.manager.get_window("debug"):
+                    screen_instance = self.debug_window
+
                 if event.type == pygame.WINDOWCLOSE:
                     self.queue_close()
 
@@ -138,23 +145,16 @@ class Game:
                     elif event.key == pygame.K_KP3:
                         self.set_fullscreen(borderless = True)
 
-                    self.current_screen_instance.on_key_down(event.key)
+                    screen_instance.on_key_down(event.key)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.window == self.manager.get_window("main"):
-                        self.current_screen_instance.on_mouse_down(event.button)
-                    elif IN_DEBUG and event.window == self.manager.get_window("debug"):
-                        self.debug_window.on_mouse_down(event.button)
+                    screen_instance.on_mouse_down(event.button)
 
                 elif event.type == pygame.MOUSEWHEEL:
-                    if IN_DEBUG and event.window == self.manager.get_window("debug"):
-                        self.debug_window.on_scroll(event.x, event.y)
+                    screen_instance.on_scroll(event.x, event.y)
 
                 elif event.type == pygame.WINDOWRESIZED:
-                    if event.window == self.manager.get_window("main"):
-                        self.current_screen_instance.on_resize((event.x, event.y))
-                    elif IN_DEBUG and event.window == self.manager.get_window("debug"):
-                        self.debug_window.on_resize((event.x, event.y))
+                    screen_instance.on_resize((event.x, event.y))
 
             # reset cursor image
             self.manager.set_cursor(pygame.SYSTEM_CURSOR_ARROW)
