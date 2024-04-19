@@ -230,10 +230,6 @@ class Room(Node):
         self._activated = True
         self.dark_overlay.queue_death()
 
-        # add doors
-        for pos in self.door_positions:
-            self.temp_doors.add(Tile(self, pygame.Surface((TILE_SIZE, TILE_SIZE)), self.room_to_world_coord(pos), True))
-
     def update(self) -> None:
         if not self._activated:
             player: Player = self.manager.get_object("player")
