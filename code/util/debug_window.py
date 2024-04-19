@@ -7,6 +7,7 @@ from engine.ui import *
 from engine.types import *
 
 class DebugWindow(Screen):
+    ALLOWED_REC = (Node, Manager, Style, list, tuple)
     def __init__(self, parent: Node) -> None:
         super().__init__(parent)
         self.window = pygame.Window("Nature's Ascent - Debug", (640, 480))
@@ -22,13 +23,17 @@ class DebugWindow(Screen):
         # focus back to main game
         game_window.focus()
 
-        self.font = pygame.font.SysFont("Consolas", 11)
-        self.line_height = self.font.size("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!£$%^&*()[]-=_+;':,./<>?")[1]
-        self.tab_length = self.font.size("  ")[0]
+        self.font = pygame.font.SysFont("Consolas", 12)
+        # pygame.font.Font.size() doesn't seem to calculate the right height so use this hardcoded value instead
+        self.line_height = 15
 
-        self.text_colour = (0, 0, 0)
-        self.line_colour_1 = (255, 255, 255)
-        self.line_colour_2 = (200, 200, 200)
+        self.tab_length = self.font.size("      ")[0]
+        self.padding_left = 4
+        self.padding_top = 4
+
+        self.text_colour = (255, 255, 255)
+        self.background_colour = (40, 42, 54)
+        self.background_colour_2 = (33, 34, 44)
 
         self.expanded_folders: set[Node] = set()
         self.folder_buttons: dict[Node, pygame.Rect] = []
@@ -40,26 +45,40 @@ class DebugWindow(Screen):
         raise NotImplementedError()
 
     def render_line(self, text: str, tab_index) -> pygame.Rect:
-        position = pygame.Vector2(tab_index * self.tab_length, self.current_line * self.line_height + self.scroll_offset)
+        position = pygame.Vector2(
+            tab_index * self.tab_length + self.padding_left,
+            self.current_line * self.line_height + self.scroll_offset + self.padding_top
+        )
         self.current_line += 1
         if position.y < -50 or position.y > self.window.size[1]:
             return None
+        
+        # draw text
         text_surf = self.font.render(text, True, self.text_colour)
         self.render_surface.blit(text_surf, position)
         return text_surf.get_rect(topleft = position)
 
+    def render_folder(self, folder_name: str, folder_value: Node, tab_index: int) -> pygame.Rect:
+        icon = "▾" if folder_value in self.expanded_folders else "▸"
+        return self.render_line(f"{icon} {folder_name}", tab_index)
+
+    def __group_dict_items(self, dict_items: list[tuple]) -> list[tuple]:
+        return map(lambda x: (x[0], tuple(x[1])) if isinstance(x[1], list) else x, sorted(dict_items, key = lambda str_val: isinstance(str_val[1], self.ALLOWED_REC)))
+
     def render_lists(self) -> dict:
-        ALLOWED_REC = (Node, Manager)
-        seen = []
+        seen = list()
         def __rec_render(d: dict, tab_index) -> None:
-            for k, v in d.items():
-                if k == "parent" or k == "manager" or v in seen: continue
-                if isinstance(v, ALLOWED_REC):
+            for k, v in self.__group_dict_items(d.items()):
+                if k == "parent" or v in seen: continue
+                if isinstance(v, self.ALLOWED_REC):
                     seen.append(v)
-                    bounding_rect = self.render_line(f"----folder---- ({k})", tab_index)
+                    bounding_rect = self.render_folder(k, v, tab_index)
                     if bounding_rect: self.folder_buttons[v] = bounding_rect
                     if v in self.expanded_folders:
-                        __rec_render(v.__dict__, tab_index + 1)
+                        if isinstance(v, (list, tuple)):
+                            __rec_render({i: v for i, v in enumerate(v)}, tab_index + 1)
+                        else:
+                            __rec_render(v.__dict__, tab_index + 1)
                 else:
                     self.render_line(f"{k} = {v}", tab_index)
 
@@ -78,10 +97,13 @@ class DebugWindow(Screen):
 
     def on_scroll(self, dx: int, dy: int) -> None:
         self.scroll_offset += dy * 20
+        if self.scroll_offset > 0:
+            self.scroll_offset = 0
 
     def update(self) -> None:
-        self.render_surface.fill((255, 255, 255))
+        self.render_surface.fill(self.background_colour)
         self.render_lists()
+
         self.window.flip()
 
     def on_resize(self, new_size: Vec2):
