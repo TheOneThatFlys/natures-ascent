@@ -1,10 +1,64 @@
 import pygame
 
-from typing import Optional
+from typing import Optional, Callable
 
 from .element import Element
 from .style import Style
 from ..types import *
+
+def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
+    """
+    Renders a section of rich text.
+
+    Formatting:
+    - %(colour) to set colour - defaults to (0, 0, 0).
+
+    e.g. `"%(255, 0, 0)this is red. %(255, 255, 255)this is white."`
+    """
+
+    text_sections = []
+
+    current_colour = (0, 0, 0)
+    current_section = ""
+    index = 0
+    while index < len(text):
+        letter = text[index]
+        if letter != "%":
+            current_section += letter
+            index += 1
+        elif text[index + 1] == "(":
+            if current_section != "":
+                text_sections.append(font.render(current_section, True, current_colour))
+                current_section = ""
+
+            inside_loop_idx = index
+            inside_acc = ""
+            while inside_loop_idx < len(text):
+                inside_loop_idx += 1
+                inside_acc += text[inside_loop_idx]
+                if text[inside_loop_idx] == ")":
+                    break
+            else:
+                raise ValueError(f"Rich text render of '{text}' failed: missing closing bracket.")
+            current_colour = tuple(map(int, inside_acc.removeprefix("(").removesuffix(")").split(", ")))
+            index = inside_loop_idx + 1
+        else:
+            raise ValueError(f"Rich text render of '{text}' failed: % with no opening bracket.")
+    if current_section != "":
+        text_sections.append(font.render(current_section, True, current_colour))
+        current_section = ""
+
+    surf = pygame.Surface((
+        sum(s.get_width() for s in text_sections),
+        max(s.get_height() for s in text_sections)
+    ), pygame.SRCALPHA)
+
+    x_offset = 0
+    for section in text_sections:
+        surf.blit(section, (x_offset, 0))
+        x_offset += section.get_width()
+
+    return surf
 
 class Text(Element):
     def __init__(self, parent: Element, style: Style, text: str = "") -> None:
@@ -29,8 +83,14 @@ class Text(Element):
         self.rect = self.image.get_rect()
         self.calculate_position()
 
+class RichText(Element):
+    def redraw_image(self) -> None:
+        self.image = render_rich_text(self.style.font, self.text)
+        self.rect = self.image.get_rect()
+        self.calculate_position()
+
 class TextBox(Element):
-    def __init__(self, parent: Element, style: Style, focused_style: Optional[Style] = None, initial_text: str = "", text_padding: Vec2 = (0, 0), show_blinker: bool = True) -> None:
+    def __init__(self, parent: Element, style: Style, focused_style: Optional[Style] = None, initial_text: str = "", text_padding: Vec2 = (0, 2), show_blinker: bool = True, enabled: bool = True, on_unfocus: tuple[Callable[..., None], list] = (None, [])) -> None:
         self.text = initial_text
         self.text_padding = text_padding
 
@@ -46,11 +106,17 @@ class TextBox(Element):
 
         self.focused = False
 
+        self.enabled = enabled
+
+        self.on_unfocus = on_unfocus[0]
+        self.on_unfocus_args = on_unfocus[1]
+
         # length in pixels of text
         self.text_length_pixels = 0
 
     def on_mouse_down(self, mouse_button: int) -> None:
         super().on_mouse_down(mouse_button)
+        if not self.enabled: return
         mouse_pos = self.manager.get_mouse_pos(self.style.window)
         if self.rect.collidepoint(mouse_pos):
             if not self.focused:
@@ -70,8 +136,12 @@ class TextBox(Element):
                 self.focused = False
                 self._blink_activated = False
 
+                if self.on_unfocus:
+                    self.on_unfocus(*self.on_unfocus_args)
+
     def on_key_down(self, key: int, unicode: str) -> None:
         super().on_key_down(key, unicode)
+        if not self.enabled: return
         pressed_keys = pygame.key.get_pressed()
         if self.focused:
             if key == pygame.K_BACKSPACE:
@@ -88,7 +158,7 @@ class TextBox(Element):
         self.image.fill(self.style.colour)
 
         font_s = self.style.font.render(self.text, self.style.antialiasing, self.style.fore_colour)
-        font_r = font_s.get_rect(left = self.text_padding[0], bottom = self.image.get_height() - self.text_padding[1])
+        font_r = font_s.get_rect(left = self.text_padding[0], top = self.text_padding[1])
 
         self.text_length_pixels = font_r.width
 
@@ -99,6 +169,7 @@ class TextBox(Element):
 
     def update(self) -> None:
         super().update()
+        if not self.enabled: return
 
         mouse_pos = self.manager.get_mouse_pos(self.style.window)
         if self.rect.collidepoint(mouse_pos):
@@ -109,6 +180,10 @@ class TextBox(Element):
             if self._blink_timer >= self._blink_interval:
                 self._blink_timer = 0
                 self._blink_activated = not self._blink_activated
+
+    def set_text(self, text: str) -> None:
+        self.text = text
+        self.redraw_image()
 
     def render(self, window: pygame.Surface) -> None:
         super().render(window)
