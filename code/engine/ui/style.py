@@ -41,8 +41,8 @@ class Style:
         """
 
         # if one of the styles is None, return the other
-        if style1 == None: return Style.from_style(style2)
-        if style2 == None: return Style.from_style(style1)
+        if style1 == None: return style2
+        if style2 == None: return style1
 
         new_style = Style()
 

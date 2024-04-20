@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pygame
 
-from typing import Any, Type
+from typing import Any, Callable, Iterable, Type
 from dataclasses import is_dataclass
 
 from engine import Node, Manager, Screen
@@ -37,10 +37,45 @@ class Path:
     def __eq__(self, value: Path) -> bool:
         return str(self) == str(value)
 
+class CheckBox(Button):
+    def __init__(self, parent: Element, style: Style, value: bool = False, enabled: bool = True, on_toggle: Callable[..., None] = None) -> None:
+        super().__init__(parent, style, enabled = enabled, on_click = self.__toggle_v, hover_sound = None, click_sound = None, hover_style = None)
+
+        self.value = value
+        self.on_toggle = on_toggle
+
+        self.redraw_image()
+
+    def __toggle_v(self) -> None:
+        self.value = not self.value
+        if self.on_toggle: self.on_toggle()
+
+    def redraw_image(self) -> None:
+        self.tick_surface = pygame.Surface(self.style.size - pygame.Vector2(4, 4))
+        self.tick_surface.fill(self.style.fore_colour)
+
+        self.image = pygame.Surface(self.style.size)
+        self.image.fill(self.style.colour)
+        pygame.draw.rect(self.image, self.style.fore_colour, (0, 0, *self.style.size), width = 1)
+        self.rect = self.image.get_rect()
+        self.calculate_position()
+
+    def render(self, window: pygame.Surface) -> None:
+        super().render(window)
+
+        if self.enabled and self.value:
+            window.blit(self.tick_surface, self.tick_surface.get_rect(center = self.rect.center))
+
+    def set_value(self, v: bool) -> None:
+        self.value = v
+
+    def update(self) -> None:
+        return super().update()
+
 class Inspector(Element):
     def __init__(self, parent: AttributeEditor) -> None:
         super().__init__(parent, Style(
-            size = (150, 250),
+            size = (150, 150),
             alignment = "top-right",
             offset = (8, 8),
         ))
@@ -48,6 +83,7 @@ class Inspector(Element):
         self.parent: AttributeEditor
 
         self.background_colour = (33, 34, 44)
+        norm_font = pygame.font.SysFont("Consolas", 12, bold = True)
 
         self.title = self.add_child(Text(
             self,
@@ -60,8 +96,6 @@ class Inspector(Element):
                 fore_colour = parent.op_colour
             )
         ))
-
-        norm_font = pygame.font.SysFont("Consolas", 12, bold = True)
 
         self.type_text_const = self.add_child(Text(
             self,
@@ -127,9 +161,26 @@ class Inspector(Element):
             )
         ))
 
+        self.value_check_box = self.add_child(CheckBox(
+            self,
+            enabled = False,
+            value = False,
+            on_toggle = self._on_value_toggle,
+            style = Style(
+                visible = False,
+                size = (self.value_text_const.rect.height, self.value_text_const.rect.height),
+                offset = self.value_text_box.style.offset,
+                colour = self.background_colour,
+                fore_colour = parent.text_colour,
+                font = norm_font,
+                antialiasing = True,
+                window = "debug",
+            )
+        ))
+
         self.attribute_path: Path | None = None
 
-    def _on_value_unfocus(self) -> None:
+    def set_attribute_value(self, path: Path, value: Any) -> None:
         def __rec_set(path: Path, new_value: Any):
             pc = self.parent.get_item_from_path(path.get_parent_path())
             key = path.get()[-1]
@@ -159,14 +210,26 @@ class Inspector(Element):
             else:
                 pc.__dict__[key] = new_value
 
-        __rec_set(self.attribute_path, type(self.parent.get_item_from_path(self.attribute_path))(self.value_text_box.text))
+        __rec_set(path, value)
+
+    def _on_value_unfocus(self) -> None:
+        self.set_attribute_value(self.attribute_path, type(self.parent.get_item_from_path(self.attribute_path))(self.value_text_box.text))
+
+    def _on_value_toggle(self) -> None:
+        self.set_attribute_value(self.attribute_path, self.value_check_box.value)
 
     def set_attribute_info(self, path: Path) -> None:
         self.attribute_path = path
         if path == None:
             self.type_text_var.set_text("N/A")
             self.name_text_var.set_text("N/A")
+            self.value_text_box.set_text("")
+            self.value_text_box.style.visible = True
             self.value_text_box.enabled = False
+
+            self.value_check_box.style.visible = False
+            self.value_check_box.enabled = False
+
         else:
             value = self.parent.get_item_from_path(path)
             self.type_text_var.set_text(str(type(value).__name__))
@@ -174,8 +237,21 @@ class Inspector(Element):
             if name.startswith(INDEX_SPECIAL_STRING):
                 name = "index " + name.removeprefix(INDEX_SPECIAL_STRING)
             self.name_text_var.set_text(str(name))
-            self.value_text_box.enabled = True
-            self.value_text_box.set_text(str(value))
+
+            if type(value) == bool:
+                self.value_text_box.style.visible = False
+                self.value_text_box.enabled = False
+
+                self.value_check_box.style.visible = True
+                self.value_check_box.enabled = True
+                self.value_check_box.set_value(value)
+            else:
+                self.value_text_box.style.visible = True
+                self.value_text_box.enabled = True
+                self.value_text_box.set_text(str(value))
+
+                self.value_check_box.style.visible = False
+                self.value_check_box.enabled = False
 
     def update(self) -> None:
         super().update()
@@ -257,7 +333,7 @@ class AttributeEditor(Element):
                 if isinstance(v, ALLOWED_REC_TYPES) or is_dataclass(v):
                     # render the folder line and get bounding rect
                     folder_text = f"{type_str} {name_str}"
-                    if isinstance(v, (list, set, dict)):
+                    if isinstance(v, (list, set, dict, tuple)):
                         folder_text += f" %{self.text_colour_faint}({len(v)})"
                     bounding_rect = self.render_folder(folder_text, str(path_to_item), depth)
                     if bounding_rect:
@@ -340,6 +416,9 @@ class AttributeEditor(Element):
         for path, rect in self.attribute_buttons.items():
             if rect.collidepoint(mouse_pos):
                 self.inspector.set_attribute_info(path)
+                break
+        else:
+            self.inspector.set_attribute_info(None)
 
     def on_scroll(self, dx: int, dy: int) -> None:
         self.scroll_offset += dy * 20
