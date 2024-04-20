@@ -490,7 +490,7 @@ class Level(Screen):
         self.paused = not self.paused
         self.pause_ui.toggle(self.game_surface)
 
-    def on_key_down(self, key: int) -> None:
+    def on_key_down(self, key: int, unicode: str) -> None:
         if key == pygame.K_ESCAPE:
             self.toggle_pause()
             

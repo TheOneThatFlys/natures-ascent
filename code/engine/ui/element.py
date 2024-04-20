@@ -83,6 +83,14 @@ class Element(Node):
         for child in self.children:
             child.on_mouse_down(mouse_button)
 
+    def on_key_down(self, key: int, unicode: str) -> None:
+        for child in self.children:
+            child.on_key_down(key, unicode)
+
+    def on_scroll(self, dx: int, dy: int) -> None:
+        for child in self.children:
+            child.on_scroll(dx, dy)
+
     def set_style(self, new_style: Style) -> None:
         if self.style != new_style:
             self.style = new_style

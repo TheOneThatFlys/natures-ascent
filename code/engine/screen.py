@@ -7,7 +7,7 @@ class Screen(Node):
         super().__init__(parent)
         self.rect = parent.window.get_surface().get_rect()
         
-    def on_key_down(self, key: int) -> None:
+    def on_key_down(self, key: int, unicode: str) -> None:
         pass
 
     def on_mouse_down(self, button: int) -> None:

@@ -145,7 +145,7 @@ class Game:
                     elif event.key == pygame.K_KP3:
                         self.set_fullscreen(borderless = True)
 
-                    screen_instance.on_key_down(event.key)
+                    screen_instance.on_key_down(event.key, event.unicode)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     screen_instance.on_mouse_down(event.button)

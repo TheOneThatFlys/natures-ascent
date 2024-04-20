@@ -18,11 +18,14 @@ class Style:
     alpha: int = 255
 
     font: Optional[pygame.font.Font] = None
+    antialiasing: bool = False
 
     image: Optional[pygame.Surface] = None
     stretch_type: StretchType = "none"
 
     text_shadow: int = 0
+
+    window: str = "main"
 
     @staticmethod
     def from_style(style: Style, **changes) -> Style:

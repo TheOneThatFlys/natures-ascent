@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import pygame
 
-from typing import Any
+from typing import Any, Type
 
 from engine import Node, Manager, Screen
 from engine.ui import *
@@ -8,10 +10,119 @@ from engine.types import *
 
 from .misc import render_rich_text
 
+class AttributeInfo:
+    SUPPORTED = (int, float, str)
+    def __init__(self, name: str, type: Type, rect: pygame.Rect):
+        self.name = name
+        self.type = type
+        self.rect = rect
+
+class Inspector(Element):
+    def __init__(self, parent: AttributeEditor):
+        super().__init__(parent, Style(
+            size = (150, 250),
+            alignment = "top-right",
+            offset = (8, 8),
+        ))
+
+        self.background_colour = (33, 34, 44)
+
+        self.title = self.add_child(Text(
+            self,
+            text = "INSPECTOR",
+            style = Style(
+                alignment = "top-center",
+                offset = (0, 4),
+                antialiasing = True,
+                font = pygame.font.SysFont("Consolas", 16, bold = True),
+                fore_colour = parent.op_colour
+            )
+        ))
+
+        norm_font = pygame.font.SysFont("Consolas", 12, bold = True)
+
+        self.type_text_const = self.add_child(Text(
+            self,
+            text = "Type  ",
+            style = Style(
+                offset  = (4, self.title.style.offset[1] + self.title.rect.height),
+                fore_colour = parent.type_colour,
+                antialiasing = True,
+                font = norm_font
+            )
+        ))
+
+        self.name_text_const = self.add_child(Text(
+            self,
+            text = "Name  ",
+            style = Style.from_style(self.type_text_const.style, offset = (4, self.type_text_const.style.offset[1] + self.type_text_const.rect.height))
+        ))
+
+        self.value_text_const = self.add_child(Text(
+            self,
+            text = "Value ",
+            style = Style.from_style(self.type_text_const.style, offset = (4, self.name_text_const.style.offset[1] + self.name_text_const.rect.height))
+        ))
+
+        self.type_text_var = self.add_child(Text(
+            self,
+            text = "N/A",
+            style = Style(
+                offset = (self.type_text_const.style.offset[0] + self.type_text_const.rect.width, self.type_text_const.style.offset[1]),
+                fore_colour = parent.text_colour,
+                antialiasing = True,
+                font = norm_font
+            )
+        ))
+
+        self.name_text_var = self.add_child(Text(
+            self,
+            text = "N/A",
+            style = Style(
+                offset = (self.name_text_const.style.offset[0] + self.name_text_const.rect.width, self.name_text_const.style.offset[1]),
+                fore_colour = parent.text_colour,
+                antialiasing = True,
+                font = norm_font
+            )
+        ))
+
+        self.value_text_box = self.add_child(TextBox(
+            self,
+            initial_text = "test",
+            style = Style(
+                size = (self.rect.right - self.value_text_const.rect.right - 8, self.value_text_const.rect.height + 4),
+                offset = (self.value_text_const.rect.width + self.value_text_const.style.offset[0], self.value_text_const.style.offset[1] - 2),
+                colour = parent.background_colour,
+                font = norm_font,
+                fore_colour = parent.text_colour,
+                antialiasing = True,
+                window = "debug",
+            ),
+            focused_style = Style(
+                colour = parent.background_colour_2
+            )
+        ))
+
+        self.attribute_info: AttributeInfo | None = None
+
+    def set_attribute_info(self, ai: AttributeInfo | None) -> None:
+        self.attribute_info = ai
+        if ai == None:
+            self.type_text_var.set_text("N/A")
+            self.name_text_var.set_text("N/A")
+        else:
+            self.type_text_var.set_text(str(ai.type.__name__))
+            self.name_text_var.set_text(str(ai.name))
+
+    def update(self) -> None:
+        super().update()
+        self.image = pygame.Surface((self.style.size))
+        self.image.fill(self.background_colour)
+
 class AttributeEditor(Element):
     ALLOWED_REC = (Node, Manager, Style, list, dict, set)
-    def __init__(self, parent: Node):
-        super().__init__(parent, Style(size = parent.rect.size))
+    def __init__(self, parent: DebugWindow):
+        super().__init__(parent, Style(size = parent.window.size))
 
         self.font = pygame.font.SysFont("Consolas", 12, bold = True)
         self.line_height = self.font.get_linesize()
@@ -34,14 +145,15 @@ class AttributeEditor(Element):
         self.str_colour = (241, 250, 129)
 
         self.expanded_folders: set[str] = set()
-        self.folder_buttons: dict[str, pygame.Rect] = {}
         self.expanded_folders.add("/Game")
-
-        s = self.font.render("▼", True, (255, 255,255))
+        self.folder_buttons: dict[str, pygame.Rect] = {}
+        self.attribute_buttons: dict[str, AttributeInfo] = {}
 
         self.highlighted_rect: pygame.Rect | None = None
 
         self.scroll_offset = 0
+
+        self.inspector = self.add_child(Inspector(self))
 
     def render_line(self, rich_text: str, tab_index: int) -> pygame.Rect:
         position = pygame.Vector2(
@@ -114,22 +226,35 @@ class AttributeEditor(Element):
                     value = v
                     if isinstance(v, str):
                         value = v.__repr__()
+
                     value_str = f"%{v_colour}{value}"
                     op_str = f"%{self.op_colour}{'' if omit_name else ' = '}"
-                    self.render_line(f"{type_str} {name_str}{op_str}{value_str}", depth)
+                    bounding_rect = self.render_line(f"{type_str} {name_str}{op_str}{value_str}", depth)
+
+                    # add attribute editor button
+                    if bounding_rect and isinstance(v, AttributeInfo.SUPPORTED):
+                        self.attribute_buttons[path_to_item] = AttributeInfo(str(k), v_type, bounding_rect)
 
         self.current_line = 0
         self.folder_buttons = {}
+        self.attribute_buttons = {}
         __rec_render(self.manager.game.__dict__, "", 0, self.manager.game)
 
     def on_mouse_down(self, button: int) -> None:
+        super().on_mouse_down(button)
         mouse_pos = self.manager.get_mouse_pos("debug")
+        if self.inspector.rect.collidepoint(mouse_pos): return
+
         for path, rect in self.folder_buttons.items():
             if rect.collidepoint(mouse_pos):
                 if path in self.expanded_folders:
                     self.expanded_folders.remove(path)
                 else:
                     self.expanded_folders.add(path)
+
+        for path, ai in self.attribute_buttons.items():
+            if ai.rect.collidepoint(mouse_pos):
+                self.inspector.set_attribute_info(ai)
 
     def on_scroll(self, dx: int, dy: int) -> None:
         self.scroll_offset += dy * 20
@@ -139,10 +264,16 @@ class AttributeEditor(Element):
     def on_resize(self, new_size: Vec2) -> None:
         self.style.size = new_size
         self.image = pygame.Surface(new_size)
+        for item in self.get_all_children():
+            item.redraw_image()
 
     def update_buttons(self) -> None:
         mouse_pos = self.manager.get_mouse_pos("debug")
-        for _, rect in self.folder_buttons.items():
+        if self.inspector.rect.collidepoint(mouse_pos):
+            self.highlighted_rect = None
+            return
+        
+        for _, rect in list(self.folder_buttons.items()) + [(None, x[1].rect) for x in self.attribute_buttons.items()]:
             if rect.collidepoint(mouse_pos):
                 self.highlighted_rect = rect
                 self.manager.set_cursor(pygame.SYSTEM_CURSOR_HAND)
@@ -178,10 +309,10 @@ class DebugWindow(Screen):
     def on_scroll(self, dx: int, dy: int) -> None:
         self.attribute_editor.on_scroll(dx, dy)
 
-    def on_key_down(self, key: int) -> None:
-        pass
+    def on_key_down(self, key: int, unicode: str) -> None:
+        self.attribute_editor.on_key_down(key, unicode)
 
-    def on_resize(self, new_size: Vec2):
+    def on_resize(self, new_size: Vec2) -> None:
         self.attribute_editor.on_resize(new_size)
 
     def on_mouse_down(self, button: int) -> None:
@@ -189,6 +320,7 @@ class DebugWindow(Screen):
 
     def update(self) -> None:
         self.attribute_editor.update()
+
         self.render_surface.fill((0, 0, 0))
         self.attribute_editor.render(self.render_surface)
         self.window.flip()
