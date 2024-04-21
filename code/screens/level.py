@@ -240,58 +240,6 @@ class HudUI(ui.Element):
         # coin text
         self.coin_text.set_text(f"{self.player.money:,}")
 
-class DebugUI(ui.Element):
-    def __init__(self, parent: Node) -> None:
-        super().__init__(parent, style = ui.Style(alpha = 0, visible = False, size = parent.rect.size))
-
-        common_font = self.manager.get_font("alagard", 16)
-        text_colour = (255, 255, 255)
-
-        self.mode = self.add_child(ui.Text(
-            parent = self,
-            text = "loading mode...",
-            style = ui.Style(
-                font = common_font,
-                fore_colour = text_colour
-            )
-        ))
-
-        self.fps = self.add_child(ui.Text(
-            parent = self,
-            text = "loading fps...",
-            style = ui.Style(
-                font = common_font,
-                fore_colour = text_colour,
-                offset = (0, self.mode.rect.bottom)
-                )
-            )
-        )
-
-        self.position = self.add_child(ui.Text(
-            parent = self,
-            text = "loading position...",
-            style = ui.Style(
-                font = common_font,
-                fore_colour = text_colour,
-                offset = (0, self.fps.rect.bottom),
-            )
-        ))
-
-        self.update_timer = 0
-        
-        self.player: Player = self.manager.get_object("player")
-        self.level: Level = self.manager.get_object("level")
-
-    def update(self) -> None:
-        self.update_timer += self.manager.dt
-
-        if self.update_timer >= 20:
-            self.fps.set_text(f"{round(60 / self.manager.dt)} fps")
-            self.update_timer = 0
-
-        self.position.set_text(f"x: {round(self.player.rect.x)} y: {round(self.player.rect.y)}")
-        self.mode.set_text(f"mode: {self.level.debug_mode}")
-
 class PauseUI(ui.Element):
     def __init__(self, parent: Level) -> None:
         # store the image of the frame paused on when this menu was opened
@@ -464,7 +412,6 @@ class Level(Screen):
             )
         )
 
-        self.debug_ui = self.master_ui.add_child(DebugUI(self.master_ui))
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
         self.pause_ui = PauseUI(self)
 
@@ -482,9 +429,6 @@ class Level(Screen):
         self.debug_mode += 1
         if self.debug_mode > 4:
             self.debug_mode = 0
-            self.debug_ui.style.visible = False
-        else:
-            self.debug_ui.style.visible = True
 
     def toggle_pause(self) -> None:
         self.paused = not self.paused
@@ -572,8 +516,6 @@ class Level(Screen):
         self.manager.groups["update"].update()
         self.master_ui.update()
         self.floor_manager.update()
-
-        ### print(f"update: {len(self.manager.groups['update'])} render: {len(self.manager.groups['render'])}")
 
     def render(self, surface: pygame.Surface) -> None:
         # clear game surface

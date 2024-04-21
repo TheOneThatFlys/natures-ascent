@@ -116,6 +116,8 @@ class Game(DebugExpandable):
                     screen_instance = self.debug_window
 
                 if event.type == pygame.WINDOWCLOSE:
+                    if IN_DEBUG:
+                        self.debug_window.kill()
                     self.queue_close()
 
                 if event.type == pygame.MOUSEMOTION:
@@ -162,7 +164,7 @@ class Game(DebugExpandable):
             # update screen instance
             self.current_screen_instance.update()
 
-            if IN_DEBUG:
+            if IN_DEBUG and not self.debug_window.dead:
                 self.debug_window.update()
 
             # call os to change cursor

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import pygame, inspect
+import pygame, inspect, pickle, base64
 
 from typing import Any, Callable, Iterable, Type
 from dataclasses import is_dataclass
@@ -9,8 +9,12 @@ from engine import Node, Logger, Screen
 from engine.ui import *
 from engine.types import *
 
+from .parsers import SaveHelper
+from .constants import *
+
 INDEX_SPECIAL_STRING = "$$"
 ALLOWED_REC_TYPES = (DebugExpandable, list, dict, set, tuple, pygame.Rect, pygame.FRect, pygame.Vector2)
+SAVE_PATH = "debug.dat"
 
 class Path:
     def __init__(self, values: tuple = ()) -> None:
@@ -28,8 +32,11 @@ class Path:
     def get(self) -> tuple:
         return self.__v
     
+    def get_str(self, seperator: str = "/"):
+        return seperator.join(map(str, self.__v))
+
     def __str__(self) -> str:
-        return "/".join(map(str, self.__v))
+        return self.get_str("/")
     
     def __hash__(self) -> int:
         return str(self).__hash__()
@@ -91,7 +98,7 @@ class ImagePreview(Element):
 class Inspector(Element):
     def __init__(self, parent: AttributeEditor) -> None:
         super().__init__(parent, Style(
-            size = (150, 216),
+            size = (175, 0),
             alignment = "top-right",
             offset = (8, 8),
         ))
@@ -219,9 +226,13 @@ class Inspector(Element):
             )
         ))
 
+        self.style.size = (self.style.size[0], self.value_preview_box.rect.bottom - 4)
+
         self.possible_boxes = [self.value_text_box, self.value_check_box, self.value_execute_box, self.value_preview_box]
 
         self.attribute_path: Path | None = None
+
+        self.redraw_image()
 
     def set_attribute_value(self, path: Path, value: Any) -> None:
         def __rec_set(path: Path, new_value: Any):
@@ -254,7 +265,7 @@ class Inspector(Element):
                 pc.__dict__[key] = new_value
 
         __rec_set(path, value)
-        Logger.debug(f"Set {path} to {value}")
+        Logger.debug(f"Set {path.get_str('.')} to {value}")
 
     def _on_value_unfocus(self) -> None:
         self.set_attribute_value(self.attribute_path, type(self.parent.get_item_from_path(self.attribute_path))(self.value_text_box.text))
@@ -264,7 +275,8 @@ class Inspector(Element):
 
     def _on_value_click(self) -> None:
         func = self.parent.get_item_from_path(self.attribute_path)
-        func()
+        res = func()
+        Logger.debug(f"Method {self.attribute_path.get_str('.')}() returned {res}")
 
     def set_input_box(self, box: Element) -> None:
         for b in self.possible_boxes:
@@ -340,6 +352,10 @@ class AttributeEditor(Element):
 
         self.expanded_folders: set[str] = set()
         self.add_folder_chain(Path(["game"]))
+
+        save_data = SaveHelper.load_file(SAVE_PATH, obfuscated = True)
+        if save_data: self.expanded_folders = pickle.loads(save_data)
+
         self.folder_buttons: dict[str, pygame.Rect] = {}
         self.attribute_buttons: dict[str, pygame.Rect] = {}
 
@@ -537,15 +553,16 @@ class AttributeEditor(Element):
 class DebugWindow(Screen):
     def __init__(self, parent: Node) -> None:
         super().__init__(parent)
-        self.window = pygame.Window("Nature's Ascent - Debug", (640, 480))
+        self.window = pygame.Window("Nature's Ascent - Debug", (640, STARTUP_SCREEN_SIZE[1]))
         self.window.set_icon(self.manager.get_image("menu/tree"))
         self.window.resizable = True
 
         self.render_surface = self.window.get_surface()
+        self.dead = False
 
         game_window = self.manager.get_window("main")
         # move this window to the left of main game
-        self.window.position = (game_window.position[0] - self.window.size[0], game_window.position[1])
+        self.window.position = (game_window.position[0] - self.window.size[0] - 50, game_window.position[1])
         # focus back to main game
         game_window.focus()
 
@@ -571,4 +588,6 @@ class DebugWindow(Screen):
         self.window.flip()
 
     def kill(self) -> None:
+        SaveHelper.save_file(pickle.dumps(self.attribute_editor.expanded_folders), SAVE_PATH, True)
+        self.dead = True
         self.window.destroy()

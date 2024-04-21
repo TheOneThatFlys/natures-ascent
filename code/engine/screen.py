@@ -18,3 +18,6 @@ class Screen(Node):
 
     def on_resize(self, new_res: Vec2) -> None:
         pass
+
+    def kill(self) -> None:
+        pass

@@ -1,4 +1,5 @@
 import pygame
+import os, base64
 from typing import Literal
 
 def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, frame_size: tuple[int, int] = None, direction: Literal["x", "y"] = "x") -> list[pygame.Surface]:
@@ -39,3 +40,33 @@ def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, f
         frames.append(frame)
 
     return frames
+
+class SaveHelper:
+    @staticmethod
+    def encode_data(data: bytes) -> str:
+        return str(base64.b64encode(data))[2:-1]
+
+    @staticmethod
+    def decode_data(data: str) -> bytes:
+        return base64.b64decode(data)
+
+    @staticmethod
+    def save_file(data: str | bytes, filename: str, obfuscate: bool = False) -> None:
+        """Save a file with string data. Creates save folder if none exists"""
+        data_to_save = SaveHelper.encode_data(data) if obfuscate else data
+
+        path = os.path.join("saves", filename)
+        if not os.path.exists("saves"):
+            os.mkdir("saves")
+        with open(path, "w") as f:
+            f.write(data_to_save)
+
+    @staticmethod
+    def load_file(filename: str, obfuscated: bool = False) -> str | bytes | None:
+        """Read a file as string. Returns none if file does not exist"""
+        path = os.path.join("saves", filename)
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                loaded_data = f.read()
+            return SaveHelper.decode_data(loaded_data) if obfuscated else loaded_data
+        return None
