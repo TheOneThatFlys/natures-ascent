@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-import pygame
+import pygame, inspect
 
 from typing import Any, Callable, Iterable, Type
 from dataclasses import is_dataclass
 
-from engine import Node, Manager, Screen
+from engine import Node, Logger, Screen
 from engine.ui import *
 from engine.types import *
 
 INDEX_SPECIAL_STRING = "$$"
-ALLOWED_REC_TYPES = (Node, Manager, Style, list, dict, set, tuple, pygame.Rect, pygame.Vector2)
+ALLOWED_REC_TYPES = (DebugExpandable, list, dict, set, tuple, pygame.Rect, pygame.FRect, pygame.Vector2)
 
 class Path:
     def __init__(self, values: tuple = ()) -> None:
@@ -72,10 +72,26 @@ class CheckBox(Button):
     def update(self) -> None:
         return super().update()
 
+class ImagePreview(Element):
+    def __init__(self, parent: Element, style: Style, enabled: bool = True) -> None:
+        super().__init__(parent, style)
+        self.enabled = enabled
+
+    def redraw_image(self) -> None:
+        super().redraw_image()
+
+        if self.style.visible:
+            pygame.draw.rect(self.image, self.style.fore_colour, self.image.get_rect(), 1)
+
+    def update(self) -> None:
+        super().update()
+        if self.enabled:
+            self.redraw_image()
+
 class Inspector(Element):
     def __init__(self, parent: AttributeEditor) -> None:
         super().__init__(parent, Style(
-            size = (150, 150),
+            size = (150, 216),
             alignment = "top-right",
             offset = (8, 8),
         ))
@@ -178,6 +194,33 @@ class Inspector(Element):
             )
         ))
 
+        self.value_execute_box = self.add_child(Button(
+            self,
+            style = Style(
+                image = norm_font.render("<call>", True, self.parent.text_colour),
+                offset = self.value_text_box.style.offset + pygame.Vector2(0, 2),
+                visible = False,
+                window = "debug"
+            ),
+            on_click = self._on_value_click,
+            enabled = False,
+            hover_sound = None,
+            click_sound = None,
+        ))
+
+        self.value_preview_box = self.add_child(ImagePreview(
+            parent = self,
+            style = Style(
+                offset = self.value_text_const.style.offset + pygame.Vector2(0, self.value_text_const.rect.height + 2),
+                stretch_type = "expand",
+                size = (self.rect.width - 8, self.rect.width - 8),
+                fore_colour = parent.background_colour_2,
+                visible = False
+            )
+        ))
+
+        self.possible_boxes = [self.value_text_box, self.value_check_box, self.value_execute_box, self.value_preview_box]
+
         self.attribute_path: Path | None = None
 
     def set_attribute_value(self, path: Path, value: Any) -> None:
@@ -197,7 +240,7 @@ class Inspector(Element):
                 new_tuple = pc[:index] + (new_value,) + pc[index + 1:]
                 __rec_set(path.get_parent_path(), new_tuple)
 
-            elif isinstance(pc, pygame.Rect):
+            elif isinstance(pc, (pygame.Rect, pygame.FRect)):
                 if key == "x": pc.x = new_value
                 elif key == "y": pc.y = new_value
                 elif key == "width": pc.width = new_value
@@ -211,6 +254,7 @@ class Inspector(Element):
                 pc.__dict__[key] = new_value
 
         __rec_set(path, value)
+        Logger.debug(f"Set {path} to {value}")
 
     def _on_value_unfocus(self) -> None:
         self.set_attribute_value(self.attribute_path, type(self.parent.get_item_from_path(self.attribute_path))(self.value_text_box.text))
@@ -218,40 +262,51 @@ class Inspector(Element):
     def _on_value_toggle(self) -> None:
         self.set_attribute_value(self.attribute_path, self.value_check_box.value)
 
+    def _on_value_click(self) -> None:
+        func = self.parent.get_item_from_path(self.attribute_path)
+        func()
+
+    def set_input_box(self, box: Element) -> None:
+        for b in self.possible_boxes:
+            if b == box:
+                b.style.visible = True
+                b.enabled = True
+            else:
+                b.style.visible = False
+                b.enabled = False
+
     def set_attribute_info(self, path: Path) -> None:
         self.attribute_path = path
         if path == None:
             self.type_text_var.set_text("N/A")
             self.name_text_var.set_text("N/A")
             self.value_text_box.set_text("")
-            self.value_text_box.style.visible = True
+
+            self.set_input_box(self.value_text_box)
             self.value_text_box.enabled = False
-
-            self.value_check_box.style.visible = False
-            self.value_check_box.enabled = False
-
         else:
             value = self.parent.get_item_from_path(path)
             self.type_text_var.set_text(str(type(value).__name__))
             name = path.get()[-1]
-            if name.startswith(INDEX_SPECIAL_STRING):
+            if isinstance(name, str) and name.startswith(INDEX_SPECIAL_STRING):
                 name = "index " + name.removeprefix(INDEX_SPECIAL_STRING)
             self.name_text_var.set_text(str(name))
 
             if type(value) == bool:
-                self.value_text_box.style.visible = False
-                self.value_text_box.enabled = False
-
-                self.value_check_box.style.visible = True
-                self.value_check_box.enabled = True
+                self.set_input_box(self.value_check_box)
                 self.value_check_box.set_value(value)
-            else:
-                self.value_text_box.style.visible = True
-                self.value_text_box.enabled = True
-                self.value_text_box.set_text(str(value))
 
-                self.value_check_box.style.visible = False
-                self.value_check_box.enabled = False
+            elif type(value) == pygame.Surface:
+                self.set_input_box(self.value_preview_box)
+                self.value_preview_box.style.image = value
+                self.value_preview_box.redraw_image()
+
+            elif inspect.ismethod(value):
+                self.set_input_box(self.value_execute_box)
+
+            else:
+                self.set_input_box(self.value_text_box)
+                self.value_text_box.set_text(str(value))
 
     def update(self) -> None:
         super().update()
@@ -281,8 +336,10 @@ class AttributeEditor(Element):
         self.op_colour = (255, 121, 198)
         self.num_colour = (189, 147, 249)
         self.str_colour = (241, 250, 129)
+        self.func_colour = (80, 250, 123)
 
         self.expanded_folders: set[str] = set()
+        self.add_folder_chain(Path(["game"]))
         self.folder_buttons: dict[str, pygame.Rect] = {}
         self.attribute_buttons: dict[str, pygame.Rect] = {}
 
@@ -291,6 +348,13 @@ class AttributeEditor(Element):
         self.scroll_offset = 0
 
         self.inspector = self.add_child(Inspector(self))
+
+    def add_folder_chain(self, path: Path) -> None:
+        """Add the path to expanded folders, along with all parents."""
+        acc = Path()
+        for dir in path.get():
+            acc = acc.add(dir)
+            self.expanded_folders.add(acc)
 
     def render_line(self, rich_text: str, tab_index: int) -> pygame.Rect:
         position = pygame.Vector2(
@@ -313,13 +377,24 @@ class AttributeEditor(Element):
         icon = "▼" if folder_path in self.expanded_folders else "►"
         return self.render_line(f"%{self.text_colour}{icon} {rich_text}", tab_index)
 
-    def __group_dict_items(self, dict_items: list[tuple]) -> list[tuple]:
-        return sorted(dict_items, key = lambda str_val: (not (isinstance(str_val[1], ALLOWED_REC_TYPES) or is_dataclass(str_val[1])), str_val[0]))
+    def __group_dict_items(self, dict_items: list[tuple], caller: Any) -> list[tuple]:
+        def __ranking(x) -> int:
+            if isinstance(x, ALLOWED_REC_TYPES) or is_dataclass(x):
+                return 0
+            elif inspect.ismethod(x):
+                return 2
+            return 1
+        
+        if isinstance(caller, list): cmp2 = lambda x: int(x.removeprefix(INDEX_SPECIAL_STRING))
+        else: cmp2 = str
+
+        return sorted(dict_items, key = lambda str_val: (__ranking(str_val[1]), cmp2(str_val[0])))
 
     def render_lists(self) -> dict:
         def __rec_render(d: dict, path: Path, depth: int, caller) -> None:
-            for k, v in self.__group_dict_items(d.items()):
-                if isinstance(k, str) and k.startswith("_Sprite_"): continue
+            for k, v in self.__group_dict_items(d.items(), caller):
+                if k == "manager" and caller != self.manager.game: continue
+                if k == "parent": continue
                 # calculate folder path of this item
                 path_to_item = path.add(k)
 
@@ -348,12 +423,13 @@ class AttributeEditor(Element):
                             thing_to_render = {f"{INDEX_SPECIAL_STRING}{str(index)}": value for index, value in enumerate(v)}
                         elif isinstance(v, dict):
                             thing_to_render = v
-                        elif isinstance(v, pygame.Rect):
+                        elif isinstance(v, (pygame.Rect, pygame.FRect)):
                             thing_to_render = {"x": v.x, "y": v.y, "width": v.width, "height": v.height}
                         elif isinstance(v, pygame.Vector2):
                             thing_to_render = {"x": v.x, "y": v.y}
                         else:
-                            thing_to_render = v.__dict__
+                            methods = {x[0]: x[1] for x in inspect.getmembers(v, predicate = lambda x: inspect.ismethod(x) and len(inspect.signature(x).parameters) == 0)}
+                            thing_to_render = {**v.__dict__, **methods} # merges 2 dicts
                         # recurse!
                         __rec_render(thing_to_render, path_to_item, depth + 1, v)
                 else:
@@ -370,35 +446,40 @@ class AttributeEditor(Element):
 
                     value_str = f"%{v_colour}{value}"
                     op_str = f"%{self.op_colour}{'' if omit_name else ' = '}"
-                    bounding_rect = self.render_line(f"{type_str} {name_str}{op_str}{value_str}", depth)
+                    line_text = f"{type_str} {name_str}{op_str}{value_str}"
+                    if inspect.ismethod(v): line_text = f"{type_str} %{self.func_colour}{key_str}"
+                    bounding_rect = self.render_line("  " + line_text, depth)
 
                     # add attribute editor button
-                    if bounding_rect and isinstance(v, (int, float, str)):
+                    if bounding_rect and (isinstance(v, (int, float, str, pygame.Surface)) or inspect.ismethod(v)):
                         self.attribute_buttons[path_to_item] = bounding_rect
 
         self.current_line = 0
         self.folder_buttons = {}
         self.attribute_buttons = {}
-        __rec_render(self.manager.game.__dict__, Path(), 0, self.manager.game)
+        __rec_render({"game": self.manager.game}, Path(), 0, self.manager.game)
 
     def get_item_from_path(self, path: Path) -> Any:
         current_node = self.manager.game
-        for dir in path.get():
+        for dir in path.get()[1:]:
             if isinstance(current_node, (list, tuple)):
-                index = int(dir.removeprefix("$$"))
+                index = int(dir.removeprefix(INDEX_SPECIAL_STRING))
                 current_node = current_node[index]
 
             elif isinstance(current_node, dict):
                 current_node = current_node[dir]
 
-            elif isinstance(current_node, pygame.Rect):
+            elif isinstance(current_node, (pygame.Rect, pygame.FRect)):
                 current_node = current_node.__getattribute__(dir)
 
             elif isinstance(current_node, pygame.Vector2):
                 current_node = current_node.__getattribute__(dir)
 
             else:
-                current_node = current_node.__dict__[dir]
+                if dir in current_node.__dict__:
+                    current_node = current_node.__dict__[dir]
+                else:
+                    current_node = [m[1] for m in inspect.getmembers(current_node) if m[0] == dir][0]
         return current_node
 
     def on_mouse_down(self, button: int) -> None:

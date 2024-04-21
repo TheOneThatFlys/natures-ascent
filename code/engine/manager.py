@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 import pygame, time, os
 from .logger import Logger
+from .types import DebugExpandable
 
 if TYPE_CHECKING:
     from .node import Node
@@ -23,7 +24,7 @@ class Font():
         self._fonts[font_size] = new_font
         return new_font
 
-class Manager():
+class Manager(DebugExpandable):
     def __init__(self, game: Game, fps: int = 60, num_channels = 8) -> None:
         self.game = game
 
@@ -107,7 +108,7 @@ class Manager():
         """Set scale for loading assets"""
         self._load_scale = scale
 
-    def set_cursor(self, cursor_enum) -> None:
+    def set_cursor(self, cursor_enum: int) -> None:
         self._current_cursor = cursor_enum
 
     def load_cursor(self) -> None:

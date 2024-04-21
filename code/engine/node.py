@@ -2,9 +2,11 @@ from __future__ import annotations
 from .manager import Manager
 from typing import TypeVar
 
+from .types import *
+
 T = TypeVar("T", bound = "Node")
 
-class Node():
+class Node(DebugExpandable):
     def __init__(self, parent: Node) -> None:
         self.parent: Node = parent
         self.manager: Manager = parent.manager

@@ -16,7 +16,7 @@ class Tile(Sprite):
         self.rect = self.image.get_rect(topleft = pos)
         self.is_wall = collider
 
-class TileSet:
+class TileSet(DebugExpandable):
     "Generate an indexed tileset (row then column)"
     def __init__(self, tile_set_image: pygame.Surface, tile_size: int) -> None:
         self.tiles = []

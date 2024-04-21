@@ -60,8 +60,14 @@ class Element(Node):
                 elif self.style.stretch_type == "expand":
                     # enlarge the image to the biggest it can fit inside element
                     # without distorting it
-                    x_factor = self.image.get_width() / self.style.image.get_width()
-                    y_factor = self.image.get_height() / self.style.image.get_height()
+                    if self.style.image.get_width() == 0:
+                        x_factor = 0
+                    else:
+                        x_factor = self.image.get_width() / self.style.image.get_width()
+                    if self.style.image.get_height() == 0:
+                        y_factor = 0
+                    else:
+                        y_factor = self.image.get_height() / self.style.image.get_height()
                     scale_factor = min(x_factor, y_factor)
 
                     self.image.blit(pygame.transform.scale(self.style.image, (self.style.image.get_width() * scale_factor, self.style.image.get_height() * scale_factor)), (0, 0))

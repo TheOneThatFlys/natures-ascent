@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
-import pygame, random
+import pygame
 pygame.init()
 from typing import Type
 from engine import Screen, Manager, Logger
@@ -21,7 +21,7 @@ from util import DebugWindow
 from engine.types import *
 from util.constants import *
 
-class Game:
+class Game(DebugExpandable):
     # main game class that manages screens and pygame events
     def __init__(self) -> None:
         

@@ -542,19 +542,17 @@ class Level(Screen):
 
             # draw z indexes on debug 4
             if self.debug_mode == 4 and hasattr(item, "z_index"):
-                z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (0, 255, 0))
-                self.game_surface.blit(z_text, z_text.get_rect(center = self.camera.convert_coords(pygame.Vector2(item.rect.center))))
+                text_pos = self.camera.convert_coords(pygame.Vector2(item.rect.center))
+                if self.rect.collidepoint(text_pos):
+                    z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (0, 255, 0))
+                    self.game_surface.blit(z_text, z_text.get_rect(center = text_pos))
 
             # ignore tiles unless on debug 3
             if isinstance(item, Tile) and self.debug_mode != 3: continue
 
             # draw hitboxes
-            scaled_pos_start = self.camera.convert_coords(pygame.Vector2(item.rect.topleft))
-            scaled_pos_end = scaled_pos_start + pygame.Vector2(item.rect.size)
-            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_start.x, scaled_pos_end.y))
-            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_start, (scaled_pos_end.x, scaled_pos_start.y))
-            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_start.x, scaled_pos_end.y))
-            pygame.draw.line(self.game_surface, (0, 0, 255), scaled_pos_end, (scaled_pos_end.x, scaled_pos_start.y))
+            hitbox_rect_scaled = pygame.Rect(*self.camera.convert_coords(pygame.Vector2(item.rect.topleft)), *item.rect.size)
+            pygame.draw.rect(self.game_surface, (0, 0, 255), hitbox_rect_scaled, width = 1)
 
         # draw enemy notice ranges
         if self.debug_mode == 3:
