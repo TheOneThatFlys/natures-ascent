@@ -89,6 +89,7 @@ class Map(ui.Element):
         self.player_icon = pygame.transform.scale_by(self.manager.get_image("map/player_icon"), 0.5)
         self.spawn_icon = self.manager.get_image("map/spawn")
         self.done_icon = self.manager.get_image("map/check")
+        self.boss_icon = self.manager.get_image("map/boss")
 
         self.update_map()
 
@@ -107,6 +108,8 @@ class Map(ui.Element):
     def _get_room_icon(self, room: Room) -> None:
         if "spawn" in room.tags:
             return self.spawn_icon
+        elif "boss" in room.tags and room.activated:
+            return self.boss_icon
         elif room.activated and len(room.enemies) == 0:
             return self.done_icon
         return pygame.Surface((0, 0))
@@ -420,14 +423,13 @@ class Level(Screen):
         Cycles current debug mode.
 
         - 0: off
-        - 1: render debug text
-        - 2: draw hitboxes
-        - 3: draw hitboxes including tiles and notice ranges
-        - 4: draw z-indexes
+        - 1: draw hitboxes
+        - 2: draw hitboxes including tiles and room boxes
+        - 3: draw z-indexes
         """
         if not IN_DEBUG: return
         self.debug_mode += 1
-        if self.debug_mode > 4:
+        if self.debug_mode > 3:
             self.debug_mode = 0
 
     def toggle_pause(self) -> None:
@@ -474,7 +476,7 @@ class Level(Screen):
             self.master_ui.on_mouse_down(button)
 
     def debug(self) -> None:
-        if self.debug_mode == 0 or self.debug_mode == 1: return
+        if self.debug_mode == 0: return
 
         # render hitboxes of anything that has a rect
         for item in self.get_all_children():
@@ -484,27 +486,24 @@ class Level(Screen):
             # ignore ui elements
             if isinstance(item, ui.Element): continue
 
-            # draw z indexes on debug 4
-            if self.debug_mode == 4 and hasattr(item, "z_index"):
+            # draw z indexes on debug 3
+            if self.debug_mode == 3 and hasattr(item, "z_index"):
                 text_pos = self.camera.convert_coords(pygame.Vector2(item.rect.center))
                 if self.rect.collidepoint(text_pos):
                     z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (0, 255, 0))
                     self.game_surface.blit(z_text, z_text.get_rect(center = text_pos))
 
-            # ignore tiles unless on debug 3
-            if isinstance(item, Tile) and self.debug_mode != 3: continue
+            # ignore tiles unless on debug 2
+            if isinstance(item, Tile) and self.debug_mode != 2: continue
 
             # draw hitboxes
-            hitbox_rect_scaled = pygame.Rect(*self.camera.convert_coords(pygame.Vector2(item.rect.topleft)), *item.rect.size)
-            pygame.draw.rect(self.game_surface, (0, 0, 255), hitbox_rect_scaled, width = 1)
+            pygame.draw.rect(self.game_surface, (0, 0, 255), self.camera.convert_rect(item.rect), width = 1)
 
-        # draw enemy notice ranges
-        if self.debug_mode == 3:
-            for enemy in self.manager.groups["enemy"].sprites():
-                radius = enemy.stats.notice_range
-                center = self.camera.convert_coords(pygame.Vector2(enemy.rect.center))
-
-                pygame.draw.circle(self.game_surface, (255, 0, 0, 100), center, radius, 2)
+        # and also draw room rects
+        if self.debug_mode == 2:
+            for room in self.floor_manager.rooms.values():
+                pygame.draw.rect(self.game_surface, (0, 255, 0), self.camera.convert_rect(room.bounding_rect), 1)
+                pygame.draw.rect(self.game_surface, (0, 255, 0), self.camera.convert_rect(room.inside_rect), 3)
 
     def update(self) -> None:
         # check for pause override
@@ -562,12 +561,17 @@ class FollowCameraLayered(Sprite):
         """Set new screen size to center camera on"""
         self.half_screen_size = pygame.Vector2(new_size[0] // 2, new_size[1] // 2)
 
-    def convert_coords(self, old_coords: pygame.Vector2) -> pygame.Vector2:
+    def convert_coords(self, old_coords: Vec2) -> pygame.Vector2:
         """Converts absolute world coords to scaled coords on screen"""
         return pygame.Vector2(
-            old_coords.x - (int(self.pos.x) - self.half_screen_size.x),
-            old_coords.y - (int(self.pos.y) - self.half_screen_size.y)
+            old_coords[0] - (int(self.pos.x) - self.half_screen_size.x),
+            old_coords[1] - (int(self.pos.y) - self.half_screen_size.y)
         )
+    
+    def convert_rect(self, rect: pygame.Rect | pygame.FRect) -> pygame.Rect | pygame.FRect:
+        new = rect.copy()
+        new.topleft = self.convert_coords(rect.topleft)
+        return new
 
     def render(self, surface: pygame.Surface, sprite_group: pygame.sprite.Group) -> None:
         # render sprites centered on camera position

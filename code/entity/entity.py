@@ -39,25 +39,25 @@ class Entity(Sprite):
 
     def check_collision_vertical(self, collide_group: list[Sprite]) -> None:
         # get future position of hitbox
-        future_player_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
+        future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in collide_group:
             if sprite == self: continue
-            if sprite.rect.colliderect(future_player_rect):
+            if sprite.rect.colliderect(future_collision_rect):
                 # move self so that it no longer colliding
                 if self.velocity.y > 0:
                     self.rect.bottom = sprite.rect.top
                     return
                 elif self.velocity.y < 0:
-                    future_player_rect.top = sprite.rect.bottom
-                    self.rect.bottom = future_player_rect.bottom
+                    future_collision_rect.top = sprite.rect.bottom
+                    self.rect.bottom = future_collision_rect.bottom
                     return
 
     def check_collision_horizontal(self, collide_group: list[Sprite]) -> None:
         # see Entity.check_collision_vertical()
-        future_player_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
+        future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in collide_group:
             if sprite == self: continue
-            if sprite.rect.colliderect(future_player_rect):
+            if sprite.rect.colliderect(future_collision_rect):
                 if self.velocity.x > 0:
                     self.rect.right = sprite.rect.left
                     return
@@ -89,6 +89,12 @@ class Entity(Sprite):
     def on_hit(self, other: Sprite) -> None:
         pass
 
+    def apply_friction(self):
+        self.velocity -= self.velocity * SURFACE_FRICTION_COEFFICIENT * self.manager.dt
+        # prevent small values of velocity
+        if -0.01 < self.velocity.x < 0.01: self.velocity.x = 0
+        if -0.01 < self.velocity.y < 0.01: self.velocity.y = 0
+
     def move(self) -> None:
         # checking collisions of one direction at a time
         # ensures that an overlap of bounds is due to the
@@ -98,12 +104,7 @@ class Entity(Sprite):
         self.rect.y += self.velocity.y * self.manager.dt
         self.check_collision_vertical(self.manager.groups["collide"])
 
-        # reduce entity speed
-        self.velocity -= self.velocity * SURFACE_FRICTION_COEFFICIENT * self.manager.dt
-
-        # prevent small values of velocity
-        if -0.01 < self.velocity.x < 0.01: self.velocity.x = 0
-        if -0.01 < self.velocity.y < 0.01: self.velocity.y = 0
+        self.apply_friction()
 
     def update(self) -> None:
         super().update()

@@ -5,7 +5,7 @@ class EntityStats:
     health: float = 100.0
     contact_damage: float = 0.0
     walk_speed: float = 1
-    iframes: int = 60
+    iframes: int = 0
 
 @dataclass
 class EnemyStats(EntityStats):
@@ -34,5 +34,12 @@ enemy_stats = {
         notice_range = 256,
         attention_span = 30,
         value = 3
+    ),
+    "tree_boss": EnemyStats(
+        health = 300,
+        contact_damage = 20,
+        walk_speed = 0.3,
+        iframes = 10,
+        value = 40,
     )
 }

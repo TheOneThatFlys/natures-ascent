@@ -1,4 +1,10 @@
+from __future__ import annotations
+
 import pygame, random, math
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from world import Room
 
 from .entity import Entity
 from .stats import EnemyStats, enemy_stats
@@ -9,12 +15,18 @@ from item import Coin
 import util
 
 class Enemy(Entity):
-    def __init__(self, parent: Node, position: Vec2, stats: EnemyStats) -> None:
+    """
+    Class to represent enemies.
+    
+    Stats are provided through Enemy.stats, and custom ai can be implemented by overriding Enemy.update_ai().
+    """
+    def __init__(self, parent: Room, position: Vec2, stats: EnemyStats) -> None:
         super().__init__(
             parent,
             stats = stats
         )
         self.stats: EnemyStats
+        self.parent: Room
         
         self.add(self.manager.groups["enemy"])
         self.remove(self.manager.groups["update"])
@@ -29,6 +41,26 @@ class Enemy(Entity):
         self.has_seen_player = False
 
         self.player = self.manager.get_object("player")
+
+    def move(self):
+        """Enemy can override move to use a better form of collision as enemies will not be able to leave their rooms"""
+        self.rect.x += self.velocity.x * self.manager.dt
+        self.check_collision_horizontal(collide_group = self.parent.collide_sprites)
+        self.rect.y += self.velocity.y * self.manager.dt
+        self.check_collision_vertical(collide_group = self.parent.collide_sprites)
+
+        # constrain self within parent room
+        bounds: pygame.Rect = self.parent.bounding_rect
+        if self.rect.left < bounds.left:
+            self.rect.left = bounds.left
+        elif self.rect.right > bounds.right:
+            self.rect.right = bounds.right
+        if self.rect.top < bounds.top:
+            self.rect.top = bounds.top
+        elif self.rect.bottom > bounds.bottom:
+            self.rect.bottom = bounds.bottom
+
+        self.apply_friction()
 
     def follow_player(self) -> None:
         if (pygame.Vector2(self.rect.center) - pygame.Vector2(self.player.rect.center)).magnitude() < 12: return
@@ -81,10 +113,9 @@ class Enemy(Entity):
         if self.has_line_of_sight(self.player.rect.center):
             self.time_since_seen_player = 0
 
-        if self.time_since_seen_player <= self.stats.attention_span:
-            self.update_ai()
-            self.avoid_others()
-            self.check_player_collision()
+        self.update_ai()
+        self.avoid_others()
+        self.check_player_collision()
         
         super().update()
 
@@ -104,4 +135,19 @@ class Slime(Enemy):
         super().update()
 
         if self.time_since_seen_player <= self.stats.attention_span:
-            self.animation_manager.set_animation(util.get_closest_direction(self.velocity))
+            self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))
+
+class TreeBoss(Enemy):
+    def __init__(self, parent: Node, position: Vec2) -> None:
+        super().__init__(parent, position, enemy_stats["tree_boss"])
+
+        self.image = pygame.Surface((100, 100))
+        self.rect = self.image.get_frect(center = position)
+
+    def update_ai(self) -> None:
+        self.follow_player()
+
+    def update(self) -> None:
+        self.update_ai()
+        self.check_player_collision()
+        Entity.update(self)
