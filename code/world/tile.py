@@ -17,7 +17,7 @@ class Tile(Sprite):
         self.is_wall = collider
 
 class TileSet(DebugExpandable):
-    "Generate an indexed tileset (row then column)"
+    """Generate an indexed tileset (row then column)"""
     def __init__(self, tile_set_image: pygame.Surface, tile_size: int) -> None:
         self.tiles = []
         rows = parse_spritesheet(tile_set_image, frame_size = (tile_set_image.get_width(), tile_size), direction = "y")
@@ -26,16 +26,5 @@ class TileSet(DebugExpandable):
             for tile in individual_tiles:
                 self.tiles.append(tile)
 
-        self.map = {}
-
-    def set_map(self, m: dict[str, int]) -> None:
-        "Creates a map that allows you to access tiles from the get() method using a string to index key"
-        self.map = m
-
-    def get(self, key: int | str) -> None:
-        if isinstance(key, str):
-            index = self.map[key]
-        else:
-            index = key
-
-        return self.tiles[index]
+    def get(self, key: int) -> None:
+        return self.tiles[key]
