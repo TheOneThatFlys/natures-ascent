@@ -104,13 +104,20 @@ class TempDoor(Sprite):
     def __init__(self, parent: Room, direction: Direction):
         super().__init__(parent, ["render", "collide"])
 
-        d = "left" if direction == "right" else direction
+        if direction == "right":
+            d = "left"
+        elif direction == "down":
+            d = "up"
+        else:
+            d = direction
         self.image = pygame.transform.scale_by(self.manager.get_image("tiles/door_" + d), 2)
         if direction == "right":
             self.image = pygame.transform.flip(self.image, True, False)
+
         self.rect = self.image.get_rect()
         self.z_index = 2
         bounding_rect = self.parent.bounding_rect
+        
         if direction == "up":
             self.rect.centerx = bounding_rect.centerx
             self.rect.bottom = bounding_rect.top
@@ -493,7 +500,7 @@ class FloorManager(Node):
             room_size = self.room_size,
             forced_doors = forced_connections,
             blacklisted_doors = blacklisted_connections,
-            enemies = {Slime: 100},
+            enemies = {Slime: 3},
             tags = tags,
         )
 

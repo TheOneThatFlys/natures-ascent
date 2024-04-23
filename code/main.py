@@ -1,7 +1,5 @@
 # TODO:
-# Rooms block player in
-# Enemies spawn randomly in rooms
-# Settings: config loader
+# Settings - display mode
 # Different rooms - shop etc
 # Weapon system - equip & inv
 # Weapon upgrades
@@ -27,6 +25,7 @@ class Game(DebugExpandable):
     def __init__(self) -> None:
         
         self.window = pygame.Window("Nature's Ascent", STARTUP_SCREEN_SIZE)
+        self.window.resizable = True
         self.display_surface: pygame.Surface = self.window.get_surface()
         self.clock = pygame.time.Clock()
 

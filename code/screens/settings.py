@@ -30,12 +30,21 @@ class SettingsUI(Element):
             text = "Settings",
             style = Style(
                 alignment = "top-center",
-                offset = (0, 64),
+                offset = (0, 32),
                 fore_colour = button_colours.colour,
                 colour = button_colours.colour_shadow,
                 font = self.manager.get_font("alagard", 72),
                 text_shadow = 2
             )
+        ))
+
+        self.main_container = self.add_child(Element(
+            parent = self,
+            style = Style(
+                alignment = "top-center",
+                offset = (0, self.title_text.rect.bottom + 16),
+                size = (self.rect.size[0] / 2, self.rect.size[1] / 1.3)
+            ),
         ))
 
     def redraw_image(self) -> None:
@@ -59,7 +68,9 @@ class SettingsScreen(Screen):
         ))
 
     def on_resize(self, new_res: Vec2) -> None:
+        self.rect.size = new_res
         self.ui.style.size = new_res
+        self.ui.main_container.style.size = (self.ui.style.size[0] - 128, self.ui.style.size[1] - 256)
         for child in self.ui.get_all_children():
             child.redraw_image()
 
