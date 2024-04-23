@@ -44,10 +44,11 @@ class Enemy(Entity):
 
     def move(self):
         """Enemy can override move to use a better form of collision as enemies will not be able to leave their rooms"""
+        check_tile_collisions = self.parent.inside_rect.contains(self.rect)
         self.rect.x += self.velocity.x * self.manager.dt
-        self.check_collision_horizontal(collide_group = self.parent.collide_sprites)
+        if check_tile_collisions: self.check_collision_horizontal(collide_group = self.parent.collide_sprites)
         self.rect.y += self.velocity.y * self.manager.dt
-        self.check_collision_vertical(collide_group = self.parent.collide_sprites)
+        if check_tile_collisions: self.check_collision_vertical(collide_group = self.parent.collide_sprites)
 
         # constrain self within parent room
         bounds: pygame.Rect = self.parent.bounding_rect
@@ -75,7 +76,7 @@ class Enemy(Entity):
         if (pygame.Vector2(target_position) - self.rect.center).magnitude() > self.stats.notice_range:
             return False
         
-        for blocking_sprite in self.manager.groups["collide"].sprites():
+        for blocking_sprite in self.parent.collide_sprites:
             if blocking_sprite.rect.clipline(self.rect.center, target_position):
                 return False
         return True
@@ -85,7 +86,7 @@ class Enemy(Entity):
             self.player.hit(self, kb_magnitude = 10, damage = self.stats.contact_damage)
 
     def avoid_others(self) -> None:
-        for enemy in self.manager.groups["enemy"]:
+        for enemy in self.parent.enemies:
             if enemy == self: continue
             if self.rect.colliderect(enemy.rect):
                 dv = (self.rect.center - pygame.Vector2(enemy.rect.center)) / 30

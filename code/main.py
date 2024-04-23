@@ -183,7 +183,28 @@ def main():
     # initialise logging
     Logger.allow_all()
     Logger.info("Starting game.")
-    Game().run()
+
+    if "-profile" in sys.argv:
+        from cProfile import run
+        import pstats
+        # create a debug folder
+        if not os.path.exists("debug"):
+            os.mkdir("debug")
+
+        profile_path = os.path.join("debug", "profile.dat")
+        log_path = os.path.join("debug", "profile.log")
+
+        # run and profile the game
+        run("Game().run()", profile_path, sort = "cumulative")
+
+        # parse output dump and save to log
+        with open(log_path, "w") as f:
+            profile_stats = pstats.Stats(profile_path, stream = f)
+            profile_stats.strip_dirs().sort_stats(pstats.SortKey.CUMULATIVE).print_stats()
+        Logger.info(f"Saved performance profile to '{log_path}'.")
+    else:
+        Game().run()
+
     Logger.info("Game closed successfully.")
 
 if __name__ == "__main__":

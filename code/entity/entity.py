@@ -38,6 +38,7 @@ class Entity(Sprite):
             self.health_bar.show()
 
     def check_collision_vertical(self, collide_group: list[Sprite]) -> None:
+        if self.velocity.y == 0: return
         # get future position of hitbox
         future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in collide_group:
@@ -53,6 +54,7 @@ class Entity(Sprite):
                     return
 
     def check_collision_horizontal(self, collide_group: list[Sprite]) -> None:
+        if self.velocity.x == 0: return
         # see Entity.check_collision_vertical()
         future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
         for sprite in collide_group:

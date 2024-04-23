@@ -493,7 +493,7 @@ class FloorManager(Node):
             room_size = self.room_size,
             forced_doors = forced_connections,
             blacklisted_doors = blacklisted_connections,
-            enemies = {Slime: 3},
+            enemies = {Slime: 100},
             tags = tags,
         )
 
