@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pygame, random, math
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable, Type
 if TYPE_CHECKING:
     from world import Room
 
 from .entity import Entity
 from .stats import EnemyStats, enemy_stats
 
-from engine import Node
+from engine import Node, Sprite
 from engine.types import *
 from item import Coin
 import util
@@ -138,17 +138,105 @@ class Slime(Enemy):
         if self.time_since_seen_player <= self.stats.attention_span:
             self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))
 
+class BossAttack(Sprite):
+    def __init__(self, parent: Enemy, attack_time: int = 0):
+        super().__init__(parent, ["update"])
+        self.parent: Enemy
+
+        self.max_attack_time = attack_time
+        self.attack_timer = 0
+        self.should_die = False
+
+    def update(self) -> None:
+        self.attack_timer += self.manager.dt
+        if self.attack_timer >= self.max_attack_time:
+            self.should_die = True
+
+class AttackFourBranches(BossAttack):
+    LIFETIME = 120
+    CHARGEUP = 40
+
+    class LineSegment(Sprite):
+        def __init__(self, parent: AttackFourBranches, direction: Direction, size: Vec2) -> None:
+            super().__init__(parent, ["render", "update"])
+            self.parent: AttackFourBranches
+            self.z_index = 10
+            self.direction = direction
+
+            self.image = pygame.Surface(size)
+            if direction == "up" or direction == "down":
+                self.image = pygame.transform.rotate(self.image, 90)
+            self.rect = self.image.get_rect()
+            self.align_to_parent()
+
+            self.image.fill((0, 0, 255))
+            self.image.set_alpha(0)
+
+        def align_to_parent(self):
+            boss_rect = self.parent.parent.rect
+            if self.direction == "up":
+                self.rect.centerx = boss_rect.centerx
+                self.rect.bottom = boss_rect.y
+            elif self.direction == "down":
+                self.rect.centerx = boss_rect.centerx
+                self.rect.top = boss_rect.bottom
+            elif self.direction == "left":
+                self.rect.centery = boss_rect.centery
+                self.rect.right = boss_rect.x
+            elif self.direction == "right":
+                self.rect.centery = boss_rect.centery
+                self.rect.x = boss_rect.right
+
+        def update(self) -> None:
+            self.align_to_parent()
+            if self.parent.attack_timer < AttackFourBranches.CHARGEUP:
+                self.image.set_alpha((self.parent.attack_timer / AttackFourBranches.CHARGEUP) * 100)
+
+    def __init__(self, parent: Enemy) -> None:
+        super().__init__(parent, attack_time = AttackFourBranches.LIFETIME)
+        for d in ("left", "right", "up", "down"):
+            self.add_child(AttackFourBranches.LineSegment(self, d, (16, 1024)))
+
 class TreeBoss(Enemy):
+    ATTACK_INTERVAL = 300
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position, enemy_stats["tree_boss"])
 
-        self.image = pygame.Surface((100, 100))
+        self.animation_manager.add_animation("default", [self.manager.get_image("tiles/wall_tiles")])
+        self.image = self.animation_manager.set_animation("default")
         self.rect = self.image.get_frect(center = position)
+
+        self.in_stationary_attack = False
+
+        self.next_attack_timer = 0
+        self.in_attack_timer = 0
+        self.possible_attacks: list[Type[BossAttack]] = [AttackFourBranches]
+        self.current_attack: BossAttack | None = None
+
+    def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
+        return super().hit(other, damage, 0 if self.in_stationary_attack else kb_magnitude)
 
     def update_ai(self) -> None:
         self.follow_player()
+        if self.in_stationary_attack:
+            self.velocity = pygame.Vector2()
+
+        # if in an attack
+        if self.current_attack:
+            if self.current_attack.should_die:
+                # remove movement lock, queue next event
+                self.current_attack.kill()
+                self.current_attack = None
+                self.in_stationary_attack = False
+                self.next_attack_timer = random.randint(self.ATTACK_INTERVAL - 50, self.ATTACK_INTERVAL + 50)
+        # count down to next attack
+        else:
+            self.next_attack_timer -= self.manager.dt
+            if self.next_attack_timer <= 0:
+                self.current_attack = self.add_child(random.choice(self.possible_attacks)(self))
+                self.in_stationary_attack = True
 
     def update(self) -> None:
+        Entity.update(self)
         self.update_ai()
         self.check_player_collision()
-        Entity.update(self)

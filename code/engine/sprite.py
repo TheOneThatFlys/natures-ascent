@@ -13,7 +13,9 @@ class Sprite(pygame.sprite.Sprite, Node):
             self.add(self.manager.groups[g])
 
     def kill(self) -> None:
-        for child in self.children:
+        # create shallow copy of list because it breaks without
+        # for some god forsaken reason
+        for child in self.children[:]:
             if isinstance(child, Sprite):
                 child.kill()
             
