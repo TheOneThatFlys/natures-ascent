@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import pygame, random, math
 
-from typing import TYPE_CHECKING, Callable, Type
+from typing import TYPE_CHECKING, Type
 if TYPE_CHECKING:
     from world import Room
+    from .player import Player
 
 from .entity import Entity
 from .stats import EnemyStats, enemy_stats
@@ -157,20 +158,25 @@ class AttackFourBranches(BossAttack):
     CHARGEUP = 40
 
     class LineSegment(Sprite):
-        def __init__(self, parent: AttackFourBranches, direction: Direction, size: Vec2) -> None:
+        def __init__(self, parent: AttackFourBranches, direction: Direction, short: int, long: int) -> None:
             super().__init__(parent, ["render", "update"])
             self.parent: AttackFourBranches
-            self.z_index = 10
-            self.direction = direction
 
-            self.image = pygame.Surface(size)
-            if direction == "up" or direction == "down":
-                self.image = pygame.transform.rotate(self.image, 90)
-            self.rect = self.image.get_rect()
+            self.direction = direction
+            self.size = (long, short) if direction == "left" or direction == "right" else (short, long)
+            self.short, self.long = short, long
+
+            self.grow_vector = pygame.Vector2(1, 0) if direction == "left" or direction == "right" else pygame.Vector2(0, 1)
+            self.image = pygame.Surface(self.size)
+            self.rect = self.image.get_frect()
             self.align_to_parent()
 
             self.image.fill((0, 0, 255))
             self.image.set_alpha(0)
+
+            self.z_index = 10
+
+            self.player = self.manager.get_object("player")
 
         def align_to_parent(self):
             boss_rect = self.parent.parent.rect
@@ -188,14 +194,21 @@ class AttackFourBranches(BossAttack):
                 self.rect.x = boss_rect.right
 
         def update(self) -> None:
-            self.align_to_parent()
             if self.parent.attack_timer < AttackFourBranches.CHARGEUP:
                 self.image.set_alpha((self.parent.attack_timer / AttackFourBranches.CHARGEUP) * 100)
+            else:
+                new_length = (self.parent.attack_timer - AttackFourBranches.CHARGEUP) / (self.parent.max_attack_time - AttackFourBranches.CHARGEUP) * self.long
+                self.image = pygame.Surface((self.short, self.short) + self.grow_vector * (new_length))
+                self.rect = self.image.get_frect()
+                self.align_to_parent()
+                
+                if self.rect.colliderect(self.player.rect):
+                    self.player.hit(self, 10)
 
     def __init__(self, parent: Enemy) -> None:
         super().__init__(parent, attack_time = AttackFourBranches.LIFETIME)
         for d in ("left", "right", "up", "down"):
-            self.add_child(AttackFourBranches.LineSegment(self, d, (16, 1024)))
+            self.add_child(AttackFourBranches.LineSegment(self, d, 64, 1024))
 
 class TreeBoss(Enemy):
     ATTACK_INTERVAL = 300
@@ -208,7 +221,7 @@ class TreeBoss(Enemy):
 
         self.in_stationary_attack = False
 
-        self.next_attack_timer = 0
+        self.next_attack_timer = self.ATTACK_INTERVAL
         self.in_attack_timer = 0
         self.possible_attacks: list[Type[BossAttack]] = [AttackFourBranches]
         self.current_attack: BossAttack | None = None
@@ -229,6 +242,7 @@ class TreeBoss(Enemy):
                 self.current_attack = None
                 self.in_stationary_attack = False
                 self.next_attack_timer = random.randint(self.ATTACK_INTERVAL - 50, self.ATTACK_INTERVAL + 50)
+
         # count down to next attack
         else:
             self.next_attack_timer -= self.manager.dt

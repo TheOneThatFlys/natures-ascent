@@ -139,7 +139,7 @@ class Player(Entity):
             self.animation_manager.set_animation("damage-" + hit_direction)
 
     def try_attack(self, direction: Direction) -> bool:
-        "Attempts an attack, returning True if successful and False if not"
+        """Attempts an attack, returning True if successful and False if not"""
         if self.attack_cd <= 0:
             # create attack
             self.add_child(
