@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
-import sys
+import sys, platform, socket
 
 import pygame
 pygame.init()
@@ -180,9 +180,25 @@ class Game(DebugExpandable):
 
 def main():
     # initialise logging
+    if not os.path.exists("debug"):
+        os.mkdir("debug")
+   
     Logger.allow_all()
+    Logger.set_path("$CONSOLE" if IN_DEBUG else os.path.join("debug", f"{Logger.get().session_id}.log"))
+    Logger.info(f"Initialised session (id {Logger.get().session_id}).")
+
+    Logger.info(f"Found system specs [platform] = {platform.platform()}")
+    Logger.info(f"Found system specs [platform-release] = {platform.release()}")
+    Logger.info(f"Found system specs [platform-version] = {platform.version()}")
+    Logger.info(f"Found system specs [architecture] = {platform.architecture()}")
+    Logger.info(f"Found system specs [ip] = {socket.gethostbyname(socket.gethostname())}")
+    Logger.info(f"Found system specs [processor] = {platform.architecture()}")
+    Logger.info(f"Found system specs [ram] = {platform.architecture()}")
+
+
     Logger.info("Starting game.")
 
+    # profiling
     if "-profile" in sys.argv:
         from cProfile import run
         import pstats

@@ -1,6 +1,8 @@
 from __future__ import annotations
 from typing import Literal, TypeVar
 
+import uuid
+
 import datetime, time
 
 _logger_instance: Logger = None
@@ -21,10 +23,10 @@ class Logger:
     WARNING = "WARN"
     ERROR = "ERROR"
 
-    def __init__(self) -> None:
+    def __init__(self, path: str = "$CONSOLE") -> None:
         self.out_path = "$CONSOLE"
-
         self.allowed_values: list[str] = []
+        self.session_id = uuid.uuid4()
 
     @staticmethod
     def set_path(path: str | Literal["$CONSOLE"]):
@@ -84,7 +86,7 @@ class Logger:
         else:
             logged_msg = f"[{time}] [{level}] {msg}"
             with open(self.out_path, "a") as f:
-                f.write(logged_msg)
+                f.write(logged_msg + "\n")
 
 if __name__ == "__main__":
     # test timing
