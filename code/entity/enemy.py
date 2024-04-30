@@ -210,6 +210,43 @@ class AttackFourBranches(BossAttack):
         for d in ("left", "right", "up", "down"):
             self.add_child(AttackFourBranches.LineSegment(self, d, 64, 1024))
 
+class Attack8Projectiles(BossAttack):
+    CHARGEUP = 10
+    LIFE = 120
+    
+    class Projectile(Sprite):
+        def __init__(self, parent: Attack8Projectiles, direction: pygame.Vector2) -> None:
+            super().__init__(parent, ["render", "update"])
+            self.velocity = direction.normalize() * 5
+            self.image = pygame.Surface((32, 32))
+            self.rect = self.image.get_rect(center = parent.rect.center)
+            self.life = Attack8Projectiles.LIFE
+
+        def update(self):
+            self.rect.topleft += self.velocity * self.manager.dt
+            self.life -= self.manager.dt
+            if self.life <= 0:
+                self.kill()
+
+    def __init__(self, parent: Enemy) -> None:
+        super().__init__(parent, attack_time = 20)
+        self.chargeup_timer = 0
+        self.attacked = False
+
+    def update(self):
+        super().update()
+        if self.attacked: return
+        self.chargeup_timer += self.manager.dt
+        if self.chargeup_timer >= Attack8Projectiles.CHARGEUP:
+            self.attack()
+            self.attacked = True
+
+    def attack(self):
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                if dx == 0 and dy == 0: continue
+                self.parent.add_child(Attack8Projectiles.Projectile(self.parent, pygame.Vector2(dx, dy)))
+
 class TreeBoss(Enemy):
     ATTACK_INTERVAL = 300
     def __init__(self, parent: Node, position: Vec2) -> None:
@@ -223,7 +260,7 @@ class TreeBoss(Enemy):
 
         self.next_attack_timer = self.ATTACK_INTERVAL
         self.in_attack_timer = 0
-        self.possible_attacks: list[Type[BossAttack]] = [AttackFourBranches]
+        self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles, AttackFourBranches]
         self.current_attack: BossAttack | None = None
 
     def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:

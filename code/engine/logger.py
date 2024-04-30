@@ -1,11 +1,19 @@
 from __future__ import annotations
-from typing import Literal, Callable, TypeVar
+from typing import Literal, TypeVar
 
-import datetime, time, traceback
+import datetime, time
 
 _logger_instance: Logger = None
 
 T = TypeVar("T")
+
+class TerminalColours:
+    END = "\033[0m"
+    INFO = "\033[94m"
+    DEBUG = "\033[92m"
+    WARN = "\033[93m"
+    ERROR = "\033[91m"
+    TIME = "\033[38;2;255;179;38m"
 
 class Logger:
     INFO = "INFO"
@@ -14,7 +22,6 @@ class Logger:
     ERROR = "ERROR"
 
     def __init__(self) -> None:
-        self.log_time = True
         self.out_path = "$CONSOLE"
 
         self.allowed_values: list[str] = []
@@ -70,15 +77,14 @@ class Logger:
         if level not in self.allowed_values: return
 
         rn = datetime.datetime.now()
-        time = f"[{rn:%H:%M:%S}] " if self.log_time else ""
-        logged_msg = f"{time}[{level}] {msg}"
-            
+        time = f"{rn:%H:%M:%S}"
         if self.out_path == "$CONSOLE":
+            logged_msg = f"{TerminalColours.TIME}{time} {getattr(TerminalColours, level)}{level} {TerminalColours.END}{msg}"
             print(logged_msg)
         else:
+            logged_msg = f"[{time}] [{level}] {msg}"
             with open(self.out_path, "a") as f:
                 f.write(logged_msg)
-
 
 if __name__ == "__main__":
     # test timing
@@ -88,6 +94,10 @@ if __name__ == "__main__":
         return test
     
     Logger.allow_all()
+    Logger.info("test info")
+    Logger.debug("test debug")
+    Logger.warn("test warn")
+    Logger.error("test error", Exception())
 
     a = foo(5)
     print("return: " + str(a))
