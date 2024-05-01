@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import pygame, inspect, pickle, base64
+import pygame, inspect, pickle, os
 
 from typing import Any, Callable, Iterable, Type
 from dataclasses import is_dataclass
@@ -14,7 +14,7 @@ from .constants import *
 
 INDEX_SPECIAL_STRING = "$$"
 ALLOWED_REC_TYPES = (DebugExpandable, list, dict, set, tuple, pygame.Rect, pygame.FRect, pygame.Vector2)
-SAVE_PATH = "debug.dat"
+SAVE_PATH = os.path.join("debug", "config.dat")
 
 class Path:
     def __init__(self, values: tuple = ()) -> None:

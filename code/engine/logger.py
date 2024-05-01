@@ -24,9 +24,8 @@ class Logger:
     ERROR = "ERROR"
 
     def __init__(self, path: str = "$CONSOLE") -> None:
-        self.out_path = "$CONSOLE"
+        self.out_path = path
         self.allowed_values: list[str] = []
-        self.session_id = uuid.uuid4()
 
     @staticmethod
     def set_path(path: str | Literal["$CONSOLE"]):
@@ -69,17 +68,21 @@ class Logger:
         return outer
 
     @staticmethod
-    def get() -> Logger:
+    def start(path: str = "$CONSOLE") -> None:
         global _logger_instance
+        _logger_instance = Logger(path)
+
+    @staticmethod
+    def get() -> Logger:
         if not _logger_instance:
-            _logger_instance = Logger()
+            raise RuntimeError("Logger not initialised. Initialise logger by calling logger.start()")
         return _logger_instance
     
     def _log(self, msg: str, level: str) -> None:
         if level not in self.allowed_values: return
 
         rn = datetime.datetime.now()
-        time = f"{rn:%H:%M:%S}"
+        time = f"{rn:%H:%M:%S}.{str(rn.microsecond)[0:3]}"
         if self.out_path == "$CONSOLE":
             logged_msg = f"{TerminalColours.TIME}{time} {getattr(TerminalColours, level)}{level} {TerminalColours.END}{msg}"
             print(logged_msg)

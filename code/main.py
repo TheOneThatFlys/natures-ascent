@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
-import sys, platform, socket
+import sys, platform, uuid, datetime
 
 import pygame
 pygame.init()
@@ -140,13 +140,6 @@ class Game(DebugExpandable):
                         elif event.key == pygame.K_F12:
                             self.set_fullscreen()
 
-                    elif event.key == pygame.K_KP1:
-                        self.set_windowed(STARTUP_SCREEN_SIZE)
-                    elif event.key == pygame.K_KP2:
-                        self.set_fullscreen()
-                    elif event.key == pygame.K_KP3:
-                        self.set_fullscreen(borderless = True)
-
                     screen_instance.on_key_down(event.key, event.unicode)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -178,23 +171,54 @@ class Game(DebugExpandable):
 
         pygame.quit()
 
+def log_system_specs():
+    """Logs system specs to standard logger"""
+    uname = platform.uname()
+    Logger.info(f"Found system specs [system] = {uname.system}")
+    Logger.info(f"Found system specs [release] = {uname.release}")
+    Logger.info(f"Found system specs [version] = {uname.version}")
+    Logger.info(f"Found system specs [machine] = {uname.machine}")
+    Logger.info(f"Found system specs [processor] = {uname.processor}")
+
+    Logger.info(f"Detected python version = {platform.python_version()}")
+
+def clean_debug_folder(max_logs = 5):
+    """Make sure only the {max_logs} newest logs are in debug folder."""
+    folder_path = os.path.join("debug")
+    # get all files ending with .log (and not profile)
+    logs = list(map(
+        lambda filename: os.path.join(folder_path, filename),
+        filter(
+            lambda filepath: filepath.endswith(".log") and not filepath == "profile.log",
+            os.listdir(folder_path)
+        )
+    ))
+    while len(logs) > max_logs:
+        # get oldest file path
+        oldest_file = min(logs, key = os.path.getctime)
+        # remove file from system
+        os.remove(oldest_file)
+        # and also update log list
+        logs.remove(oldest_file)
+
 def main():
     # initialise logging
     if not os.path.exists("debug"):
         os.mkdir("debug")
+
+    session_id = uuid.uuid4()
+
    
+    Logger.start("$CONSOLE" if IN_DEBUG else os.path.join("debug", f"{session_id}.log"))
+    
+    # keep newest 5 logs (5 total)
+    clean_debug_folder(max_logs = 5)
+
     Logger.allow_all()
-    Logger.set_path("$CONSOLE" if IN_DEBUG else os.path.join("debug", f"{Logger.get().session_id}.log"))
-    Logger.info(f"Initialised session (id {Logger.get().session_id}).")
+    Logger.info(f"Initialised session {session_id} on {datetime.datetime.now():%d/%m/%y %H:%M:%S}.")
 
-    Logger.info(f"Found system specs [platform] = {platform.platform()}")
-    Logger.info(f"Found system specs [platform-release] = {platform.release()}")
-    Logger.info(f"Found system specs [platform-version] = {platform.version()}")
-    Logger.info(f"Found system specs [architecture] = {platform.architecture()}")
-    Logger.info(f"Found system specs [ip] = {socket.gethostbyname(socket.gethostname())}")
-    Logger.info(f"Found system specs [processor] = {platform.architecture()}")
-    Logger.info(f"Found system specs [ram] = {platform.architecture()}")
-
+    # get some system debug info
+    log_system_specs()
 
     Logger.info("Starting game.")
 
@@ -218,6 +242,7 @@ def main():
             profile_stats.strip_dirs().sort_stats(pstats.SortKey.CUMULATIVE).print_stats()
         Logger.info(f"Saved performance profile to '{log_path}'.")
     else:
+        # main entry point
         Game().run()
 
     Logger.info("Game closed successfully.")
