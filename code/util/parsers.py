@@ -54,14 +54,14 @@ class SaveHelper:
     def save_file(data: str | bytes, filepath: str, obfuscate: bool = False) -> None:
         """Save a file with string data"""
         data_to_save = SaveHelper.encode_data(data) if obfuscate else data
-        with open(filepath, "w") as f:
+        with open(filepath, "wb" if isinstance(data, bytes) else "w") as f:
             f.write(data_to_save)
 
     @staticmethod
-    def load_file(filepath: str, obfuscated: bool = False) -> str | bytes | None:
+    def load_file(filepath: str, obfuscated: bool = False, format: Literal["bytes", "text"] = "text") -> str | bytes | None:
         """Read a file as string. Returns none if file does not exist"""
         if os.path.exists(filepath):
-            with open(filepath, "r") as f:
+            with open(filepath, "rb" if format == "bytes" else "r") as f:
                 loaded_data = f.read()
             return SaveHelper.decode_data(loaded_data) if obfuscated else loaded_data
         return None

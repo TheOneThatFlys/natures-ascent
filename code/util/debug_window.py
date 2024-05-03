@@ -353,7 +353,7 @@ class AttributeEditor(Element):
         self.expanded_folders: set[str] = set()
         self.add_folder_chain(Path(["game"]))
 
-        save_data = SaveHelper.load_file(SAVE_PATH, obfuscated = False)
+        save_data = SaveHelper.load_file(SAVE_PATH, format = "bytes")
         if save_data: self.expanded_folders = pickle.loads(save_data)
 
         self.folder_buttons: dict[str, pygame.Rect] = {}
@@ -561,9 +561,35 @@ class DebugWindow(Screen):
         self.dead = False
 
         game_window = self.manager.get_window("main")
-        # move this window to the left of main game
-        self.window.position = (game_window.position[0] - self.window.size[0] - 50, game_window.position[1])
-        # focus back to main game
+        monitor_size = pygame.display.get_desktop_sizes()[0]
+
+        # create virtual rects representing windows and monitor
+        monitor_rect = pygame.Rect(0, 0, *monitor_size)
+        debug_win_rect = pygame.Rect(*self.window.position, *self.window.size)
+        main_win_rect = pygame.Rect(*game_window.position, *game_window.size)
+
+        # normal layout - main centered, debug to the left
+        main_win_rect.center = monitor_rect.center
+        debug_win_rect.right = main_win_rect.left - 50
+
+        # if debug doesn't fit, shift to the right
+        if debug_win_rect.left < 0:
+            debug_win_rect.left = 0
+
+        # but if this makes windows overlay, move game window to the right
+        if main_win_rect.left < debug_win_rect.right:
+            main_win_rect.left = debug_win_rect.right
+
+        # if main window is shifted too far to the right,
+        # resize debug window to fit
+        if main_win_rect.right > monitor_rect.right:
+            main_win_rect.right = monitor_rect.right
+            self.window.size = monitor_rect.right - main_win_rect.width, self.window.size[1]
+
+        # move actual windows according to their rects
+        game_window.position = main_win_rect.topleft
+        self.window.position = debug_win_rect.topleft
+
         game_window.focus()
 
         self.attribute_editor = self.add_child(AttributeEditor(self))
