@@ -293,6 +293,9 @@ class Room(Node):
             if direction in self.connections:
                 self.temp_doors.add(self.add_child(TempDoor(self, direction)))
 
+    def on_completion(self) -> None:
+        print("done")
+
     def update(self) -> None:
         if not self._activated:
             if self.bounding_rect.contains(self.player.rect):
@@ -301,6 +304,7 @@ class Room(Node):
         if not self._completed and self._activated:
             if len(self.enemies) == 0:
                 self._completed = True
+                self.on_completion()
                 # remove doors
                 for sprite in self.temp_doors:
                     sprite.kill()
@@ -316,6 +320,10 @@ class SpawnRoom(Room):
         portal_sprite.rect = portal_sprite.image.get_rect(center = self.bounding_rect.center)
         # render above floor and below player
         portal_sprite.z_index = -0.5
+
+        # force completion without activating room clear
+        self._activated = True
+        self._completed = True
 
     def gen_connections_random(self, __, ___) -> None:
         for _ in range(4):

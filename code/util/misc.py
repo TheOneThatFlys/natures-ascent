@@ -52,6 +52,18 @@ def get_closest_direction(vector: pygame.Vector2) -> Direction:
         else:
             return "up"
         
+def get_direction_vector(direction: Direction) -> tuple[int, int]:
+    """Get a normalised vector in the direction specified e.g. get_direction_vector("left") returns (-1, 0)"""
+    match direction:
+        case "left":
+            return (-1, 0)
+        case "right":
+            return (1, 0)
+        case "up":
+            return (0, -1)
+        case "down":
+            return (0, 1)
+        
 def sign(n: float) -> Literal[1, -1, 0]:
     """Returns 1 if n is positive, -1 if negative, and 0 if 0"""
     if n > 0: return 1

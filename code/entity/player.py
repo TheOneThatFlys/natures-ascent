@@ -5,7 +5,7 @@ from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 
-from item import MeleeWeaponAttack, WeaponStats
+from item import Weapon, Weapons
 
 from .entity import Entity
 from .stats import PlayerStats, player_stats
@@ -37,8 +37,6 @@ class Player(Entity):
         self.stats: PlayerStats
 
         self.id = "player"
-        # self.image = pygame.Surface((TILE_SIZE // 2, TILE_SIZE // 2))
-        # self.image.fill((49, 222, 49))
         
         self._load_animations()
         self.image = self.animation_manager.set_animation("idle-right")
@@ -51,13 +49,7 @@ class Player(Entity):
         self.walking = False
 
         self.attack_cd = 0
-        self.weapon = WeaponStats(
-            size = (self.rect.width / 2, self.rect.height),
-            damage = 10,
-            attack_time = ANIMATION_FRAME_TIME * 3,
-            cooldown_time = ANIMATION_FRAME_TIME * 4,
-            knockback = 10,
-        )
+        self.weapon: Weapon = Weapons.FIREBALL_SPELL
 
         self.money = 0
 
@@ -142,17 +134,18 @@ class Player(Entity):
         """Attempts an attack, returning True if successful and False if not"""
         if self.attack_cd <= 0:
             # create attack
-            self.add_child(
-                MeleeWeaponAttack(
-                    self,
-                    self.weapon,
-                    direction
-                )
-            )
+            self.add_child(self.weapon.spawn_type(self, self.weapon, direction))
+
             self.attack_cd = self.weapon.cooldown_time
             self.last_facing.set("attack", direction)
-            self.animation_manager.set_animation("sword_attack-" + direction)
-            self.manager.play_sound(sound_name = "effect/sword_slash", volume = 0.2)
+
+            # set player animation if avaliable
+            if self.weapon.animation_key:
+                self.animation_manager.set_animation(self.weapon.animation_key + "-" + direction)
+
+            # play associated weapon noise if avaliable
+            if self.weapon.sound_key:
+                self.manager.play_sound(sound_name = self.weapon.sound_key, volume = 0.2)
             return True
         return False
         

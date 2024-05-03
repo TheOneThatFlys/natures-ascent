@@ -1,2 +1,2 @@
-from .melee import MeleeWeaponAttack, WeaponStats
+from .weapon import MeleeWeaponAttack, Weapon, Weapons
 from .coin import Coin
