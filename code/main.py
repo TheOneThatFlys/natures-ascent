@@ -182,7 +182,7 @@ def log_system_specs():
 
     Logger.info(f"Detected python version = {platform.python_version()}")
 
-def clean_debug_folder(max_logs = 5):
+def clean_debug_folder(max_logs):
     """Make sure only the {max_logs} newest logs are in debug folder."""
     folder_path = os.path.join("debug")
     # get all files ending with .log (and not profile)
@@ -202,13 +202,14 @@ def clean_debug_folder(max_logs = 5):
         logs.remove(oldest_file)
 
 def main():
-    # initialise logging
+    # create a debug folder
     if not os.path.exists("debug"):
         os.mkdir("debug")
 
+    # generate a unique session id
     session_id = uuid.uuid4()
 
-   
+    # initialise logging
     Logger.start("$CONSOLE" if IN_DEBUG else os.path.join("debug", f"{session_id}.log"))
     
     # keep newest 5 logs (5 total)

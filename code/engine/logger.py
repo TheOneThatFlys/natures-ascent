@@ -5,6 +5,8 @@ import uuid
 
 import datetime, time
 
+_MAGIC_VALUE = "$CONSOLE"
+
 _logger_instance: Logger = None
 
 T = TypeVar("T")
@@ -23,12 +25,16 @@ class Logger:
     WARNING = "WARN"
     ERROR = "ERROR"
 
-    def __init__(self, path: str = "$CONSOLE") -> None:
+    def __init__(self, path: str = _MAGIC_VALUE) -> None:
         self.out_path = path
         self.allowed_values: list[str] = []
 
+        if self.out_path != _MAGIC_VALUE:
+            with open(self.out_path, "a"):
+                ...
+
     @staticmethod
-    def set_path(path: str | Literal["$CONSOLE"]):
+    def set_path(path: str):
         """Set out path for logging. Magic value '$CONSOLE' causes logs to be output to console instead"""
         Logger.get().out_path = path
 
@@ -68,7 +74,7 @@ class Logger:
         return outer
 
     @staticmethod
-    def start(path: str = "$CONSOLE") -> None:
+    def start(path: str = _MAGIC_VALUE) -> None:
         global _logger_instance
         _logger_instance = Logger(path)
 
@@ -83,7 +89,7 @@ class Logger:
 
         rn = datetime.datetime.now()
         time = f"{rn:%H:%M:%S}.{str(rn.microsecond)[0:3]}"
-        if self.out_path == "$CONSOLE":
+        if self.out_path == _MAGIC_VALUE:
             logged_msg = f"{TerminalColours.TIME}{time} {getattr(TerminalColours, level)}{level} {TerminalColours.END}{msg}"
             print(logged_msg)
         else:
@@ -92,6 +98,7 @@ class Logger:
                 f.write(logged_msg + "\n")
 
 if __name__ == "__main__":
+    Logger.start()
     # test timing
     @Logger.time("executed in %t seconds")
     def foo(test: int) -> int:

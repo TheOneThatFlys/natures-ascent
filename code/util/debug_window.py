@@ -353,7 +353,7 @@ class AttributeEditor(Element):
         self.expanded_folders: set[str] = set()
         self.add_folder_chain(Path(["game"]))
 
-        save_data = SaveHelper.load_file(SAVE_PATH, obfuscated = True)
+        save_data = SaveHelper.load_file(SAVE_PATH, obfuscated = False)
         if save_data: self.expanded_folders = pickle.loads(save_data)
 
         self.folder_buttons: dict[str, pygame.Rect] = {}
@@ -588,6 +588,6 @@ class DebugWindow(Screen):
         self.window.flip()
 
     def kill(self) -> None:
-        SaveHelper.save_file(pickle.dumps(self.attribute_editor.expanded_folders), SAVE_PATH, True)
+        SaveHelper.save_file(pickle.dumps(self.attribute_editor.expanded_folders), SAVE_PATH, False)
         self.dead = True
         self.window.destroy()
