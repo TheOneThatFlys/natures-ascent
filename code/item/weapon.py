@@ -39,7 +39,7 @@ class MeleeWeaponAttack(AbstractWeaponInstance):
 
         self.life = ANIMATION_FRAME_TIME * 3
         self.stats = stats
-        self.rect = pygame.Rect(0, 0, 16 * PIXEL_SCALE, 32 * PIXEL_SCALE)
+        self.rect = pygame.Rect(0, 0, 24 * PIXEL_SCALE, 32 * PIXEL_SCALE)
         self._hit_enemies = [] # keep track of hit enemies
 
         # flip hitbox if attacking up or down 

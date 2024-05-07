@@ -49,7 +49,7 @@ class Player(Entity):
         self.walking = False
 
         self.attack_cd = 0
-        self.weapon: Weapon = Weapons.FIREBALL_SPELL
+        self.weapon: Weapon = Weapons.STARTER_SWORD
 
         self.money = 0
 
