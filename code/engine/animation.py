@@ -34,12 +34,12 @@ class AnimationManager(Node):
         return self._current
 
     def add_animation(self, key: str, animation: list[pygame.Surface]) -> AnimationManager:
-        "Add an animation. Can be chain called."
+        """Add an animation. Can be chain called."""
         self._animations[key] = animation
         return self
 
     def set_animation(self, key: str) -> pygame.Surface:
-        "Plays the specified animation and returns first frame."
+        """Plays the specified animation and returns first frame."""
         if key != self._current:
             self._current = key
             self._current_index = 0

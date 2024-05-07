@@ -29,7 +29,7 @@ class Style(DebugExpandable):
 
     @staticmethod
     def from_style(style: Style, **changes) -> Style:
-        "Returns a shallow copy of style with changes."
+        """Returns a shallow copy of style with changes."""
         return replace(style, **changes)
     
     @staticmethod

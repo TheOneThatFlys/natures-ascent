@@ -1,8 +1,10 @@
 # TODO:
+# Room clear rewards
+# |-> Weapon upgrades
+# |-> Weapon system - equip & inv
+
 # Settings - display mode
 # Different rooms - shop etc
-# Weapon system - equip & inv
-# Weapon upgrades
 
 from __future__ import annotations
 
@@ -59,15 +61,15 @@ class Game(DebugExpandable):
         self.manager.load()
 
     def queue_close(self) -> None:
-        "Quits program after current game loop finishes"
+        """Quits program after current game loop finishes"""
         self.running = False
 
     def add_screen(self, name: str, screen: Type[Screen]) -> None:
-        "Add screen object to screen dictionary, key being screen.name"
+        """Add screen object to screen dictionary, key being screen.name"""
         self._screens[name] = screen
 
     def set_screen(self, screen_name: str) -> None:
-        "Sets the current screen based on screen name"
+        """Sets the current screen based on screen name"""
         if screen_name == self.current_screen: return
         self.manager.cleanup()
         self.current_screen = screen_name

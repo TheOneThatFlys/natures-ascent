@@ -187,7 +187,7 @@ class Room(Node):
                     e.rect.topleft = generate_pos()
 
     def place_in_world(self) -> None:
-        "Adds the room's tiles and enemies into the world"
+        """Adds the room's tiles and enemies into the world"""
         self.add_tiles()
         self.add_enemies()
 
@@ -253,7 +253,7 @@ class Room(Node):
         return (x, y), (x + second_offset[0], y + second_offset[1])
 
     def add_doors(self) -> None:
-        "Generate the relative positions of 'doors'"
+        """Generate the relative positions of 'doors'"""
         for connection in self.connections:
             door1, door2 = self.get_door_position(connection)
 
@@ -294,7 +294,7 @@ class Room(Node):
                 self.temp_doors.add(self.add_child(TempDoor(self, direction)))
 
     def on_completion(self) -> None:
-        print("done")
+        pass
 
     def update(self) -> None:
         if not self._activated:

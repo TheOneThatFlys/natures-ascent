@@ -28,7 +28,7 @@ class Node(DebugExpandable):
         self.children.remove(child)
 
     def get_all_children(self) -> list[Node]:
-        "Recursively traverse through all the children of a node, similar to os.walk"
+        """Recursively traverse through all the children of a node, similar to os.walk"""
         lst = [self]
         for child in self.children:
             lst += child.get_all_children()

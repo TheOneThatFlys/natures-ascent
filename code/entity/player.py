@@ -11,7 +11,7 @@ from .entity import Entity
 from .stats import PlayerStats, player_stats
 
 class LastFacing:
-    "Class to store last facing direction data of player."
+    """Class to store last facing direction data of player."""
     def __init__(self) -> None:
         self.walk: Direction = "right"
         self.attack: Direction = "right"
