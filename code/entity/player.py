@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pygame
 
 from engine import Node, Sprite
@@ -26,6 +28,25 @@ class LastFacing:
         else:
             raise TypeError("Unknown facing type: " + type)
 
+class Inventory(Node):
+    def __init__(self, parent: Player) -> None:
+        super().__init__(parent)
+
+        self.primary: Weapon = None
+        self.secondary: Weapon = None
+        
+        self.coins: int = 0
+
+    def add_coin(self, value: int) -> None:
+        self.coins += value
+
+    def at(self, index: int) -> Weapon | None:
+        if index == 0:
+            return self.primary
+        if index == 1:
+            return self.secondary
+        raise IndexError()
+
 class Player(Entity):
     def __init__(self, parent: Node, start_pos: pygame.Vector2) -> None:
         super().__init__(
@@ -48,10 +69,12 @@ class Player(Entity):
         self.last_facing = LastFacing()
         self.walking = False
 
-        self.attack_cd = 0
-        self.weapon: Weapon = Weapons.STARTER_SWORD
+        self.inventory = self.add_child(Inventory(parent = self))
+        self.inventory.primary = Weapons.STARTER_SWORD
+        self.inventory.secondary = Weapons.FIREBALL_SPELL
+        self.selected_weapon_index: int = 0
 
-        self.money = 0
+        self.attack_cd = 0
 
     def _load_animations(self) -> None:
         types = ["idle", "damage", "walk"]
@@ -68,13 +91,11 @@ class Player(Entity):
             self.animation_manager.add_animation("sword_attack" + "-" + dir, anim)
 
     def get_inputs(self) -> None:
-        # movement
         keys = pygame.key.get_pressed()
 
-        dv = pygame.Vector2()
-
+        # movement
         self.walking = False
-
+        dv = pygame.Vector2()
         if keys[pygame.K_w]:
             dv.y -= 1
             self.last_facing.set("walk", "up")
@@ -92,6 +113,7 @@ class Player(Entity):
             self.last_facing.set("walk", "right")
             self.walking = True
 
+        # attack
         if keys[pygame.K_RIGHT]:
             self.try_attack("right")
         elif keys[pygame.K_LEFT]:
@@ -100,6 +122,12 @@ class Player(Entity):
             self.try_attack("up")
         elif keys[pygame.K_DOWN]:
             self.try_attack("down")
+
+        # inventory switching
+        if keys[pygame.K_1]:
+            self.selected_weapon_index = 0
+        elif keys[pygame.K_2]:
+            self.selected_weapon_index = 1
 
         # normalise vector so that diagonal movement is the
         # same speed as horizontal
@@ -112,9 +140,6 @@ class Player(Entity):
         if "death" in current_animation or "damage" in current_animation or "attack" in current_animation: return
 
         self.eval_anim()
-
-    def add_money(self, value: int) -> None:
-        self.money += value
 
     def eval_anim(self) -> None:
         if self.walking:
@@ -132,20 +157,22 @@ class Player(Entity):
 
     def try_attack(self, direction: Direction) -> bool:
         """Attempts an attack, returning True if successful and False if not"""
+        current_weapon = self.inventory.at(self.selected_weapon_index)
+        if current_weapon == None: return
         if self.attack_cd <= 0:
             # create attack
-            self.add_child(self.weapon.spawn_type(self, self.weapon, direction))
+            self.add_child(current_weapon.spawn_type(self, current_weapon, direction))
 
-            self.attack_cd = self.weapon.cooldown_time
+            self.attack_cd = current_weapon.cooldown_time
             self.last_facing.set("attack", direction)
 
             # set player animation if avaliable
-            if self.weapon.animation_key:
-                self.animation_manager.set_animation(self.weapon.animation_key + "-" + direction)
+            if current_weapon.animation_key:
+                self.animation_manager.set_animation(current_weapon.animation_key + "-" + direction)
 
             # play associated weapon noise if avaliable
-            if self.weapon.sound_key:
-                self.manager.play_sound(sound_name = self.weapon.sound_key, volume = 0.2)
+            if current_weapon.sound_key:
+                self.manager.play_sound(sound_name = current_weapon.sound_key, volume = 0.2)
             return True
         return False
         

@@ -87,14 +87,29 @@ class Fireball(AbstractWeaponInstance):
         self.rect = self.image.get_rect(center = parent.rect.center)
         self.image.fill((255, 120, 0))
 
-        self.velocity = pygame.Vector2(util.get_direction_vector(direction)) * 5 + parent.velocity
+        self.velocity = pygame.Vector2(util.get_direction_vector(direction)) * 7 + parent.velocity * 0.5
+        self.life = 300
+
+        self.room = self.manager.get_object("floor-manager").get_room_at_world_pos(self.rect.center)
 
     def update(self):
+        self.life -= self.manager.dt
+        if self.life <= 0:
+            # kill with no dying animation
+            super().kill()
+            return
+
         self.rect.topleft += self.velocity
         for enemy in self.manager.groups["enemy"]:
             if enemy.rect.colliderect(self):
-                self.kill()
                 enemy.hit(self, damage = self.stats.damage, kb_magnitude = self.stats.knockback)
+                self.kill()
+                return
+            
+        for tile in self.room.collide_sprites:
+            if self.rect.colliderect(tile.rect):
+                self.kill()
+                return
 
 class Weapons:
     STARTER_SWORD = Weapon(

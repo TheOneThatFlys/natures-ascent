@@ -407,6 +407,9 @@ class FloorManager(Node):
     def _get_type_of_tile(self, wall_tiles: dict[Vec2, Tile], all_tiles: dict[Vec2, Tile] , coord: Vec2) -> Literal["wall", "floor", "world"]:
         return "wall" if coord in wall_tiles else "floor" if coord in all_tiles else "world"
 
+    def get_room_at_world_pos(self, world_position: Vec2) -> Room:
+        return self.rooms[(world_position[0] // self.room_size // TILE_SIZE, world_position[1] // self.room_size // TILE_SIZE)]
+
     def calculate_textures(self) -> None:
         # not proud of this code, but it works(?)
         all_tiles = {}

@@ -241,7 +241,7 @@ class HudUI(ui.Element):
         self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
 
         # coin text
-        self.coin_text.set_text(f"{self.player.money:,}")
+        self.coin_text.set_text(f"{self.player.inventory.coins:,}")
 
 class PauseUI(ui.Element):
     def __init__(self, parent: Level) -> None:

@@ -18,7 +18,7 @@ class Coin(Sprite):
 
     def kill(self) -> None:
         self.manager.play_sound("effect/coin", 0.05)
-        self.player.add_money(value = 1)
+        self.player.inventory.add_coin(value = 1)
         super().kill()
 
     def update(self) -> None:
