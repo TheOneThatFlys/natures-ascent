@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 import pygame
 from engine import Screen, Node
 from engine.types import *
-from engine.ui import Element, Style, Text, Button
+from engine.ui import Element, Style, Text, Button, Dropdown
 from util import draw_background
 from util.constants import *
 
@@ -44,6 +44,19 @@ class SettingsUI(Element):
                 alignment = "top-center",
                 offset = (0, self.title_text.rect.bottom + 16),
                 size = (self.rect.size[0] / 2, self.rect.size[1] / 1.3)
+            ),
+        ))
+
+        self.resolution_picker = self.main_container.add_child(Dropdown(
+            parent = self.main_container,
+            options = ["test1", "test2", "test3", "test4"],
+            on_change = lambda s: None,
+            style = Style(
+                alignment = "top-center",
+                size = (128, 40),
+                colour = (255, 0, 0),
+                font = self.manager.get_font("alagard", 32),
+                fore_colour = (255, 255, 255)
             ),
         ))
 

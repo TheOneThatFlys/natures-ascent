@@ -173,7 +173,7 @@ class Game(DebugExpandable):
 
         pygame.quit()
 
-def log_system_specs():
+def log_system_specs() -> None:
     """Logs system specs to standard logger"""
     uname = platform.uname()
     Logger.info(f"Found system specs [system] = {uname.system}")
@@ -184,7 +184,7 @@ def log_system_specs():
 
     Logger.info(f"Detected python version = {platform.python_version()}")
 
-def clean_debug_folder(max_logs):
+def clean_debug_folder(max_logs) -> None:
     """Make sure only the {max_logs} newest logs are in debug folder."""
     folder_path = os.path.join("debug")
     # get all files ending with .log (and not profile)
@@ -203,7 +203,7 @@ def clean_debug_folder(max_logs):
         # and also update log list
         logs.remove(oldest_file)
 
-def main():
+def main() -> None:
     # create a debug folder
     if not os.path.exists("debug"):
         os.mkdir("debug")

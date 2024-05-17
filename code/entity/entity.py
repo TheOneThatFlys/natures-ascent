@@ -9,6 +9,9 @@ from .bar import HealthBar
 HealthBarMode = Literal["normal", "always-show", "always-hide"]
 
 class Entity(Sprite):
+    """
+    Class representing a sprite that has health with colliders, i.e player and enemies.
+    """
     def __init__(self, parent: Node, stats: EntityStats, health_bar_mode: HealthBarMode = "normal") -> None:
         super().__init__(parent, groups = ["render", "update"])
         self.velocity = pygame.Vector2()

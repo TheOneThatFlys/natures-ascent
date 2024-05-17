@@ -61,6 +61,9 @@ def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
     return surf
 
 class Text(Element):
+    """
+    UI element that displays text.
+    """
     def __init__(self, parent: Element, style: Style, text: str = "") -> None:
         self.text = text
         super().__init__(parent, style)
@@ -84,12 +87,18 @@ class Text(Element):
         self.calculate_position()
 
 class RichText(Element):
+    """
+    UI element that displays rich text (only supports colour).
+    """
     def redraw_image(self) -> None:
         self.image = render_rich_text(self.style.font, self.text)
         self.rect = self.image.get_rect()
         self.calculate_position()
 
 class TextBox(Element):
+    """
+    UI element that enables use to type into a text field.
+    """
     def __init__(self, parent: Element, style: Style, focused_style: Optional[Style] = None, initial_text: str = "", text_padding: Vec2 = (0, 2), show_blinker: bool = True, enabled: bool = True, on_unfocus: tuple[Callable[..., None], list] = (None, [])) -> None:
         self.text = initial_text
         self.text_padding = text_padding

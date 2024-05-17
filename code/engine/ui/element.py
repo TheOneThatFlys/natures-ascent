@@ -9,6 +9,11 @@ from .style import Style
 T = TypeVar("T", bound = "Element")
 
 class Element(Node):
+    """
+    Base UI element.
+    
+    Can be displayed as a coloured rectangle or an image.
+    """
     def __init__(self, parent: Element | Node, style: Style) -> None:
         super().__init__(parent)
 

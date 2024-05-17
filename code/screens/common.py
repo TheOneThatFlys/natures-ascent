@@ -44,7 +44,7 @@ class TextButton(Button):
         self.colours = colours
         self.font_size = font_size
 
-        text_size = self.manager.get_font("alagard", 32).size(text)
+        text_size = self.manager.get_font("alagard", font_size).size(text)
         self.style.size = text_size[0] + 4, text_size[1] + 4
         self.hover_style.size = self.style.size
         self.redraw_image()
