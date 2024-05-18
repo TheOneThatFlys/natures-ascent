@@ -48,7 +48,7 @@ class Game(DebugExpandable):
         # dictionary to hold screens
         self._screens: dict[str, Type[Screen]] = {}
 
-        self.current_screen: str = None
+        self.current_screen: str = ""
         self.current_screen_instance: Screen
 
         self.add_screen("level", Level)

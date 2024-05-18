@@ -78,6 +78,7 @@ class Manager(DebugExpandable):
     def add_window(self, window: pygame.Window, id: str) -> pygame.Window:
         self.windows[id] = window
         self._window_mouse_positions[id] = (-1, -1)
+        return window
 
     def get_window(self, id: str) -> pygame.Window:
         return self.windows[id]
@@ -85,7 +86,7 @@ class Manager(DebugExpandable):
     def remove_object(self, id: str) -> None:
         del self.objects[id]
 
-    def get_object(self, id: str) -> Node:
+    def get_object(self, id: str):
         return self.objects[id]
 
     def add_groups(self, names: list[str]) -> None:
@@ -149,6 +150,7 @@ class Manager(DebugExpandable):
                         loaded_asset = pygame.image.load(fullpath).convert_alpha()
                     except pygame.error as e:
                         Logger.error(f"Could not load image file at {fullpath}.", e)
+                        loaded_asset = pygame.image.load(os.path.join(dirpath, "image", "error.png"))
 
                     # scale asset up
                     loaded_asset = pygame.transform.scale(
@@ -179,7 +181,11 @@ class Manager(DebugExpandable):
             return self.assets["image"]["error"]
     
     def get_font(self, name: str, size: int) -> pygame.font.Font:
-        return self.assets["font"][name].get(size)
+        try:
+            return self.assets["font"][name].get(size)
+        except KeyError:
+            sysfont = pygame.font.SysFont(name, size)
+            return sysfont
     
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]

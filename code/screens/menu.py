@@ -83,7 +83,6 @@ class Menu(Screen):
             parent = self.master_container,
             yoffset = self.settings_button.rect.bottom,
             text = "Exit",
-            text_hover = ":c",
             on_click = self.parent.queue_close,
             colours = button_colours
         ))

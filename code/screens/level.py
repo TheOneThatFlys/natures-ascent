@@ -312,7 +312,7 @@ class PauseUI(ui.Element):
             on_click = self._on_exit_click
         ))
 
-        self.settings_ui = self.add_child(SettingsUI(self, self.calculate_settings_size()))
+        self.settings_ui = self.add_child(SettingsUI(self, self.calculate_settings_size(), self.toggle_settings))
         self.in_settings = False
         self.toggle_settings(False)
     
@@ -328,7 +328,7 @@ class PauseUI(ui.Element):
     def calculate_settings_size(self) -> pygame.Vector2:
         if self.pause_frame == None:
             return pygame.Vector2()
-        return pygame.Vector2(self.pause_frame.get_size()) / 1.8
+        return pygame.Vector2(self.pause_frame.get_size())
 
     def _on_resume_click(self) -> None:
         self.parent.toggle_pause()

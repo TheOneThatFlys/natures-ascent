@@ -1,3 +1,5 @@
+import pygame
+
 from .node import Node
 
 from .types import *
@@ -20,4 +22,7 @@ class Screen(Node):
         pass
 
     def kill(self) -> None:
+        pass
+
+    def render(self, surface: pygame.Surface) -> None:
         pass
