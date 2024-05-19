@@ -94,6 +94,10 @@ class Element(Node):
         for child in self.children:
             child.on_mouse_down(mouse_button)
 
+    def on_mouse_up(self, mouse_button: int) -> None:
+        for child in self.children:
+            child.on_mouse_up(mouse_button)
+
     def on_key_down(self, key: int, unicode: str) -> None:
         for child in self.children:
             child.on_key_down(key, unicode)

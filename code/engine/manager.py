@@ -45,6 +45,10 @@ class Manager(DebugExpandable):
 
         # store current playing music
         self.music_current: str = ""
+        
+        # store volume percentages (0-1 inclusive)
+        self._sfx_volume = 0.1
+        self._music_volume = 0.1
 
         self.fps: int = fps
         self._dt_adjusted: float = 1
@@ -63,6 +67,23 @@ class Manager(DebugExpandable):
     @property
     def dt_raw(self) -> float:
         return self._dt_raw
+    
+    @property
+    def sfx_volume(self) -> float:
+        return self._sfx_volume
+    
+    @sfx_volume.setter
+    def sfx_volume(self, v) -> None:
+        self._sfx_volume = v
+
+    @property
+    def music_volume(self) -> float:
+        return self._music_volume
+    
+    @music_volume.setter
+    def music_volume(self, v) -> None:
+        current_music = self.get_sound(self.music_current)
+        current_music.set_volume(v * 3)
 
     def update_dt(self) -> None:
         """Updates delta time for current frame. Should be called every frame"""
@@ -198,7 +219,8 @@ class Manager(DebugExpandable):
         self.music_current = ""
 
     def play_sound(self, sound_name: str, volume: float = 1.0, loop = False) -> None:
-        if sound_name.startswith("music/"):
+        is_music = sound_name.startswith("music/")
+        if is_music:
             # if trying to play the same track twice, just continue current
             if self.music_current == sound_name:
                 return
@@ -210,6 +232,7 @@ class Manager(DebugExpandable):
             self.music_current = sound_name
 
         s = self.get_sound(sound_name)
-        s.set_volume(volume)
+        volume_multiplier = 3 * self._music_volume if is_music else 10 * self._sfx_volume
+        s.set_volume(volume * volume_multiplier)
         n_loops = -1 if loop else 0
         s.play(n_loops)

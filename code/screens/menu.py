@@ -104,7 +104,7 @@ class Menu(Screen):
         self.bg_offset = 0
         self.secret_activated = False
 
-        self.manager.play_sound(sound_name = "music/menu", volume = 0.5, loop = True)
+        self.manager.play_sound(sound_name = "music/menu", loop = True)
             
     def _toggle_secret(self) -> None:
         self.secret_activated = not self.secret_activated

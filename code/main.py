@@ -147,6 +147,9 @@ class Game(DebugExpandable):
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     screen_instance.on_mouse_down(event.button)
 
+                elif event.type == pygame.MOUSEBUTTONUP:
+                    screen_instance.on_mouse_up(event.button)
+
                 elif event.type == pygame.MOUSEWHEEL:
                     screen_instance.on_scroll(event.x, event.y)
 

@@ -15,6 +15,9 @@ class Screen(Node):
     def on_mouse_down(self, button: int) -> None:
         pass
 
+    def on_mouse_up(self, button: int) -> None:
+        pass
+
     def on_scroll(self, dx: int, dy: int) -> None:
         pass
 

@@ -20,7 +20,7 @@ class Dropdown(Element):
         self.hover_style = hover_style
         self.button_style = button_style if button_style else style
 
-        self.top_button = self.add_child(Button(self, style = Style.from_style(style, alignment = "center-center", offset = (0, 0)), on_click = self._on_top_click))
+        self.top_button = self.add_child(Button(self, style = Style.from_style(style, alignment = "center-center", offset = (0, 0)), on_click = self._on_top_click, hover_sound = None))
         self.selected_text = self.add_child(Text(self, style = Style.from_style(style, alignment = "center-center", offset = (0, 0)), text = options[0]))
 
         self.opened = False
@@ -34,7 +34,7 @@ class Dropdown(Element):
 
         for i, option in enumerate(options):
             new_y = i * self.button_style.size[1] + self.top_button.rect.height
-            button = Button(self, style = Style.from_style(self.button_style, alignment = "top-center", offset = (0, new_y)), on_click = self.on_option_click, click_args = (option,), hover_style = self.hover_style)
+            button = Button(self, style = Style.from_style(self.button_style, alignment = "top-center", offset = (0, new_y)), on_click = self.on_option_click, click_args = (option,), hover_style = self.hover_style, hover_sound = None)
             button.add_child(Text(
                 parent = button,
                 text = option,
@@ -57,7 +57,7 @@ class Dropdown(Element):
     def on_mouse_down(self, mouse_button: int) -> None:
         # unselected self if clicked outside the dropdown
         if self.opened:
-            mouse_pos = pygame.mouse.get_pos()
+            mouse_pos = self.manager.get_mouse_pos()
             for button in self.dropdown_buttons + [self.top_button]:
                 if button.rect.collidepoint(mouse_pos):
                     break

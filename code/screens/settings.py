@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 import pygame
 from engine import Screen, Node
 from engine.types import *
-from engine.ui import Element, Style, Text, Button, Dropdown
+from engine.ui import Element, Style, Text, Button, Dropdown, Slider
 from util import draw_background
 from util.constants import *
 
@@ -73,12 +73,31 @@ class SettingsUI(Element):
 
         self.divider1 = self.add_child(DividerX(self, self.title_text.style.offset[1] + self.title_text.rect.height))
 
+        ROW_HEIGHT = 40
         self.horizontal_container_1 = self.add_child(Element(self, style = Style(
             alpha = 0,
-            size = (384, 40),
+            size = (384, ROW_HEIGHT),
             alignment = "top-center",
             offset = (0, self.title_text.style.offset[1] + self.title_text.rect.height + 32)
         )))
+
+        self.horizontal_container_2 = self.add_child(Element(self, style = Style(
+            alpha = 0,
+            size = (384, ROW_HEIGHT),
+            alignment = "top-center",
+            offset = (0, self.horizontal_container_1.style.offset[1] + ROW_HEIGHT)
+        )))
+
+        self.horizontal_container_3 = self.add_child(Element(self, style = Style(
+            alpha = 0,
+            size = (384, ROW_HEIGHT),
+            alignment = "top-center",
+            offset = (0, self.horizontal_container_2.style.offset[1] + ROW_HEIGHT)
+        )))
+
+        # send item 1 to back
+        self.children.remove(self.horizontal_container_1)
+        self.children.append(self.horizontal_container_1)
 
         self.window_mode_dropdown = self.horizontal_container_1.add_child(Dropdown(
             parent = self.horizontal_container_1,
@@ -88,17 +107,15 @@ class SettingsUI(Element):
                 alignment = "center-right",
                 font = self.manager.get_font("alagard", 20),
                 fore_colour = (255, 255, 255),
-                image = _draw_dropdown_top((128, 40))
+                image = self.manager.get_image("menu/dropdown_head")
             ),
             button_style = Style(
                 size = (128, 40),
-                colour = (88, 105, 131),
+                colour = (142, 82, 82),
                 font = self.manager.get_font("alagard", 20),
                 fore_colour = (255, 255, 255)
             ),
-            hover_style = Style(
-                colour = (62, 74, 93)
-            )
+            hover_style = Style(image = None, size = (128, 40), colour = (186, 117, 106))
         ))
 
         self.window_mode_text = self.horizontal_container_1.add_child(Text(
@@ -111,6 +128,75 @@ class SettingsUI(Element):
             ),
         ))
 
+        self.sfx_volume_text = self.horizontal_container_2.add_child(Text(
+            parent = self.horizontal_container_2,
+            text = "SFX Volume",
+            style = Style(
+                fore_colour = (99, 169, 65),
+                font = self.manager.get_font("alagard", 20),
+                alignment = "center-left",
+            ),
+        ))
+
+        self.sfx_slider = self.horizontal_container_2.add_child(Slider(
+            parent = self.horizontal_container_2,
+            style = Style(
+                alignment = "center-right",
+                image = self.manager.get_image("menu/slider_bar"),
+            ),
+            knob_style = Style(
+                image = self.manager.get_image("menu/slider_knob"),
+            ),
+            on_change = self._on_sfx_change
+        ))
+
+        self.sfx_slider_annotation = self.horizontal_container_2.add_child(Text(
+            parent = self.horizontal_container_2,
+            text = str(int(self.manager.sfx_volume * 100)),
+            style = Style(
+                alignment = "center-left",
+                offset = (self.horizontal_container_2.rect.width + 12, 0),
+                fore_colour = (99, 169, 65),
+                font = self.manager.get_font("alagard", 20)
+            )
+        ))
+
+        self.music_volume_text = self.horizontal_container_3.add_child(Text(
+            parent = self.horizontal_container_3,
+            text = "Music Volume",
+            style = Style(
+                fore_colour = (99, 169, 65),
+                font = self.manager.get_font("alagard", 20),
+                alignment = "center-left",
+            ),
+        ))
+
+        self.music_slider = self.horizontal_container_3.add_child(Slider(
+            parent = self.horizontal_container_3,
+            style = Style(
+                alignment = "center-right",
+                image = self.manager.get_image("menu/slider_bar"),
+            ),
+            knob_style = Style(
+                image = self.manager.get_image("menu/slider_knob"),
+            ),
+            on_change = self._on_music_change
+        ))
+
+        self.music_slider_annotation = self.horizontal_container_3.add_child(Text(
+            parent = self.horizontal_container_3,
+            text = str(int(self.manager.music_volume * 100)),
+            style = Style(
+                alignment = "center-left",
+                offset = (self.horizontal_container_2.rect.width + 12, 0),
+                fore_colour = (99, 169, 65),
+                font = self.manager.get_font("alagard", 20)
+            )
+        ))
+
+        self.sfx_slider.set_value(self.manager.sfx_volume)
+        self.music_slider.set_value(self.manager.music_volume)
+
     def _on_window_mode_change(self, mode: str) -> None:
         match mode:
             case "Windowed":
@@ -122,15 +208,24 @@ class SettingsUI(Element):
             case _:
                 raise TypeError(f"Unknown window mode: {mode}")
 
-    def redraw_image(self) -> None:
-        self.style.image = self._draw_background(self.style.size)
-        super().redraw_image()
+    def _on_sfx_change(self, value: float) -> None:
+        self.manager.sfx_volume = value
+        self.sfx_slider_annotation.set_text(str(int(value * 100)))
+
+    def _on_music_change(self, value: float) -> None:
+        self.manager.music_volume = value
+        self.music_slider_annotation.set_text(str(int(value * 100)))
+
 
     def _draw_background(self, size: Vec2) -> pygame.Surface:
         image = pygame.Surface(size)
         image.fill((37, 44, 55))
         pygame.draw.rect(image, (26, 30, 36), (0, 0, *size), 24)
         return image
+    
+    def redraw_image(self) -> None:
+        self.style.image = self._draw_background(self.style.size)
+        super().redraw_image()
 
 class SettingsScreen(Screen):
     def __init__(self, game: Game) -> None:
@@ -148,6 +243,9 @@ class SettingsScreen(Screen):
 
     def on_mouse_down(self, button: int) -> None:
         self.ui.on_mouse_down(button)
+
+    def on_mouse_up(self, button: int) -> None:
+        self.ui.on_mouse_up(button)
 
     def update(self) -> None:
         for child in self.children:
