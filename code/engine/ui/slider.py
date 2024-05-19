@@ -3,9 +3,10 @@ from typing import Callable
 from .element import Element
 from .style import Style
 class Slider(Element):
-    def __init__(self, parent: Element, style: Style, knob_style: Style, on_change: Callable[[float], None] = lambda _: None):
+    def __init__(self, parent: Element, style: Style, knob_style: Style, on_change: Callable[[float], None] = lambda _: None, on_unfocus: Callable[[float], None] = lambda _: None):
         self.knob_style = knob_style
         self.on_change = on_change
+        self.on_unfocus = on_unfocus
         self.knob_image = self._resolve_knob_image()
         self.knob_rect = self.knob_image.get_rect()
         self._value = 0
@@ -36,7 +37,9 @@ class Slider(Element):
 
     def on_mouse_up(self, mouse_button: int) -> None:
         super().on_mouse_up(mouse_button)
-        if mouse_button == 1: self.selected = False
+        if mouse_button == 1 and self.selected:
+            self.selected = False
+            self.on_unfocus(self.get_value())
 
     def set_value(self, value: float) -> None:
         """Set the value of slider, moving the knob"""

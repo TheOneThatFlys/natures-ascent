@@ -7,7 +7,7 @@ import pygame
 from engine import Screen, Node
 from engine.types import *
 from engine.ui import Element, Style, Text, Button, Dropdown, Slider
-from util import draw_background
+from util import parse_spritesheet
 from util.constants import *
 
 from .common import TextButton, TextButtonColours
@@ -60,15 +60,16 @@ class SettingsUI(Element):
             )
         ))
 
+        back_button_normal, back_button_hover = parse_spritesheet(self.manager.get_image("menu/back_arrow"), frame_count=2)
         self.exit_button = self.add_child(Button(
             parent = self,
             on_click = exit_binding,
             style = Style(
-                image = pygame.Surface((TILE_SIZE, TILE_SIZE)),
+                image = back_button_normal,
                 alignment = "top-left",
-                offset = (32, 32)
+                offset = (48, 48)
             ),
-            hover_style = None
+            hover_style = Style(image = back_button_hover)
         ))
 
         self.divider1 = self.add_child(DividerX(self, self.title_text.style.offset[1] + self.title_text.rect.height))
@@ -147,7 +148,8 @@ class SettingsUI(Element):
             knob_style = Style(
                 image = self.manager.get_image("menu/slider_knob"),
             ),
-            on_change = self._on_sfx_change
+            on_change = self._on_sfx_change,
+            on_unfocus = self._on_sfx_unfocus
         ))
 
         self.sfx_slider_annotation = self.horizontal_container_2.add_child(Text(
@@ -216,6 +218,8 @@ class SettingsUI(Element):
         self.manager.music_volume = value
         self.music_slider_annotation.set_text(str(int(value * 100)))
 
+    def _on_sfx_unfocus(self, value: float) -> None:
+        self.manager.play_sound("effect/hit", volume = 0.2)
 
     def _draw_background(self, size: Vec2) -> pygame.Surface:
         image = pygame.Surface(size)
