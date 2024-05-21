@@ -7,14 +7,15 @@
 from __future__ import annotations
 
 import os
+
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
-import sys, platform, uuid, datetime, socket
+import sys, platform, uuid, datetime, json
 import pygame
 pygame.init()
 from typing import Type
 from engine import Screen, Manager, Logger
 from screens import Level, Menu, Settings
-from util import DebugWindow
+from util import DebugWindow, SaveHelper
 
 from engine.types import *
 from util.constants import *
@@ -27,6 +28,8 @@ class Game(DebugExpandable):
         self.window.resizable = True
         self.display_surface: pygame.Surface = self.window.get_surface()
         self.clock = pygame.time.Clock()
+
+        self._window_mode: WindowMode = "window"
 
         self.running = True
 
@@ -52,6 +55,8 @@ class Game(DebugExpandable):
         self.add_screen("menu", Menu)
         self.add_screen("settings", Settings)
         self.set_screen("menu")
+
+        self.load_config()
 
     @Logger.time(msg = "Loaded assets in %t seconds.")
     def load_assets(self):
@@ -83,6 +88,7 @@ class Game(DebugExpandable):
 
         self.current_screen_instance.on_resize(new_size)
         Logger.info(f"Set video mode to WINDOWED ({new_size[0]}, {new_size[1]})")
+        self._window_mode = "window"
 
     def set_fullscreen(self, *, borderless: bool = False) -> None:
         """Sets the active window to fullscreen (or borderless fullscreen if specified)."""
@@ -96,6 +102,61 @@ class Game(DebugExpandable):
             Logger.info("Set video mode to FULLSCREEN")
 
         self.current_screen_instance.on_resize(self.window.size)
+        self._window_mode = "borderless" if borderless else "fullscreen"
+ 
+    def get_window_mode(self) -> WindowMode:
+        return self._window_mode
+
+    def save_config(self) -> None:
+        config = {
+            "window-mode": self.get_window_mode(),
+            "sfx-vol": self.manager.sfx_volume,
+            "music-vol": self.manager.music_volume
+        }
+        json_str = json.dumps(config, indent=4)
+        SaveHelper.save_file(json_str, os.path.join("saves", "config.json"))
+    
+    def load_config(self) -> None:
+        def grab_config(key):
+            return config[key] if config[key] else default_config[key]
+
+        save_path = os.path.join("saves", "config.json")
+
+        default_config = {
+            "window-mode": "window",
+            "sfx-vol": 0.1,
+            "music-vol": 0.1
+        }
+
+        if not os.path.exists(save_path):
+            # load default values
+            config = default_config
+        else:
+            config = json.loads(SaveHelper.load_file(os.path.join("saves", "config.json")))
+           
+        try:
+            self.manager.sfx_volume = config["sfx-vol"]
+        except Exception as e:
+            Logger.warn(f"Could not load config option [sfx-vol]. Defaulting to value {default_config['sfx-vol']} ({e})")
+
+        try:
+            self.manager.music_volume = config["music-vol"]
+        except Exception as e:
+            Logger.warn(f"Could not load config option [music-vol]. Defaulting to value {default_config['music-vol']} ({e})")
+
+        try:
+            window_mode: WindowMode = config["window-mode"]
+            match window_mode:
+                case "window":
+                    self.set_windowed(STARTUP_SCREEN_SIZE)
+                case "fullscreen":
+                    self.set_fullscreen()
+                case "borderless":
+                    self.set_fullscreen(borderless = True)
+                case _:
+                    Logger.error(f"Unknown window mode set: {window_mode}")
+        except Exception as e:
+            Logger.warn(f"Could not load config option [window-mode]. Defaulting to value {default_config['window-mode']} ({e})")
 
     def run(self) -> None:
         # main loop
@@ -171,6 +232,7 @@ class Game(DebugExpandable):
             self.current_screen_instance.render(self.display_surface)
             self.window.flip()
 
+        self.save_config()
         pygame.quit()
 
 def log_system_specs() -> None:

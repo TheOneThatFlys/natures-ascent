@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-import pygame, time, os
+import pygame, os
 from .logger import Logger
 from .types import DebugExpandable
 

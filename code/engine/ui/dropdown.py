@@ -1,3 +1,4 @@
+from multiprocessing import Value
 import pygame
 
 from typing import Callable, Optional
@@ -47,6 +48,14 @@ class Dropdown(Element):
 
     def get_selected(self) -> str:
         return self.selected
+
+    def set_selected(self, key: str) -> None:
+        """Set the option that is selected."""
+        if key not in self.str_options:
+            raise ValueError(f"Could not set selected option '{key}': key does not exist.")
+        self.selected = key
+        self.on_change(key)
+        self.selected_text.set_text(self.selected)
 
     def set_dropdown_visibility(self, visible: bool) -> None:
         self.opened = visible

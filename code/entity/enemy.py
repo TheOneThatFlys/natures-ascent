@@ -251,9 +251,12 @@ class TreeBoss(Enemy):
     ATTACK_INTERVAL = 300
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position, enemy_stats["tree_boss"])
+        rows = util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("enemy/slime_green"), 8), frame_count = 4, direction = "y")
+        directions = ["down", "right", "up", "left"]
+        for i, dir in enumerate(directions):
+            self.animation_manager.add_animation(dir, util.parse_spritesheet(rows[i], frame_count = 2))
 
-        self.animation_manager.add_animation("default", [self.manager.get_image("tiles/wall_tiles")])
-        self.image = self.animation_manager.set_animation("default")
+        self.image = self.animation_manager.set_animation("down")
         self.rect = self.image.get_frect(center = position)
 
         self.in_stationary_attack = False
@@ -291,3 +294,4 @@ class TreeBoss(Enemy):
         Entity.update(self)
         self.update_ai()
         self.check_player_collision()
+        self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))

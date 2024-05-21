@@ -192,6 +192,8 @@ class SettingsUI(Element):
 
         self.sfx_slider.set_value(self.manager.sfx_volume)
         self.music_slider.set_value(self.manager.music_volume)
+        window_mode = self.manager.game.get_window_mode()
+        self.window_mode_dropdown.set_selected(window_mode[0].upper()+window_mode[1:])
 
     def _on_window_mode_change(self, mode: str) -> None:
         match mode:

@@ -6,6 +6,7 @@ Colour = tuple[int, int, int]
 StretchType = Literal["skew", "expand", "none", "fit"]
 Direction = Literal["up", "down", "left", "right"]
 Vec2 = tuple[float, float]
+WindowMode = Literal["window", "borderless", "fullscreen"]
 
 class DebugExpandable:
     """Inherit from this to make a class be expandable in the debug menu."""
