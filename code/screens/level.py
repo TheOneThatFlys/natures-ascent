@@ -450,6 +450,7 @@ class Level(Screen):
             self.hud_ui.map.decrease_scale()
 
     def on_resize(self, new_res: Vec2) -> None:
+        super().on_resize(new_res)
         # remake game surface to new size
         self.game_surface = pygame.Surface(new_res)
         # recalibrate camera
@@ -459,15 +460,13 @@ class Level(Screen):
         for sub_menu in self.master_ui.children:
             sub_menu.style.size = new_res
 
-        for item in self.master_ui.get_all_children():
-            item.redraw_image()
+        self.master_ui.on_resize(new_res)
 
         if self.paused:
             self.pause_ui.style.size = new_res
             # extra render step to sync up menu
             self.render(pygame.Surface((1, 1)))
-            for item in self.pause_ui.get_all_children():
-                item.redraw_image()
+            self.pause_ui.on_resize(new_res)
 
     def on_mouse_down(self, button: int) -> None:
         if self.paused:

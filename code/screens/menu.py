@@ -2,6 +2,7 @@ import pygame
 
 from engine import Screen
 from engine.ui import Element, Style, Text, Button
+from engine.types import *
 import util
 
 from .common import TextButton, TextButtonColours
@@ -109,12 +110,11 @@ class Menu(Screen):
     def _toggle_secret(self) -> None:
         self.secret_activated = not self.secret_activated
 
-    def on_resize(self, new_res) -> None:
+    def on_resize(self, new_res: Vec2) -> None:
+        super().on_resize(new_res)
         self.master_container.style.size = new_res
         self.master_container.style.image = util.draw_background(new_res)
-
-        for item in self.master_container.get_all_children():
-            item.redraw_image()
+        self.master_container.on_resize(new_res)
 
     def on_mouse_down(self, button: int) -> None:
         self.master_container.on_mouse_down(button)

@@ -106,6 +106,11 @@ class Element(Node):
         for child in self.children:
             child.on_scroll(dx, dy)
 
+    def on_resize(self, new_res: Vec2) -> None:
+        self.redraw_image()
+        for child in self.children:
+            child.on_resize(new_res)
+
     def set_style(self, new_style: Style) -> None:
         if self.style != new_style:
             self.style = new_style

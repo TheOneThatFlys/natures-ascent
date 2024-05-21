@@ -10,15 +10,9 @@ from engine.ui import Element, Style, Text, Button, Dropdown, Slider
 from util import parse_spritesheet
 from util.constants import *
 
-from .common import TextButton, TextButtonColours
+from .common import TextButtonColours
 
 _do_nothing = lambda: None
-
-def _draw_dropdown_top(size: Vec2) -> pygame.Surface:
-    s = pygame.Surface(size)
-    s.fill((88, 105, 131))
-    pygame.draw.rect(s, (26, 30, 36), (0, 0, *size), 4)
-    return s
 
 class DividerX(Element):
     def __init__(self, parent: Element, y: int, thickness: int = 2) -> None:
@@ -240,10 +234,9 @@ class SettingsScreen(Screen):
         self.parent.set_screen("menu")
 
     def on_resize(self, new_res: Vec2) -> None:
-        self.rect.size = new_res
+        super().on_resize(new_res)
         self.ui.style.size = new_res
-        for child in self.ui.get_all_children():
-            child.redraw_image()
+        self.ui.on_resize(new_res)
 
     def on_mouse_down(self, button: int) -> None:
         self.ui.on_mouse_down(button)
