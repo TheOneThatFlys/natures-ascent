@@ -2,16 +2,13 @@
 # Room clear rewards
 # |-> Weapon upgrades
 # |-> Weapon system - equip & inv
-
-# Settings - display mode
 # Different rooms - shop etc
 
 from __future__ import annotations
 
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
-import sys, platform, uuid, datetime
-
+import sys, platform, uuid, datetime, socket
 import pygame
 pygame.init()
 from typing import Type
@@ -214,8 +211,9 @@ def main() -> None:
     # generate a unique session id
     session_id = uuid.uuid4()
 
+    log_to_console = IN_DEBUG or "-cout" in sys.argv or "-c" in sys.argv
     # initialise logging
-    Logger.start("$CONSOLE" if IN_DEBUG else os.path.join("debug", f"{session_id}.log"))
+    Logger.start("$CONSOLE" if log_to_console else os.path.join("debug", f"{datetime.datetime.now():%H.%M.%S-%d.%m.%y}.log"))
     
     # keep newest 5 logs (5 total)
     clean_debug_folder(max_logs = 5)

@@ -474,6 +474,13 @@ class Level(Screen):
         else:
             self.master_ui.on_mouse_down(button)
 
+    def on_mouse_up(self, button: int) -> None:
+        super().on_mouse_up(button)
+        if self.paused:
+            self.pause_ui.on_mouse_up(button)
+        else:
+            self.master_ui.on_mouse_up(button)
+
     def debug(self) -> None:
         if self.debug_mode == 0: return
 

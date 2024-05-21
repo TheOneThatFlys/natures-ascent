@@ -82,8 +82,9 @@ class Manager(DebugExpandable):
     
     @music_volume.setter
     def music_volume(self, v) -> None:
-        current_music = self.get_sound(self.music_current)
-        current_music.set_volume(v * 3)
+        if self.music_current != "":
+            current_music = self.get_sound(self.music_current)
+            current_music.set_volume(v * 3)
 
     def update_dt(self) -> None:
         """Updates delta time for current frame. Should be called every frame"""
