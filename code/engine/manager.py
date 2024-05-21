@@ -199,14 +199,15 @@ class Manager(DebugExpandable):
         try:
             return self.assets["image"][name]
         except KeyError:
+            Logger.warn(f"Failed to fetch image at key {name}")
             return self.assets["image"]["error"]
     
     def get_font(self, name: str, size: int) -> pygame.font.Font:
         try:
             return self.assets["font"][name].get(size)
         except KeyError:
-            sysfont = pygame.font.SysFont(name, size)
-            return sysfont
+            Logger.warn(f"Failed to fetch font at key {name}")
+            return pygame.font.Font(None, size)
     
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]
