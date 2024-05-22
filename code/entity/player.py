@@ -176,6 +176,11 @@ class Player(Entity):
             return True
         return False
         
+    def add_health(self, value: int) -> None:
+        self.health += value
+        if self.health > self.stats.health:
+            self.health = self.stats.health
+
     def update(self) -> None:
         super().update()
         self.get_inputs()

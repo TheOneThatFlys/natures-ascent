@@ -7,6 +7,7 @@ from typing import Literal, Type
 from engine.types import *
 from engine import Node, Sprite
 from entity import Player, Enemy, Slime, TreeBoss
+from item import Coin, Health
 from util.constants import *
 
 from .tile import Tile, TileSet
@@ -294,7 +295,7 @@ class Room(Node):
                 self.temp_doors.add(self.add_child(TempDoor(self, direction)))
 
     def on_completion(self) -> None:
-        pass
+        self.add_child(Health(self, self.bounding_rect.center))
 
     def update(self) -> None:
         if not self._activated:

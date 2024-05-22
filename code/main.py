@@ -294,7 +294,8 @@ def main() -> None:
     Logger.info(f"Initialised session {session_id} on {datetime.datetime.now():%d/%m/%y %H:%M:%S}.")
 
     # get some system debug info
-    log_system_specs()
+    if not log_to_console:
+        log_system_specs()
 
     Logger.info("Starting game.")
 
