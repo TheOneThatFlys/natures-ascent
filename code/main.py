@@ -133,12 +133,18 @@ class Game(DebugExpandable):
             config = json.loads(SaveHelper.load_file(os.path.join("saves", "config.json")))
            
         try:
-            self.manager.sfx_volume = config["sfx-vol"]
+            cfg_option = config["sfx-vol"]
+            if not isinstance(cfg_option, (int, float)): raise TypeError(f"Incorrect type: {cfg_option}")
+            if cfg_option < 0 or cfg_option > 1: raise ValueError(f"Value out of bounds: {cfg_option}")
+            self.manager.sfx_volume = cfg_option
         except Exception as e:
             Logger.warn(f"Could not load config option [sfx-vol]. Defaulting to value {default_config['sfx-vol']} ({e})")
 
         try:
-            self.manager.music_volume = config["music-vol"]
+            cfg_option = config["music-vol"]
+            if not isinstance(cfg_option, (int, float)): raise TypeError(TypeError(f"Incorrect type: ({cfg_option})"))
+            if cfg_option < 0 or cfg_option > 1: raise ValueError(f"Value out of bounds: {cfg_option}")
+            self.manager.music_volume = cfg_option
         except Exception as e:
             Logger.warn(f"Could not load config option [music-vol]. Defaulting to value {default_config['music-vol']} ({e})")
 
@@ -153,7 +159,7 @@ class Game(DebugExpandable):
                     case "borderless":
                         self.set_fullscreen(borderless = True)
                     case _:
-                        Logger.error(f"Unknown window mode set: {window_mode}")
+                        raise ValueError(f"Unknown window mode: {window_mode}")
         except Exception as e:
             Logger.warn(f"Could not load config option [window-mode]. Defaulting to value {default_config['window-mode']} ({e})")
 
