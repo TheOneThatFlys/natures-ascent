@@ -7,15 +7,15 @@
 from __future__ import annotations
 
 import os
-
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
+
 import sys, platform, uuid, datetime, json
 import pygame
-pygame.init()
+
 from typing import Type
 from engine import Screen, Manager, Logger
 from screens import Level, Menu, Settings
-from util import DebugWindow, SaveHelper
+from util import DebugWindow, SaveHelper, AutoSaver
 
 from engine.types import *
 from util.constants import *
@@ -23,13 +23,14 @@ from util.constants import *
 class Game(DebugExpandable):
     # main game class that manages screens and pygame events
     def __init__(self) -> None:
+        pygame.init()
         
         self.window = pygame.Window("Nature's Ascent", STARTUP_SCREEN_SIZE)
         self.window.resizable = True
         self.display_surface: pygame.Surface = self.window.get_surface()
         self.clock = pygame.time.Clock()
 
-        self._window_mode: WindowMode = "window"
+        self._window_mode: WindowMode = "windowed"
 
         self.running = True
 
@@ -57,6 +58,7 @@ class Game(DebugExpandable):
         self.set_screen("menu")
 
         self.load_config()
+        self.settings_saver = AutoSaver(self, os.path.join("saves", "config.json"), 60 * 120, ignore_limit = True)
 
     @Logger.time(msg = "Loaded assets in %t seconds.")
     def load_assets(self):
@@ -88,7 +90,7 @@ class Game(DebugExpandable):
 
         self.current_screen_instance.on_resize(new_size)
         Logger.info(f"Set video mode to WINDOWED ({new_size[0]}, {new_size[1]})")
-        self._window_mode = "window"
+        self._window_mode = "windowed"
 
     def set_fullscreen(self, *, borderless: bool = False) -> None:
         """Sets the active window to fullscreen (or borderless fullscreen if specified)."""
@@ -107,23 +109,19 @@ class Game(DebugExpandable):
     def get_window_mode(self) -> WindowMode:
         return self._window_mode
 
-    def save_config(self) -> None:
+    def get_config_as_string(self) -> str:
         config = {
             "window-mode": self.get_window_mode(),
             "sfx-vol": self.manager.sfx_volume,
             "music-vol": self.manager.music_volume
         }
-        json_str = json.dumps(config, indent=4)
-        SaveHelper.save_file(json_str, os.path.join("saves", "config.json"))
+        return json.dumps(config, indent=4)
     
     def load_config(self) -> None:
-        def grab_config(key):
-            return config[key] if config[key] else default_config[key]
-
         save_path = os.path.join("saves", "config.json")
 
         default_config = {
-            "window-mode": "window",
+            "window-mode": "windowed",
             "sfx-vol": 0.1,
             "music-vol": 0.1
         }
@@ -146,17 +144,22 @@ class Game(DebugExpandable):
 
         try:
             window_mode: WindowMode = config["window-mode"]
-            match window_mode:
-                case "window":
-                    self.set_windowed(STARTUP_SCREEN_SIZE)
-                case "fullscreen":
-                    self.set_fullscreen()
-                case "borderless":
-                    self.set_fullscreen(borderless = True)
-                case _:
-                    Logger.error(f"Unknown window mode set: {window_mode}")
+            if window_mode != self._window_mode:
+                match window_mode:
+                    case "windowed":
+                        self.set_windowed(STARTUP_SCREEN_SIZE)
+                    case "fullscreen":
+                        self.set_fullscreen()
+                    case "borderless":
+                        self.set_fullscreen(borderless = True)
+                    case _:
+                        Logger.error(f"Unknown window mode set: {window_mode}")
         except Exception as e:
             Logger.warn(f"Could not load config option [window-mode]. Defaulting to value {default_config['window-mode']} ({e})")
+
+    def update_save(self) -> None:
+        self.settings_saver.data = self.get_config_as_string()
+        self.settings_saver.update()
 
     def run(self) -> None:
         # main loop
@@ -219,6 +222,7 @@ class Game(DebugExpandable):
 
             # update screen instance
             self.current_screen_instance.update()
+            self.update_save()
 
             if IN_DEBUG and not self.debug_window.dead:
                 self.debug_window.update()
@@ -232,7 +236,7 @@ class Game(DebugExpandable):
             self.current_screen_instance.render(self.display_surface)
             self.window.flip()
 
-        self.save_config()
+        self.settings_saver.force_save()
         pygame.quit()
 
 def log_system_specs() -> None:

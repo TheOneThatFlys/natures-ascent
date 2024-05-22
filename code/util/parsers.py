@@ -2,6 +2,8 @@ import pygame
 import os, base64
 from typing import Literal
 
+from engine import Node, Logger
+
 def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, frame_size: tuple[int, int] = None, direction: Literal["x", "y"] = "x") -> list[pygame.Surface]:
     """
     Returns a list of surfaces containing each frame of the sprite sheet.
@@ -65,3 +67,30 @@ class SaveHelper:
                 loaded_data = f.read()
             return SaveHelper.decode_data(loaded_data) if obfuscated else loaded_data
         return None
+    
+class AutoSaver(Node):
+    """Class for creating auto saved files. Make sure to update ``AutoSaver.data`` in order for saved data to be up to date."""
+    MIN_INTERVAL = 1800 # 30 seconds
+    def __init__(self, parent: Node, filepath: str, interval: int, **kwargs) -> None:
+        super().__init__(parent)
+        self.filepath = filepath
+        self.interval = interval
+        self._counter = 0
+
+        self.data: str = ""
+
+        # set time interval to the minimum set if too low
+        if kwargs.get("ignore_limit", False) == False and interval < AutoSaver.MIN_INTERVAL:
+            Logger.warn(f"Autosave interval for {filepath} set too low. Defaulting to minimum {AutoSaver.MIN_INTERVAL}. Set 'ignore_limit' kwarg to True in order to ignore this limit.")
+            self.interval = AutoSaver.MIN_INTERVAL
+
+    def force_save(self) -> None:
+        """Save data to file now. Restarts timer to next save."""
+        SaveHelper.save_file(self.data, self.filepath)
+        self.interval = 0
+
+    def update(self) -> None:
+        self._counter += self.manager.dt
+        if self._counter > self.interval:
+            SaveHelper.save_file(self.data, self.filepath)
+            self._counter = 0

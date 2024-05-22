@@ -52,9 +52,8 @@ class Dropdown(Element):
     def set_selected(self, key: str) -> None:
         """Set the option that is selected."""
         if key not in self.str_options:
-            raise ValueError(f"Could not set selected option '{key}': key does not exist.")
+            raise ValueError(f"Could not set selected option '{key}': key does not exist.\nAvaliable options: {self.str_options}")
         self.selected = key
-        self.on_change(key)
         self.selected_text.set_text(self.selected)
 
     def set_dropdown_visibility(self, visible: bool) -> None:
