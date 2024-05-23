@@ -93,6 +93,20 @@ class Map(ui.Element):
 
         self.update_map()
 
+        self.explored_text = self.add_child(IconText(
+            parent = self,
+            text = "0/0",
+            icon = self.manager.get_image("map/explored"),
+            icon_alignment = "right",
+            padding = 4,
+            style = ui.Style(
+                font = self.manager.get_font("alagard", 16),
+                fore_colour = (218, 224, 234),
+                alignment = "bottom-right",
+                offset = (TILE_SIZE / 8, TILE_SIZE / 8)
+            )
+        ))
+
     def scale_room_to_map(self, room_coord: Vec2) -> None:
         "Scale a room coord into map coordinates"
         scaled_room_coords = pygame.Vector2(room_coord) * (self.scale + self.scale / 4) + pygame.Vector2(self.map_surf.get_size()) / 2 - pygame.Vector2(0.5, 0.5) * self.scale
@@ -175,6 +189,68 @@ class Map(ui.Element):
         self.image.blit(self.map_surf, (self.BORDER_SIZE, self.BORDER_SIZE))
         self.style.image = self.image
 
+        # explored text
+        total_rooms = len(self.floor_manager.rooms)
+        rooms_completed = len(list(filter(lambda coord_room: coord_room[1].activated and coord_room[1].completed, self.floor_manager.rooms.items())))
+        self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
+
+class InventoryUI(ui.Element):
+    MAIN_SIZE = 96
+    SECOND_SIZE = 48
+    def __init__(self, parent: ui.Element) -> None:
+        super().__init__(parent, ui.Style(
+            alignment = "bottom-left",
+            alpha = 0,
+            offset = (16, 16),
+        ))
+
+        self.main_slot = self.add_child(ui.Element(
+            parent = self,
+            style = ui.Style(
+                image = self._draw_slot_image(InventoryUI.MAIN_SIZE),
+                alignment = "bottom-left"
+            )
+        ))
+
+        self.secondary_slot = self.main_slot.add_child(ui.Element(
+            parent = self.main_slot,
+            style = ui.Style(
+                image = self._draw_slot_image(InventoryUI.SECOND_SIZE),
+                alignment = "top-right",
+                offset = (-InventoryUI.SECOND_SIZE / 2, -InventoryUI.SECOND_SIZE / 2)
+            )
+        ))
+
+        self.prev_main_slot: str = ""
+        self.prev_secondary_slot: str = ""
+
+        self.player: Player = self.manager.get_object("player")
+
+    def _draw_slot_image(self, size: int, icon_key: str = "") -> pygame.Surface:
+        image = pygame.Surface((size, size))
+        image.fill((91, 49, 56))
+        pygame.draw.rect(image, (51, 22, 31), (0, 0, size, size), 4)
+
+        if icon_key:
+            icon = self.manager.get_image(icon_key)
+            icon = pygame.transform.scale(icon, (size - 16, size - 16))
+            image.blit(icon, (8, 8))
+        return image
+
+    def update(self) -> None:
+        current_main_slot = self.player.inventory.primary.icon_key
+        current_secondary_slot = self.player.inventory.secondary.icon_key
+
+        if current_main_slot != self.prev_main_slot:
+            self.prev_main_slot = current_main_slot
+            self.main_slot.style.image = self._draw_slot_image(InventoryUI.MAIN_SIZE, current_main_slot)
+            self.main_slot.redraw_image()
+
+        if current_secondary_slot != self.prev_secondary_slot:
+            self.prev_secondary_slot = current_secondary_slot
+            self.secondary_slot.style.image = self._draw_slot_image(InventoryUI.SECOND_SIZE, current_secondary_slot)
+            self.secondary_slot.redraw_image()
+
 class HudUI(ui.Element):
     BAR_PADDING = 4
     def __init__(self, parent: Node) -> None:
@@ -196,25 +272,11 @@ class HudUI(ui.Element):
                 parent = self,
                 style = ui.Style(
                     alignment = "top-right",
-                    offset = (self.health_bar.style.offset[0], self.health_bar.rect.bottom + TILE_SIZE / 8),
-                    size = (TILE_SIZE * 4, TILE_SIZE * 4),
+                    offset = (self.health_bar.style.offset[0], self.health_bar.rect.bottom + 8),
+                    size = (256, 256),
                 )
             )
         )
-
-        self.explored_text = self.add_child(IconText(
-            parent = self,
-            text = "0/0",
-            icon = self.manager.get_image("map/explored"),
-            icon_alignment = "right",
-            padding = 4,
-            style = ui.Style(
-                font = self.manager.get_font("alagard", 16),
-                fore_colour = (218, 224, 234),
-                alignment = "top-right",
-                offset = (self.health_bar.style.offset[0], self.map.rect.bottom + TILE_SIZE / 8)
-            )
-        ))
 
         self.coin_text = self.add_child(IconText(
             parent = self,
@@ -226,20 +288,17 @@ class HudUI(ui.Element):
                 font = self.manager.get_font("alagard", 16),
                 fore_colour = (218, 224, 234),
                 alignment = "top-right",
-                offset = (self.health_bar.style.offset[0], self.explored_text.rect.bottom + TILE_SIZE / 8)
+                offset = (self.map.explored_text.style.offset[0] + self.map.style.offset[0], self.map.rect.bottom + 8)
             )
         ))
+
+        self.inventory_ui = self.add_child(InventoryUI(parent = self))
 
         self.floor: FloorManager = self.manager.get_object("floor-manager")
         self.player: Player = self.manager.get_object("player")
 
     def update(self) -> None:
         super().update()
-        # explored text
-        total_rooms = len(self.floor.rooms)
-        rooms_completed = len(list(filter(lambda coord_room: coord_room[1].activated and coord_room[1].completed, self.floor.rooms.items())))
-        self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
-
         # coin text
         self.coin_text.set_text(f"{self.player.inventory.coins:,}")
 

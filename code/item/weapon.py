@@ -18,6 +18,7 @@ class Weapon:
     spawn_type: Type[AbstractWeaponInstance]
     animation_key: str = ""
     sound_key: str = ""
+    icon_key: str = "error"
     damage: float = 5.0
     cooldown_time: int = 40
     knockback: float = 4.0
@@ -123,6 +124,7 @@ class Weapons:
 
     FIREBALL_SPELL = Weapon(
         spawn_type = Fireball,
+        icon_key = "items/fireball_test",
         damage = 5,
         cooldown_time = 20.0,
         knockback = 3,
