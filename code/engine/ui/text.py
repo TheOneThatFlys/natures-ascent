@@ -21,16 +21,24 @@ def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
     current_colour = (0, 0, 0)
     current_section = ""
     index = 0
+    # loop through input string
     while index < len(text):
         letter = text[index]
+        # add character to current section if not escaping
         if letter != "%":
             current_section += letter
             index += 1
+        # if valid escape is used followed by an opening bracket
         elif text[index + 1] == "(":
+            # if the previous text section is not empty,
+            # render the previous section of text and
+            # start a new section
             if current_section != "":
                 text_sections.append(font.render(current_section, True, current_colour))
                 current_section = ""
 
+            # grab the entire colour escape clause
+            # e.g. (255, 0, 0)
             inside_loop_idx = index
             inside_acc = ""
             while inside_loop_idx < len(text):
@@ -40,19 +48,29 @@ def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
                     break
             else:
                 raise ValueError(f"Rich text render of '{text}' failed: missing closing bracket.")
-            current_colour = tuple(map(int, inside_acc.removeprefix("(").removesuffix(")").split(", ")))
+
+            # create a colour tuple from the string
+            current_colour = tuple(map(int, inside_acc.removeprefix("(").removesuffix(")").replace(" ", "").split(",")))
+            
+            # offset the main loop pointer by the length of the escape clause
             index = inside_loop_idx + 1
+        # invalid escape clause
+        # TODO: add %% escape to mean render raw % sign
         else:
             raise ValueError(f"Rich text render of '{text}' failed: % with no opening bracket.")
+
+    # add the last section if it was not already escaped
     if current_section != "":
         text_sections.append(font.render(current_section, True, current_colour))
         current_section = ""
 
+    # create a surface of the max bounds of the text added together
     surf = pygame.Surface((
         sum(s.get_width() for s in text_sections),
         max(s.get_height() for s in text_sections)
     ), pygame.SRCALPHA)
 
+    # render each section of text side by side
     x_offset = 0
     for section in text_sections:
         surf.blit(section, (x_offset, 0))
