@@ -152,7 +152,7 @@ class CreditsScreen(Screen):
         self.text = self.master_container.add_child(
             Text(
                 parent = self.master_container,
-                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                text = "Lorem ipsum dolor sit amet\n, consectetur adipiscing elit.",
                 style = Style(
                     alignment = "top-center",
                     offset = (0, self.title.rect.bottom + 16),
@@ -161,6 +161,23 @@ class CreditsScreen(Screen):
                 )
             )
         )
+    def render_multiline_text(self, text: str, font: pygame.font.Font, colour: Colour) -> pygame.Surface:
+        line_images = []
+        for line in text.split("\n"):
+            s = font.render(line, False, colour)
+            line_images.append(s)
+
+        width = max(line_images, key = lambda s: s.get_width())
+        height = sum(line_images, key = lambda s: s.get_height())
+        image = pygame.Surface((width, height), pygame.SRCALPHA)
+
+        ty = 0
+        for l in line_images:
+            r = l.get_rect(centerx = width / 2, y = ty)
+            image.blit(l, r)
+            ty += r.height
+
+        return image
 
     def on_key_down(self, key: int, unicode: str) -> None:
         super().on_key_down(key, unicode)
