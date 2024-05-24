@@ -14,7 +14,7 @@ import pygame
 
 from typing import Type
 from engine import Screen, Manager, Logger
-from screens import Level, Menu, Settings
+from screens import Level, Menu, Settings, CreditsScreen
 from util import DebugWindow, SaveHelper, AutoSaver
 
 from engine.types import *
@@ -55,6 +55,7 @@ class Game(DebugExpandable):
         self.add_screen("level", Level)
         self.add_screen("menu", Menu)
         self.add_screen("settings", Settings)
+        self.add_screen("credits", CreditsScreen)
         self.set_screen("menu")
 
         self.load_config()

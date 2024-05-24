@@ -1,3 +1,4 @@
+
 import pygame
 
 from engine import Screen
@@ -97,18 +98,13 @@ class Menu(Screen):
                 visible = False
             ),
             hover_style = None,
-            on_click = self._toggle_secret,
+            on_click = self.parent.set_screen,
+            click_args = ["credits"],
             hover_sound = None,
             click_sound = "effect/hit_alt"
         ))
 
-        self.bg_offset = 0
-        self.secret_activated = False
-
         self.manager.play_sound(sound_name = "music/menu", loop = True)
-            
-    def _toggle_secret(self) -> None:
-        self.secret_activated = not self.secret_activated
 
     def on_resize(self, new_res: Vec2) -> None:
         super().on_resize(new_res)
@@ -119,14 +115,63 @@ class Menu(Screen):
     def on_mouse_down(self, button: int) -> None:
         self.master_container.on_mouse_down(button)
 
-    def render(self, window) -> None:
+    def render(self, window: pygame.Surface) -> None:
         self.master_container.render(window)
 
     def update(self) -> None:
         self.master_container.update()
 
-        if self.secret_activated:
-            self.master_container.image = util.draw_background(self.rect.size, offset = self.bg_offset)
-            self.bg_offset += 1
-            if self.bg_offset >= 14:
-                self.bg_offset -= 14
+class CreditsScreen(Screen):
+    def __init__(self, parent) -> None:
+        super().__init__(parent)
+
+        self.master_container = Element(
+            parent = self,
+            style = Style(
+                size = self.rect.size,
+                image = util.draw_background(self.rect.size),
+                colour = (78, 173, 245)
+            )
+        )
+
+        self.title = self.master_container.add_child(
+            Text(
+                parent = self.master_container,
+                text = "Credits",
+                style = Style(
+                    alignment = "top-center",
+                    offset = (0, 64),
+                    fore_colour = (99, 169, 65),
+                    colour = (23, 68, 41),
+                    text_shadow = 2,
+                    font = self.manager.get_font("alagard", 72),
+                )
+            )
+        )
+
+        self.text = self.master_container.add_child(
+            Text(
+                parent = self.master_container,
+                text = "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+                style = Style(
+                    alignment = "top-center",
+                    offset = (0, self.title.rect.bottom + 16),
+                    font = self.manager.get_font("alagard", 32),
+                    fore_colour = (255, 255, 255),
+                )
+            )
+        )
+
+    def on_key_down(self, key: int, unicode: str) -> None:
+        super().on_key_down(key, unicode)
+        if key == pygame.K_ESCAPE:
+            self.parent.set_screen("menu")
+
+    def on_resize(self, new_res: Vec2) -> None:
+        super().on_resize(new_res)
+        self.master_container.style.size = new_res
+        self.master_container.style.image = util.draw_background(new_res)
+        self.master_container.on_resize(new_res)
+
+    def render(self, window: pygame.Surface) -> None:
+        self.master_container.render(window)
