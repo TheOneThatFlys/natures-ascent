@@ -50,9 +50,7 @@ class Health(Pickup):
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position)
 
-        temp_surf = pygame.Surface((32, 32))
-        temp_surf.fill((255, 0, 0))
-        self.animation_manager.add_animation("still", [temp_surf])
+        self.animation_manager.add_animation("still", [self.manager.get_image("items/heart")])
         self.image = self.animation_manager.set_animation("still")
         self.rect = self.image.get_rect(center = self.pos)
 

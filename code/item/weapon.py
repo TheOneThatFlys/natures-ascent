@@ -124,7 +124,7 @@ class Weapons:
 
     FIREBALL_SPELL = Weapon(
         spawn_type = Fireball,
-        icon_key = "items/fireball_test",
+        icon_key = "items/fireball",
         damage = 5,
         cooldown_time = 20.0,
         knockback = 3,
