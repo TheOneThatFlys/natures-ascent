@@ -55,6 +55,14 @@ class SaveHelper:
     @staticmethod
     def save_file(data: str | bytes, filepath: str, obfuscate: bool = False) -> None:
         """Save a file with string data"""
+        # create all folders in path if they don't already exists
+
+        accumulated_path = ""
+        for folder in os.path.dirname(filepath).split(os.path.sep):
+            accumulated_path += folder
+            if not os.path.exists(accumulated_path):
+                os.mkdir(accumulated_path)
+        
         data_to_save = SaveHelper.encode_data(data) if obfuscate else data
         with open(filepath, "wb" if isinstance(data, bytes) else "w") as f:
             f.write(data_to_save)
