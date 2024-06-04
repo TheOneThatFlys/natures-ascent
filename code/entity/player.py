@@ -113,6 +113,12 @@ class Player(Entity):
             self.last_facing.set("walk", "right")
             self.walking = True
 
+        # inventory switching
+        if keys[pygame.K_LSHIFT]:
+            self.selected_weapon_index = 1
+        else:
+            self.selected_weapon_index = 0
+
         # attack
         if keys[pygame.K_RIGHT]:
             self.try_attack("right")
@@ -122,12 +128,6 @@ class Player(Entity):
             self.try_attack("up")
         elif keys[pygame.K_DOWN]:
             self.try_attack("down")
-
-        # inventory switching
-        if keys[pygame.K_1]:
-            self.selected_weapon_index = 0
-        elif keys[pygame.K_2]:
-            self.selected_weapon_index = 1
 
         # normalise vector so that diagonal movement is the
         # same speed as horizontal

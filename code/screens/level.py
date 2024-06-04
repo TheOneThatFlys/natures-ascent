@@ -5,9 +5,9 @@ if TYPE_CHECKING:
     from ..main import Game
 
 import pygame
+import random
 
 from util.constants import *
-from util import draw_background
 from engine import Screen, Sprite, Node, Logger, ui
 from engine.types import *
 from entity import Player
@@ -223,12 +223,13 @@ class InventoryUI(ui.Element):
 
         self.prev_main_slot: str = ""
         self.prev_secondary_slot: str = ""
+        self.prev_selected_index: int = 0
 
         self.player: Player = self.manager.get_object("player")
 
-    def _draw_slot_image(self, size: int, icon_key: str = "") -> pygame.Surface:
+    def _draw_slot_image(self, size: int, icon_key: str = "", is_selected = False) -> pygame.Surface:
         image = pygame.Surface((size, size))
-        image.fill((91, 49, 56))
+        image.fill((162, 109, 91) if is_selected else (91, 49, 56))
         pygame.draw.rect(image, (51, 22, 31), (0, 0, size, size), 4)
 
         if icon_key:
@@ -240,15 +241,26 @@ class InventoryUI(ui.Element):
     def update(self) -> None:
         current_main_slot = self.player.inventory.primary.icon_key
         current_secondary_slot = self.player.inventory.secondary.icon_key
+        current_selected_index = self.player.selected_weapon_index
 
+        should_redraw = False
         if current_main_slot != self.prev_main_slot:
             self.prev_main_slot = current_main_slot
-            self.main_slot.style.image = self._draw_slot_image(InventoryUI.MAIN_SIZE, current_main_slot)
-            self.main_slot.redraw_image()
+            should_redraw = True
 
         if current_secondary_slot != self.prev_secondary_slot:
             self.prev_secondary_slot = current_secondary_slot
-            self.secondary_slot.style.image = self._draw_slot_image(InventoryUI.SECOND_SIZE, current_secondary_slot)
+            should_redraw = True
+
+        if current_selected_index != self.prev_selected_index:
+            self.prev_selected_index = current_selected_index
+            should_redraw = True
+
+        if should_redraw:
+            self.main_slot.style.image = self._draw_slot_image(InventoryUI.MAIN_SIZE, current_main_slot, current_selected_index == 0)
+            self.main_slot.redraw_image()
+
+            self.secondary_slot.style.image = self._draw_slot_image(InventoryUI.SECOND_SIZE, current_secondary_slot, current_selected_index == 1)
             self.secondary_slot.redraw_image()
 
 class HudUI(ui.Element):
@@ -618,9 +630,17 @@ class FollowCameraLayered(Sprite):
 
         self.offset = pygame.Vector2()
 
+        self.shake_timer = 0
+        self.shake_intensity = 0
+
     def update(self) -> None:
         # move camera closer to target
         self.pos += self.manager.dt * (self.target.rect.center - self.pos) * self.follow_speed
+
+        # implement shake
+        if self.shake_timer > 0:
+            self.shake_timer -= self.manager.dt
+            self.pos += pygame.Vector2(random.randrange(-self.shake_intensity, self.shake_intensity), random.randrange(-self.shake_intensity, self.shake_intensity))
 
     def set_screen_size(self, new_size: Vec2) -> None:
         """Set new screen size to center camera on"""
@@ -634,9 +654,15 @@ class FollowCameraLayered(Sprite):
         )
     
     def convert_rect(self, rect: pygame.Rect | pygame.FRect) -> pygame.Rect | pygame.FRect:
+        """See convert_coords"""
         new = rect.copy()
         new.topleft = self.convert_coords(rect.topleft)
         return new
+    
+    def shake(self, intensity: float, duration: float) -> None:
+        """Shake the camera with `intensity` pixel offset for `duration` frames"""
+        self.shake_intensity = intensity
+        self.shake_timer = duration
 
     def render(self, surface: pygame.Surface, sprite_group: pygame.sprite.Group) -> None:
         # render sprites centered on camera position
