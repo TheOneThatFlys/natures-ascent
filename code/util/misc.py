@@ -64,6 +64,18 @@ def get_direction_vector(direction: Direction) -> tuple[int, int]:
         case "down":
             return (0, 1)
         
+def get_direction_angle(direction: Direction) -> int:
+    """Get the angle in degrees of a direction"""
+    match direction:
+        case "left":
+            return 180
+        case "right":
+            return 0
+        case "up":
+            return 90
+        case "down":
+            return -90
+
 def sign(n: float) -> Literal[1, -1, 0]:
     """Returns 1 if n is positive, -1 if negative, and 0 if 0"""
     if n > 0: return 1

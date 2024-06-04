@@ -71,7 +71,7 @@ class Player(Entity):
 
         self.inventory = self.add_child(Inventory(parent = self))
         self.inventory.primary = Weapons.STARTER_SWORD
-        self.inventory.secondary = Weapons.FIREBALL_SPELL
+        self.inventory.secondary = Weapons.TELEPORT_SPELL
         self.selected_weapon_index: int = 0
 
         self.attack_cd = 0

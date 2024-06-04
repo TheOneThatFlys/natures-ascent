@@ -84,9 +84,8 @@ class Fireball(AbstractWeaponInstance):
     def __init__(self, parent: Player, stats: Weapon, direction: Direction):
         super().__init__(parent, stats, direction)
 
-        self.image = pygame.Surface((32, 32))
+        self.image = pygame.transform.rotate(self.manager.get_image("items/fireball"), util.get_direction_angle(direction) + 90)
         self.rect = self.image.get_rect(center = parent.rect.center)
-        self.image.fill((255, 120, 0))
 
         self.velocity = pygame.Vector2(util.get_direction_vector(direction)) * 7 + parent.velocity * 0.5
         self.life = 300
