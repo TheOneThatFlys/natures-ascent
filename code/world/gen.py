@@ -190,7 +190,6 @@ class Room(Node):
     def place_in_world(self) -> None:
         """Adds the room's tiles and enemies into the world"""
         self.add_tiles()
-        self.add_enemies()
 
         self.dark_overlay = self.add_child(DarkOverlay(self))
         self.player: Player = self.manager.get_object("player")
@@ -289,6 +288,7 @@ class Room(Node):
     def activate(self) -> None:
         self._activated = True
         self.dark_overlay.queue_death()
+        self.add_enemies()
 
         for direction in room_directions:
             if direction in self.connections:
@@ -309,8 +309,6 @@ class Room(Node):
                 # remove doors
                 for sprite in self.temp_doors:
                     sprite.kill()
-
-            self.enemies.update()
 
 class SpawnRoom(Room):
     def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:

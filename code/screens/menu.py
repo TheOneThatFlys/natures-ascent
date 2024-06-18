@@ -141,6 +141,7 @@ class CreditsScreen(Screen):
 
         self.master_container.style.alpha = 255
         self.master_container.style.image = util.draw_background(self.rect.size)
+        self.master_container.redraw_image()
 
         self.title = self.master_container.add_child(
             Text(

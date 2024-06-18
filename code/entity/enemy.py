@@ -3,6 +3,7 @@ from __future__ import annotations
 import pygame, random, math
 
 from typing import TYPE_CHECKING, Type
+
 if TYPE_CHECKING:
     from world import Room
     from .player import Player
@@ -10,10 +11,37 @@ if TYPE_CHECKING:
 from .entity import Entity
 from .stats import EnemyStats, enemy_stats
 
-from engine import Node, Sprite
+from engine import Node, Sprite, AnimationManager
 from engine.types import *
 from item import Coin
 import util
+from util.constants import *
+
+class EnemySpawnIndicator(Sprite):
+    """
+    Sprite that displays the warning indicator for the location of an enemy spawn.
+
+    Will call parent.place_in_world on death after 1 second.
+    """
+    def __init__(self, parent: Enemy) -> None:
+        super().__init__(parent, ["render", "update"], 0)
+        self.animation_manager = self.add_child(AnimationManager(parent = self))
+        self.animation_manager.add_animation("default", util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("tiles/spawn_warning"), 2), frame_size=(TILE_SIZE, TILE_SIZE)))
+        self.image = self.animation_manager.set_animation("default")
+        self.rect = self.image.get_rect(topleft = parent.rect.topleft)
+
+        self.counter = 0
+        self.life_time = 60 + random.randint(0, 30)
+
+    def update(self) -> None:
+        self.animation_manager.update()
+        self.counter += self.manager.dt
+        if self.counter >= self.life_time: # TEMP
+            self.kill()
+
+    def kill(self) -> None:
+        self.parent.place_in_world()
+        super().kill()
 
 class Enemy(Entity):
     """
@@ -29,8 +57,8 @@ class Enemy(Entity):
         self.stats: EnemyStats
         self.parent: Room
         
-        self.add(self.manager.groups["enemy"])
         self.remove(self.manager.groups["update"])
+        self.remove(self.manager.groups["render"])
 
         self.animation_manager.add_animation("__TEMP", [self.manager.get_image("error")])
         self.image = self.animation_manager.set_animation("__TEMP")
@@ -42,6 +70,22 @@ class Enemy(Entity):
         self.has_seen_player = False
 
         self.player = self.manager.get_object("player")
+
+        # spawn in animation
+        self.spawn_time = 60
+        self.spawn_counter = 0
+
+        self.spawn_indicator = self.add_child(EnemySpawnIndicator(parent = self))
+        self.falling_in = True
+
+    def place_in_world(self) -> None:
+        self.add(self.manager.groups["render"])
+        self.add(self.manager.groups["update"])
+        self.add(self.manager.groups["enemy"])
+        screen_height = self.manager.get_window("main").size[1]
+        self.target_y = self.rect.y
+        self.rect.y -= screen_height
+        self.fall_speed = screen_height / 60
 
     def move(self):
         """Enemy can override move to use a better form of collision as enemies will not be able to leave their rooms"""
@@ -111,6 +155,13 @@ class Enemy(Entity):
             self.follow_player()
 
     def update(self) -> None:
+        if self.falling_in:
+            self.rect.y += self.fall_speed
+            if self.rect.y > self.target_y:
+                self.rect.y = self.target_y
+                self.falling_in = False
+            return
+
         self.time_since_seen_player += self.manager.dt
         if self.has_line_of_sight(self.player.rect.center):
             self.time_since_seen_player = 0
@@ -291,7 +342,5 @@ class TreeBoss(Enemy):
                 self.in_stationary_attack = True
 
     def update(self) -> None:
-        Entity.update(self)
-        self.update_ai()
-        self.check_player_collision()
+        super().update()
         self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))
