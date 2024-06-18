@@ -91,6 +91,7 @@ class Manager(DebugExpandable):
 
         # do not change these hardcoded values
         self._dt_raw = self.game.clock.get_time() / 1000
+        self._dt_raw = min(self._dt_raw, 0.05) # limit to 3 frame skips
         self._dt_adjusted = 60 * self._dt_raw
 
     def add_object(self, id: str, node: Node) -> Node:
