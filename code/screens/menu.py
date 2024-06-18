@@ -11,14 +11,9 @@ class Menu(Screen):
     def __init__(self, parent) -> None:
         super().__init__(parent)
         
-        self.master_container = Element(
-            parent = self,
-            style = Style(
-                size = self.rect.size,
-                image = util.draw_background(self.rect.size),
-                colour = (78, 173, 245)
-            )
-        )
+        self.master_container.style.alpha = 255
+        self.master_container.style.image = util.draw_background(self.rect.size)
+        self.master_container.redraw_image()
 
         self.tree_img = self.master_container.add_child(
             Element(
@@ -105,13 +100,8 @@ class Menu(Screen):
         self.manager.play_sound(sound_name = "music/menu", loop = True)
 
     def on_resize(self, new_res: Vec2) -> None:
-        super().on_resize(new_res)
-        self.master_container.style.size = new_res
         self.master_container.style.image = util.draw_background(new_res)
-        self.master_container.on_resize(new_res)
-
-    def on_mouse_down(self, button: int) -> None:
-        self.master_container.on_mouse_down(button)
+        super().on_resize(new_res)
 
     def render(self, window: pygame.Surface) -> None:
         self.master_container.render(window)
@@ -149,14 +139,8 @@ class CreditsScreen(Screen):
     def __init__(self, parent) -> None:
         super().__init__(parent)
 
-        self.master_container = Element(
-            parent = self,
-            style = Style(
-                size = self.rect.size,
-                image = util.draw_background(self.rect.size),
-                colour = (78, 173, 245)
-            )
-        )
+        self.master_container.style.alpha = 255
+        self.master_container.style.image = util.draw_background(self.rect.size)
 
         self.title = self.master_container.add_child(
             Text(
@@ -200,17 +184,12 @@ This game created for entertainment purposes only. Any attempt to to use this pr
         if key == pygame.K_ESCAPE:
             self.parent.set_screen("menu")
 
-    def on_scroll(self, dx: int, dy: int) -> None:
-        super().on_scroll(dx, dy)
-        self.master_container.on_scroll(dx, dy)
-
     def on_resize(self, new_res: Vec2) -> None:
-        super().on_resize(new_res)
         self.master_container.style.size = new_res
         self.master_container.style.image = util.draw_background(new_res)
         self.text.style.size = (self.rect.width - 100, self.rect.height - 200)
-        self.master_container.on_resize(new_res)
 
+        super().on_resize(new_res)
 
     def render(self, window: pygame.Surface) -> None:
         self.master_container.render(window)

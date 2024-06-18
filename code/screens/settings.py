@@ -230,21 +230,14 @@ class SettingsUI(Element):
 class SettingsScreen(Screen):
     def __init__(self, game: Game) -> None:
         super().__init__(game)
-        self.ui = self.add_child(SettingsUI(self, self.rect.size, self._on_exit))
+        self.ui = self.master_container.add_child(SettingsUI(self.master_container, self.rect.size, self._on_exit))
 
     def _on_exit(self) -> None:
         self.parent.set_screen("menu")
 
     def on_resize(self, new_res: Vec2) -> None:
-        super().on_resize(new_res)
         self.ui.style.size = new_res
-        self.ui.on_resize(new_res)
-
-    def on_mouse_down(self, button: int) -> None:
-        self.ui.on_mouse_down(button)
-
-    def on_mouse_up(self, button: int) -> None:
-        self.ui.on_mouse_up(button)
+        super().on_resize(new_res)
 
     def update(self) -> None:
         for child in self.children:
