@@ -82,10 +82,13 @@ class Enemy(Entity):
         self.add(self.manager.groups["render"])
         self.add(self.manager.groups["update"])
         self.add(self.manager.groups["enemy"])
+
         screen_height = self.manager.get_window("main").size[1]
-        self.target_y = self.rect.y
-        self.rect.y -= screen_height
-        self.fall_speed = screen_height / 60
+        self.target_y = self.rect.y # keep track of original spawn location
+        self.rect.y -= screen_height # move entity out of screen view
+        self.fall_speed = screen_height / 60 # move linearly down for 1 second
+
+        self.z_index = 10 # make sure enemy is rendered on top of everything else in world
 
     def move(self):
         """Enemy can override move to use a better form of collision as enemies will not be able to leave their rooms"""
@@ -159,7 +162,8 @@ class Enemy(Entity):
             self.rect.y += self.fall_speed
             if self.rect.y > self.target_y:
                 self.rect.y = self.target_y
-                self.falling_in = False
+                self.falling_in = False # stop falling animation
+                self.z_index = 0 # reset z index
             return
 
         self.time_since_seen_player += self.manager.dt
