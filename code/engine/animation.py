@@ -50,6 +50,9 @@ class AnimationManager(Node):
 
         return self._animations[key][0]
 
+    def get_current_frame(self) -> pygame.Surface:
+        return self._animations[self._current][self._current_index]
+
     def update(self) -> None:
         self._counter += self.manager.dt
         if self._counter >= self._frame_time:

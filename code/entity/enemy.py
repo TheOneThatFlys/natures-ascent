@@ -154,6 +154,17 @@ class Enemy(Entity):
         if self.time_since_seen_player <= self.stats.attention_span:
             self.follow_player()
 
+    def calculate_damage_frames(self) -> None:
+        """Draw a red overlay over enemy sprite when taking damage"""
+        if self.iframes > 0:
+            alpha = (self.iframes / self.stats.iframes) * 122
+
+            self.image = self.animation_manager.get_current_frame().copy()
+            mask = pygame.mask.from_surface(self.image)
+            mask = mask.to_surface(setcolor=(255, 0, 0), unsetcolor=None)
+            mask.set_alpha(alpha)
+            self.image.blit(mask, (0, 0))
+
     def update(self) -> None:
         if self.falling_in:
             self.rect.y += self.fall_speed
@@ -169,8 +180,10 @@ class Enemy(Entity):
         self.update_ai()
         self.avoid_others()
         self.check_player_collision()
-        
+
         super().update()
+
+        self.calculate_damage_frames()
 
 class Slime(Enemy):
     def __init__(self, parent: Node, position: Vec2) -> None:
