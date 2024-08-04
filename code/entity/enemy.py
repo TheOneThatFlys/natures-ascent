@@ -175,6 +175,7 @@ class Enemy(Entity):
                 self.rect.y = self.target_y
                 self.falling_in = False # stop falling animation
                 self.z_index = 0 # reset z index
+                self.manager.play_sound(self.stats.enter_sound, volume=0.2)
             return
 
         self.time_since_seen_player += self.manager.dt

@@ -12,6 +12,7 @@ class EnemyStats(EntityStats):
     notice_range: float = 256
     attention_span: float = 0
     value: int = 0
+    enter_sound: str = "effect/enemy_enter"
 
 @dataclass
 class PlayerStats(EntityStats):
@@ -41,5 +42,6 @@ enemy_stats = {
         walk_speed = 0.3,
         iframes = 10,
         value = 40,
+        enter_sound="effect/boss_enter"
     )
 }
