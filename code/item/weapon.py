@@ -116,6 +116,7 @@ class Weapons:
         spawn_type = MeleeWeaponAttack,
         animation_key = "sword_attack",
         sound_key = "effect/sword_slash",
+        icon_key = "items/sword",
         damage = 10.0,
         cooldown_time = ANIMATION_FRAME_TIME * 4,
         knockback = 10.0,
