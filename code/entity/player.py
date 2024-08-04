@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import pygame
+from typing import Type
 
 from engine import Node, Sprite
 from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 
-from item import Weapon, Weapons
+from item import Weapon, Sword
 
 from .entity import Entity
 from .stats import PlayerStats, player_stats
@@ -33,12 +34,32 @@ class Inventory(Node):
         super().__init__(parent)
 
         self.primary: Weapon = None
-        self.secondary: Weapon = None
+        self.spell: Weapon = None
         
         self.coins: int = 0
 
     def add_coin(self, value: int) -> None:
         self.coins += value
+
+    def set_weapon(self, slot: int, weapon: Type[Weapon]) -> None:
+        if slot == 0:
+            if self.primary != None:
+                self.remove_weapon(0)
+            self.primary = self.add_child(weapon(self, self.parent))
+        elif slot == 1:
+            if self.spell != None:
+                self.remove_weapon(1)
+            self.spell = self.add_child(weapon(self, self.parent))
+
+    def remove_weapon(self, slot: int) -> None:
+        if slot == 0:
+            if self.primary != None:
+                self.remove_child(self.primary)
+                self.primary = None
+        if slot == 1:
+            if self.spell != None:
+                self.remove_child(self.spell)
+                self.spell = None
 
     def at(self, index: int) -> Weapon | None:
         if index == 0:
@@ -70,9 +91,7 @@ class Player(Entity):
         self.walking = False
 
         self.inventory = self.add_child(Inventory(parent = self))
-        self.inventory.primary = Weapons.STARTER_SWORD
-        self.inventory.secondary = Weapons.FIREBALL_SPELL
-        self.selected_weapon_index: int = 0
+        self.inventory.set_weapon(0, Sword)
 
         self.attack_cd = 0
 
@@ -113,12 +132,6 @@ class Player(Entity):
             self.last_facing.set("walk", "right")
             self.walking = True
 
-        # inventory switching
-        if keys[pygame.K_LSHIFT]:
-            self.selected_weapon_index = 1
-        else:
-            self.selected_weapon_index = 0
-
         # attack
         if keys[pygame.K_RIGHT]:
             self.try_attack("right")
@@ -157,11 +170,11 @@ class Player(Entity):
 
     def try_attack(self, direction: Direction) -> bool:
         """Attempts an attack, returning True if successful and False if not"""
-        current_weapon = self.inventory.at(self.selected_weapon_index)
+        current_weapon = self.inventory.primary
         if current_weapon == None: return
         if self.attack_cd <= 0:
             # create attack
-            self.add_child(current_weapon.spawn_type(self, current_weapon, direction))
+            current_weapon.attack(direction)
 
             self.attack_cd = current_weapon.cooldown_time
             self.last_facing.set("attack", direction)
@@ -169,10 +182,6 @@ class Player(Entity):
             # set player animation if avaliable
             if current_weapon.animation_key:
                 self.animation_manager.set_animation(current_weapon.animation_key + "-" + direction)
-
-            # play associated weapon noise if avaliable
-            if current_weapon.sound_key:
-                self.manager.play_sound(sound_name = current_weapon.sound_key, volume = 0.2)
             return True
         return False
         

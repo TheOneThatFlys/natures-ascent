@@ -1,45 +1,67 @@
 from __future__ import annotations
-from typing import Literal, Type, TYPE_CHECKING
+from typing import Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from entity import Player
 
 import pygame
 
-from engine import Sprite
-from dataclasses import dataclass
+from engine import Sprite, Node
+from engine.types import *
 
 import util
 from util.constants import *
 
-Direction = Literal["left", "right", "up", "down"]
+class Weapon(Node):
+    """
+    Stores weapon information such as sound effects and icon keys.
+    Actual implementation for attacks should be in derived classes.
+    """
+    def __init__(self, parent: Node, player: Player, animation_key: str = "", sound_key: str = "", icon_key: str = "error", cooldown_time: int = 40) -> None:
+        super().__init__(parent)
+        self.player = player
 
-@dataclass
-class Weapon:
-    spawn_type: Type[AbstractWeaponInstance]
-    animation_key: str = ""
-    sound_key: str = ""
-    icon_key: str = "error"
-    damage: float = 5.0
-    cooldown_time: int = 40
-    knockback: float = 4.0
+        self.animation_key = animation_key
+        self.sound_key = sound_key
+        self.icon_key = icon_key
+        self.cooldown_time = cooldown_time
 
-class AbstractWeaponInstance(Sprite):
-    def __init__(self, parent: Player, stats: Weapon, direction: Direction):
-        super().__init__(parent, groups = ["update", "render"])
-        self.stats = stats
-        self.direction = direction
+    def attack(self, direction: Direction) -> None:
+        if self.sound_key:
+            self.manager.play_sound(self.sound_key, volume=0.2)
 
-    def update(self):
-        raise NotImplementedError()
+class Spell(Weapon):
+    """
+    Same as a weapon, but attack direction does not matter (as it is binded to a single key)
+    """
+    def attack(self) -> None:
+        super().attack(None)
 
-class MeleeWeaponAttack(AbstractWeaponInstance):
-    def __init__(self, parent: Player, stats: Weapon, direction: Direction) -> None:
-        super().__init__(parent, stats, direction)
+class Sword(Weapon):
+    def __init__(self, parent: Node, player: Player,):
+        super().__init__(
+            parent, player,
+            animation_key = "sword_attack",
+            sound_key = "effect/sword_slash",
+            icon_key = "items/sword",
+            cooldown_time = ANIMATION_FRAME_TIME * 4,
+        )
+
+        self.damage = 10.0
+        self.knockback = 10.0
+
+    def attack(self, direction: Direction) -> None:
+        super().attack(direction)
+        self.player.add_child(MeleeWeaponAttack(self.player, direction, self.damage, self.knockback))
+
+class MeleeWeaponAttack(Sprite):
+    def __init__(self, parent: Player, direction: Direction, damage: float, knockback: float) -> None:
+        super().__init__(parent, groups = ["update"])
         self.z_index = 1
-        self.remove(self.manager.groups["render"])
+        self.direction = direction
+        self.damage = damage
+        self.knockback = knockback
 
         self.life = ANIMATION_FRAME_TIME * 3
-        self.stats = stats
         self.rect = pygame.Rect(0, 0, 24 * PIXEL_SCALE, 32 * PIXEL_SCALE)
         self._hit_enemies = [] # keep track of hit enemies
 
@@ -55,7 +77,7 @@ class MeleeWeaponAttack(AbstractWeaponInstance):
         # check if hitting enemy
         for enemy in self.manager.groups["enemy"].sprites():
             if self.rect.colliderect(enemy.rect) and not enemy in self._hit_enemies:
-                enemy.hit(self.manager.get_object("player"), damage = self.stats.damage, kb_magnitude = self.stats.knockback)
+                enemy.hit(self.manager.get_object("player"), damage = self.damage, kb_magnitude = self.knockback)
                 self._hit_enemies.append(enemy)
 
     def _stick_to_parent_position(self) -> None:
@@ -80,7 +102,7 @@ class MeleeWeaponAttack(AbstractWeaponInstance):
         if self.life < 0:
             self.kill()
 
-class Fireball(AbstractWeaponInstance):
+class Fireball(Sprite):
     def __init__(self, parent: Player, stats: Weapon, direction: Direction):
         super().__init__(parent, stats, direction)
 
@@ -111,21 +133,21 @@ class Fireball(AbstractWeaponInstance):
                 self.kill()
                 return
 
-class Weapons:
-    STARTER_SWORD = Weapon(
-        spawn_type = MeleeWeaponAttack,
-        animation_key = "sword_attack",
-        sound_key = "effect/sword_slash",
-        icon_key = "items/sword",
-        damage = 10.0,
-        cooldown_time = ANIMATION_FRAME_TIME * 4,
-        knockback = 10.0,
-    )
+# class Weapons:
+#     STARTER_SWORD = Weapon(
+#         spawn_type = MeleeWeaponAttack,
+#         animation_key = "sword_attack",
+#         sound_key = "effect/sword_slash",
+#         icon_key = "items/sword",
+#         damage = 10.0,
+#         cooldown_time = ANIMATION_FRAME_TIME * 4,
+#         knockback = 10.0,
+#     )
 
-    FIREBALL_SPELL = Weapon(
-        spawn_type = Fireball,
-        icon_key = "items/fireball",
-        damage = 5,
-        cooldown_time = 20.0,
-        knockback = 3,
-    )
+#     FIREBALL_SPELL = Weapon(
+#         spawn_type = Fireball,
+#         icon_key = "items/fireball",
+#         damage = 5,
+#         cooldown_time = 20.0,
+#         knockback = 3,
+#     )

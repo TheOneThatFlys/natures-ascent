@@ -196,7 +196,7 @@ class Map(ui.Element):
 
 class InventoryUI(ui.Element):
     MAIN_SIZE = 96
-    SECOND_SIZE = 48
+    SPELL_SIZE = 48
     def __init__(self, parent: ui.Element) -> None:
         super().__init__(parent, ui.Style(
             alignment = "bottom-left",
@@ -204,7 +204,7 @@ class InventoryUI(ui.Element):
             offset = (16, 16),
         ))
 
-        self.main_slot = self.add_child(ui.Element(
+        self.primary_slot = self.add_child(ui.Element(
             parent = self,
             style = ui.Style(
                 image = self._draw_slot_image(InventoryUI.MAIN_SIZE),
@@ -212,24 +212,23 @@ class InventoryUI(ui.Element):
             )
         ))
 
-        self.secondary_slot = self.main_slot.add_child(ui.Element(
-            parent = self.main_slot,
+        self.spell_slot = self.primary_slot.add_child(ui.Element(
+            parent = self.primary_slot,
             style = ui.Style(
-                image = self._draw_slot_image(InventoryUI.SECOND_SIZE),
-                alignment = "top-right",
-                offset = (-InventoryUI.SECOND_SIZE / 2, -InventoryUI.SECOND_SIZE / 2)
+                image = self._draw_slot_image(InventoryUI.SPELL_SIZE),
+                alignment = "top-left",
+                offset = (0, -InventoryUI.SPELL_SIZE - 8)
             )
         ))
 
-        self.prev_main_slot: str = ""
-        self.prev_secondary_slot: str = ""
-        self.prev_selected_index: int = 0
+        self.prev_primary_slot: str = ""
+        self.prev_spell_slot: str = ""
 
         self.player: Player = self.manager.get_object("player")
 
-    def _draw_slot_image(self, size: int, icon_key: str = "", is_selected = False) -> pygame.Surface:
+    def _draw_slot_image(self, size: int, icon_key: str = "") -> pygame.Surface:
         image = pygame.Surface((size, size))
-        image.fill((162, 109, 91) if is_selected else (91, 49, 56))
+        image.fill((91, 49, 56))
         pygame.draw.rect(image, (51, 22, 31), (0, 0, size, size), 4)
 
         if icon_key:
@@ -239,29 +238,27 @@ class InventoryUI(ui.Element):
         return image
 
     def update(self) -> None:
-        current_main_slot = self.player.inventory.primary.icon_key
-        current_secondary_slot = self.player.inventory.secondary.icon_key
-        current_selected_index = self.player.selected_weapon_index
+        primary = self.player.inventory.primary
+        spell = self.player.inventory.spell
+        
+        current_primary_slot = primary.icon_key if primary else ""
+        current_spell_slot = spell.icon_key if spell else ""
 
         should_redraw = False
-        if current_main_slot != self.prev_main_slot:
-            self.prev_main_slot = current_main_slot
+        if current_primary_slot != self.prev_primary_slot:
+            self.prev_primary_slot = current_primary_slot
             should_redraw = True
 
-        if current_secondary_slot != self.prev_secondary_slot:
-            self.prev_secondary_slot = current_secondary_slot
-            should_redraw = True
-
-        if current_selected_index != self.prev_selected_index:
-            self.prev_selected_index = current_selected_index
+        if current_spell_slot != self.prev_spell_slot:
+            self.prev_spell_slot = current_spell_slot
             should_redraw = True
 
         if should_redraw:
-            self.main_slot.style.image = self._draw_slot_image(InventoryUI.MAIN_SIZE, current_main_slot, current_selected_index == 0)
-            self.main_slot.redraw_image()
+            self.primary_slot.style.image = self._draw_slot_image(InventoryUI.MAIN_SIZE, current_primary_slot)
+            self.primary_slot.redraw_image()
 
-            self.secondary_slot.style.image = self._draw_slot_image(InventoryUI.SECOND_SIZE, current_secondary_slot, current_selected_index == 1)
-            self.secondary_slot.redraw_image()
+            self.spell_slot.style.image = self._draw_slot_image(InventoryUI.SPELL_SIZE, current_spell_slot)
+            self.spell_slot.redraw_image()
 
 class HudUI(ui.Element):
     BAR_PADDING = 4
