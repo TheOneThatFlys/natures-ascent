@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 
 import pygame, math
 
-from engine import Sprite, Node
+from engine import Sprite, Node, Logger
 from engine.types import *
 
 import util
@@ -36,31 +36,6 @@ class Spell(Weapon):
     """
     def attack(self) -> None:
         super().attack(None)
-
-class Sword(Weapon):
-    def __init__(self, parent: Player):
-        super().__init__(
-            parent,
-            animation_key = "sword_attack",
-            sound_key = "effect/sword_slash",
-            icon_key = "items/sword",
-            cooldown_time = ANIMATION_FRAME_TIME * 4,
-        )
-
-        self.damage = 10.0
-        self.knockback = 10.0
-
-    def attack(self, direction: Direction) -> None:
-        super().attack(direction)
-        self.player.add_child(MeleeWeaponAttack(
-            parent = self.player,
-            direction = direction,
-            damage = self.damage,
-            knockback = self.knockback,
-            width = 48, length = 64,
-            total_life = ANIMATION_FRAME_TIME * 3,
-            hit_frames = [(ANIMATION_FRAME_TIME, ANIMATION_FRAME_TIME * 2)]
-        ))
 
 class MeleeWeaponAttack(Sprite):
     def __init__(self, parent: Player, direction: Direction, damage: float, knockback: float, width: float, length: float, hit_frames: list[tuple[int, int]], total_life: int) -> None:
@@ -121,37 +96,6 @@ class MeleeWeaponAttack(Sprite):
         if self.life < 0:
             self.kill()
 
-class FireballSpell(Spell):
-    def __init__(self, parent: Player) -> None:
-        super().__init__(
-            parent,
-            icon_key = "items/fireball",
-            cooldown_time = 90.0,
-        )
-
-        self.damage = 5
-        self.knockback = 3
-        self.spawn_number = 8
-        self.spawn_speed = 7
-        self.momentum_coef = 0.5
-
-    def attack(self) -> None:
-        super().attack()
-
-        for a in range(self.spawn_number):
-            angle = a / self.spawn_number * 360
-
-            self.add_child(FireballProjectile(
-                parent = self,
-                origin = self.player.rect.center,
-                velocity = util.polar_to_cart(angle, self.spawn_speed) + self.player.velocity * self.momentum_coef,
-                damage = self.damage,
-                knockback = self.knockback,
-                max_life = 300,
-                rotation_degrees = angle,
-                scale = 2,
-            ))
-
 class Projectile(Sprite):
     """
     Represents player spawned projectiles which can damage enemies.
@@ -192,6 +136,61 @@ class Projectile(Sprite):
             if self.hitbox.colliderect(tile.rect):
                 self.kill()
                 return
+class Sword(Weapon):
+    def __init__(self, parent: Player):
+        super().__init__(
+            parent,
+            animation_key = "sword_attack",
+            sound_key = "effect/sword_slash",
+            icon_key = "items/sword",
+            cooldown_time = ANIMATION_FRAME_TIME * 4,
+        )
+
+        self.damage = 10.0
+        self.knockback = 10.0
+
+    def attack(self, direction: Direction) -> None:
+        super().attack(direction)
+        self.player.add_child(MeleeWeaponAttack(
+            parent = self.player,
+            direction = direction,
+            damage = self.damage,
+            knockback = self.knockback,
+            width = 48, length = 64,
+            total_life = ANIMATION_FRAME_TIME * 3,
+            hit_frames = [(ANIMATION_FRAME_TIME, ANIMATION_FRAME_TIME * 2)]
+        ))
+
+class FireballSpell(Spell):
+    def __init__(self, parent: Player) -> None:
+        super().__init__(
+            parent,
+            icon_key = "items/fireball",
+            cooldown_time = 90.0,
+        )
+
+        self.damage = 5
+        self.knockback = 3
+        self.spawn_number = 8
+        self.spawn_speed = 7
+        self.momentum_coef = 0.5
+
+    def attack(self) -> None:
+        super().attack()
+
+        for a in range(self.spawn_number):
+            angle = a / self.spawn_number * 360
+
+            self.add_child(FireballProjectile(
+                parent = self,
+                origin = self.player.rect.center,
+                velocity = util.polar_to_cart(angle, self.spawn_speed) + self.player.velocity * self.momentum_coef,
+                damage = self.damage,
+                knockback = self.knockback,
+                max_life = 300,
+                rotation_degrees = angle,
+                scale = 2,
+            ))
 
 class FireballProjectile(Projectile):
     def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, max_life: int = 999, rotation_degrees: float = 0, scale: int = 1):
@@ -207,3 +206,53 @@ class FireballProjectile(Projectile):
 
         self.image = pygame.transform.scale_by(pygame.transform.rotate(self.manager.get_image("items/fireball"), rotation_degrees + 90), scale)
         self.rect = self.image.get_rect(center = origin)
+
+class DashSpell(Spell):
+    # terrible hack to get a timer to update
+    class __FrictionNormaliser(Sprite):
+        def __init__(self, parent: Node) -> None:
+            super().__init__(parent, ["update"])
+            self.counter = 0
+
+        def update(self) -> None:
+            self.counter += self.manager.dt
+            if self.counter > 10:
+                player: Player = self.manager.get_object("player")
+                player.local_friction_coef = SURFACE_FRICTION_COEFFICIENT
+                player.disable_movement_input = False
+                self.kill()
+
+    def __init__(self, parent: Player) -> None:
+        super().__init__(
+            parent,
+            cooldown_time = 45,
+            sound_key = "effect/dash",
+            icon_key = "items/dash"
+        )
+
+        if self.cooldown_time < 16:
+            Logger.warn(f"Dash spell cooldown set to {self.cooldown_time}, which is below the recommended minimum of {16}.")
+
+        self.magnitude = 10
+
+        self.dash_timer = 0
+
+    def attack(self) -> None:
+        super().attack()
+        direction = pygame.Vector2()
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_d]: direction.x += 1
+        if keys[pygame.K_a]: direction.x -= 1
+        if keys[pygame.K_w]: direction.y -= 1
+        if keys[pygame.K_s]: direction.y += 1
+
+        # default to facing if no input pressed
+        if direction.magnitude() == 0:
+            last_direction = self.player.last_facing.overall
+            direction = pygame.Vector2(util.get_direction_vector(last_direction))
+        self.player.velocity = direction.normalize() * self.magnitude
+        self.player.iframes = 16
+        self.player.local_friction_coef = 0
+        self.player.disable_movement_input = True
+        self.add_child(DashSpell.__FrictionNormaliser(self))
+        self.player.animation_manager.set_animation("dash-" + self.player.last_facing.overall)

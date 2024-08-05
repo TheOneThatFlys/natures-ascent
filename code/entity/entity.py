@@ -24,6 +24,7 @@ class Entity(Sprite):
 
         self.health_bar_mode = health_bar_mode
         self.time_since_hit = HEALTH_VISIBILITY_TIME + 1
+        self.local_friction_coef = SURFACE_FRICTION_COEFFICIENT
         self.health_bar = self.add_child(
             HealthBar(
                 self,
@@ -95,7 +96,7 @@ class Entity(Sprite):
         pass
 
     def apply_friction(self):
-        self.velocity -= self.velocity * SURFACE_FRICTION_COEFFICIENT * self.manager.dt
+        self.velocity -= self.velocity * self.local_friction_coef * self.manager.dt
         # prevent small values of velocity
         if -0.01 < self.velocity.x < 0.01: self.velocity.x = 0
         if -0.01 < self.velocity.y < 0.01: self.velocity.y = 0

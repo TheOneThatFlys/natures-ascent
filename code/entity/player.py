@@ -8,7 +8,7 @@ from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 
-from item import Weapon, Spell, Sword, FireballSpell
+from item import Weapon, Spell, Sword, FireballSpell, DashSpell
 
 from .entity import Entity
 from .stats import PlayerStats, player_stats
@@ -90,16 +90,17 @@ class Player(Entity):
 
         self.last_facing = LastFacing()
         self.walking = False
+        self.disable_movement_input = False
 
         self.inventory = self.add_child(Inventory(parent = self))
         self.inventory.set_weapon(0, Sword)
-        self.inventory.set_weapon(1, FireballSpell)
+        self.inventory.set_weapon(1, DashSpell)
 
         self.attack_cd = 0
         self.spell_cd = 0
 
     def _load_animations(self) -> None:
-        types = ["idle", "damage", "walk"]
+        types = ["idle", "damage", "walk", "dash"]
         directions = ["right", "left", "down", "up"]
         for type in types:
             rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/" + type), 2), frame_count = 4, direction = "y")
@@ -116,24 +117,25 @@ class Player(Entity):
         keys = pygame.key.get_pressed()
 
         # movement
-        self.walking = False
         dv = pygame.Vector2()
-        if keys[pygame.K_w]:
-            dv.y -= 1
-            self.last_facing.set("walk", "up")
-            self.walking = True
-        if keys[pygame.K_s]:
-            dv.y += 1
-            self.last_facing.set("walk", "down")
-            self.walking = True
-        if keys[pygame.K_a]:
-            dv.x -= 1
-            self.last_facing.set("walk", "left")
-            self.walking = True
-        if keys[pygame.K_d]:
-            dv.x += 1
-            self.last_facing.set("walk", "right")
-            self.walking = True
+        self.walking = False
+        if not self.disable_movement_input:
+            if keys[pygame.K_w]:
+                dv.y -= 1
+                self.last_facing.set("walk", "up")
+                self.walking = True
+            if keys[pygame.K_s]:
+                dv.y += 1
+                self.last_facing.set("walk", "down")
+                self.walking = True
+            if keys[pygame.K_a]:
+                dv.x -= 1
+                self.last_facing.set("walk", "left")
+                self.walking = True
+            if keys[pygame.K_d]:
+                dv.x += 1
+                self.last_facing.set("walk", "right")
+                self.walking = True
 
         # attack
         if keys[pygame.K_RIGHT]:
@@ -145,7 +147,7 @@ class Player(Entity):
         elif keys[pygame.K_DOWN]:
             self.try_attack("down")
         
-        if keys[pygame.K_q]:
+        if keys[pygame.K_SPACE]:
             self.try_spell()
 
         # normalise vector so that diagonal movement is the
@@ -156,9 +158,8 @@ class Player(Entity):
         self.add_velocity(dv)
 
         current_animation = self.animation_manager.current
-        if "death" in current_animation or "damage" in current_animation or "attack" in current_animation: return
-
-        self.eval_anim()
+        if "walk" in current_animation or "idle" in current_animation:
+            self.eval_anim()
 
     def eval_anim(self) -> None:
         if self.walking:
@@ -218,6 +219,6 @@ class Player(Entity):
         if self.spell_cd < 0:
             self.spell_cd = 0
 
-        if "damage" in self.animation_manager.current or "attack" in self.animation_manager.current:
+        if "damage" in self.animation_manager.current or "attack" in self.animation_manager.current or "dash" in self.animation_manager.current:
             if self.animation_manager.finished:
                 self.eval_anim()
