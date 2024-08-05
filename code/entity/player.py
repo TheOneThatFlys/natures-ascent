@@ -8,7 +8,7 @@ from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 
-from item import Weapon, Sword
+from item import Weapon, Spell, Sword, FireballSpell
 
 from .entity import Entity
 from .stats import PlayerStats, player_stats
@@ -32,9 +32,10 @@ class LastFacing:
 class Inventory(Node):
     def __init__(self, parent: Player) -> None:
         super().__init__(parent)
+        self.player: Player = parent
 
         self.primary: Weapon = None
-        self.spell: Weapon = None
+        self.spell: Spell = None
         
         self.coins: int = 0
 
@@ -45,20 +46,20 @@ class Inventory(Node):
         if slot == 0:
             if self.primary != None:
                 self.remove_weapon(0)
-            self.primary = self.add_child(weapon(self, self.parent))
+            self.primary = self.player.add_child(weapon(self.player))
         elif slot == 1:
             if self.spell != None:
                 self.remove_weapon(1)
-            self.spell = self.add_child(weapon(self, self.parent))
+            self.spell = self.player.add_child(weapon(self.player))
 
     def remove_weapon(self, slot: int) -> None:
         if slot == 0:
             if self.primary != None:
-                self.remove_child(self.primary)
+                self.player.remove_child(self.primary)
                 self.primary = None
         if slot == 1:
             if self.spell != None:
-                self.remove_child(self.spell)
+                self.player.remove_child(self.spell)
                 self.spell = None
 
     def at(self, index: int) -> Weapon | None:
@@ -92,8 +93,10 @@ class Player(Entity):
 
         self.inventory = self.add_child(Inventory(parent = self))
         self.inventory.set_weapon(0, Sword)
+        self.inventory.set_weapon(1, FireballSpell)
 
         self.attack_cd = 0
+        self.spell_cd = 0
 
     def _load_animations(self) -> None:
         types = ["idle", "damage", "walk"]
@@ -141,6 +144,9 @@ class Player(Entity):
             self.try_attack("up")
         elif keys[pygame.K_DOWN]:
             self.try_attack("down")
+        
+        if keys[pygame.K_q]:
+            self.try_spell()
 
         # normalise vector so that diagonal movement is the
         # same speed as horizontal
@@ -184,6 +190,18 @@ class Player(Entity):
                 self.animation_manager.set_animation(current_weapon.animation_key + "-" + direction)
             return True
         return False
+    
+    def try_spell(self) -> bool:
+        """See ``Player.try_attack``"""
+        current_spell = self.inventory.spell
+        if current_spell == None: return
+        if self.spell_cd <= 0:
+            current_spell.attack()
+
+            self.spell_cd = current_spell.cooldown_time
+
+            if current_spell.animation_key:
+                self.animation_manager.set_animation(current_spell.animation_key + "-" + self.animation_manager.current.split("-")[1])
         
     def add_health(self, value: int) -> None:
         self.health += value
@@ -196,6 +214,9 @@ class Player(Entity):
         self.attack_cd -= self.manager.dt
         if self.attack_cd < 0:
             self.attack_cd = 0
+        self.spell_cd -= self.manager.dt
+        if self.spell_cd < 0:
+            self.spell_cd = 0
 
         if "damage" in self.animation_manager.current or "attack" in self.animation_manager.current:
             if self.animation_manager.finished:

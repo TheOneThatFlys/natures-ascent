@@ -1,9 +1,10 @@
 from __future__ import annotations
 from typing import Type, TYPE_CHECKING
 if TYPE_CHECKING:
-    from entity import Player
+    from entity import Player, Entity
+    from world import FloorManager
 
-import pygame
+import pygame, math
 
 from engine import Sprite, Node
 from engine.types import *
@@ -16,9 +17,9 @@ class Weapon(Node):
     Stores weapon information such as sound effects and icon keys.
     Actual implementation for attacks should be in derived classes.
     """
-    def __init__(self, parent: Node, player: Player, animation_key: str = "", sound_key: str = "", icon_key: str = "error", cooldown_time: int = 40) -> None:
+    def __init__(self, parent: Player, animation_key: str = "", sound_key: str = "", icon_key: str = "error", cooldown_time: int = 40) -> None:
         super().__init__(parent)
-        self.player = player
+        self.player = parent
 
         self.animation_key = animation_key
         self.sound_key = sound_key
@@ -37,9 +38,9 @@ class Spell(Weapon):
         super().attack(None)
 
 class Sword(Weapon):
-    def __init__(self, parent: Node, player: Player,):
+    def __init__(self, parent: Player):
         super().__init__(
-            parent, player,
+            parent,
             animation_key = "sword_attack",
             sound_key = "effect/sword_slash",
             icon_key = "items/sword",
@@ -102,17 +103,53 @@ class MeleeWeaponAttack(Sprite):
         if self.life < 0:
             self.kill()
 
-class Fireball(Sprite):
-    def __init__(self, parent: Player, stats: Weapon, direction: Direction):
-        super().__init__(parent, stats, direction)
+class FireballSpell(Spell):
+    def __init__(self, parent: Player) -> None:
+        super().__init__(
+            parent,
+            icon_key = "items/fireball",
+            cooldown_time = 20.0,
+        )
 
-        self.image = pygame.transform.rotate(self.manager.get_image("items/fireball"), util.get_direction_angle(direction) + 90)
-        self.rect = self.image.get_rect(center = parent.rect.center)
+        self.damage = 5
+        self.knockback = 3
+        self.spawn_number = 8
+        self.spawn_speed = 7
+        self.momentum_coef = 0.5
 
-        self.velocity = pygame.Vector2(util.get_direction_vector(direction)) * 7 + parent.velocity * 0.5
-        self.life = 300
+    def attack(self) -> None:
+        super().attack()
 
-        self.room = self.manager.get_object("floor-manager").get_room_at_world_pos(self.rect.center)
+        for a in range(self.spawn_number):
+            angle = a / self.spawn_number * 360
+
+            self.add_child(FireballProjectile(
+                parent = self,
+                origin = self.player.rect.center,
+                velocity = util.polar_to_cart(angle, self.spawn_speed) + self.player.velocity * self.momentum_coef,
+                damage = self.damage,
+                knockback = self.knockback,
+                max_life = 300,
+                rotation_degrees = angle,
+                scale = 2,
+            ))
+
+class Projectile(Sprite):
+    """
+    Represents player spawned projectiles which can damage enemies.
+    """
+    def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, image_key: str = "error", max_life: int = 999) -> None:
+        super().__init__(parent, groups = ["update", "render"])
+
+        self.image = self.manager.get_image(image_key)
+        self.rect = self.image.get_rect(center = origin)
+
+        self.velocity = velocity
+        self.life = max_life
+        self.damage = damage
+        self.knockback = knockback
+
+        self.floor_manager: FloorManager = self.manager.get_object("floor-manager")
 
     def update(self):
         self.life -= self.manager.dt
@@ -124,30 +161,19 @@ class Fireball(Sprite):
         self.rect.topleft += self.velocity
         for enemy in self.manager.groups["enemy"]:
             if enemy.rect.colliderect(self):
-                enemy.hit(self, damage = self.stats.damage, kb_magnitude = self.stats.knockback)
+                enemy.hit(self, damage = self.damage, kb_magnitude = self.knockback)
                 self.kill()
                 return
             
-        for tile in self.room.collide_sprites:
+        current_room = self.floor_manager.get_room_at_world_pos(self.rect.center)
+        for tile in current_room.collide_sprites:
             if self.rect.colliderect(tile.rect):
                 self.kill()
                 return
 
-# class Weapons:
-#     STARTER_SWORD = Weapon(
-#         spawn_type = MeleeWeaponAttack,
-#         animation_key = "sword_attack",
-#         sound_key = "effect/sword_slash",
-#         icon_key = "items/sword",
-#         damage = 10.0,
-#         cooldown_time = ANIMATION_FRAME_TIME * 4,
-#         knockback = 10.0,
-#     )
+class FireballProjectile(Projectile):
+    def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, max_life: int = 999, rotation_degrees: float = 0, scale: int = 1):
+        super().__init__(parent, origin, velocity, damage, knockback, max_life)
 
-#     FIREBALL_SPELL = Weapon(
-#         spawn_type = Fireball,
-#         icon_key = "items/fireball",
-#         damage = 5,
-#         cooldown_time = 20.0,
-#         knockback = 3,
-#     )
+        self.image = pygame.transform.scale_by(pygame.transform.rotate(self.manager.get_image("items/fireball"), rotation_degrees + 90), scale)
+        self.rect = self.image.get_rect(center = origin)

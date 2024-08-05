@@ -1,4 +1,4 @@
-import pygame
+import pygame, math
 from engine.types import *
 
 def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Surface:
@@ -75,6 +75,13 @@ def get_direction_angle(direction: Direction) -> int:
             return 90
         case "down":
             return -90
+        
+def polar_to_cart(angle_degrees: float, magnitude: float) -> pygame.Vector2:
+    angle_radians = math.radians(angle_degrees)
+    return pygame.Vector2(
+        math.cos(angle_radians) * magnitude,
+        -math.sin(angle_radians) * magnitude,
+    )
 
 def sign(n: float) -> Literal[1, -1, 0]:
     """Returns 1 if n is positive, -1 if negative, and 0 if 0"""
