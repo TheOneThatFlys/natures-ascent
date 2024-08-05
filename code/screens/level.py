@@ -11,6 +11,7 @@ from util.constants import *
 from engine import Screen, Sprite, Node, Logger, ui
 from engine.types import *
 from entity import Player
+from item import MeleeWeaponAttack, Projectile
 from world import FloorManager, Tile, Room
 
 from .common import TextButtonColours, TextButton, IconText
@@ -221,6 +222,17 @@ class InventoryUI(ui.Element):
             )
         ))
 
+        self.spell_cd_overlay = self.spell_slot.add_child(ui.Element(
+            parent = self.spell_slot,
+            style = ui.Style(
+                size = (InventoryUI.SPELL_SIZE - 8, InventoryUI.SPELL_SIZE - 8),
+                offset = (4, 4),
+                alignment = "bottom-left",
+                alpha = 100,
+                colour = (200, 200, 200)
+            )
+        ))
+
         self.prev_primary_slot: str = ""
         self.prev_spell_slot: str = ""
 
@@ -259,6 +271,12 @@ class InventoryUI(ui.Element):
 
             self.spell_slot.style.image = self._draw_slot_image(InventoryUI.SPELL_SIZE, current_spell_slot)
             self.spell_slot.redraw_image()
+
+        # calculate cooldown progress
+        if self.spell_slot:
+            height = self.player.spell_cd / self.player.inventory.spell.cooldown_time * (InventoryUI.SPELL_SIZE - 8)
+            self.spell_cd_overlay.style.size = (InventoryUI.SPELL_SIZE - 8, height)
+            self.spell_cd_overlay.redraw_image()
 
 class HudUI(ui.Element):
     BAR_PADDING = 4
@@ -570,8 +588,14 @@ class Level(Screen):
             # ignore tiles unless on debug 2
             if isinstance(item, Tile) and self.debug_mode != 2: continue
 
+            # draw active damage hitboxes
+            outline_colour = (255, 0, 0) if isinstance(item, MeleeWeaponAttack) and item.in_hit_frames() else (0, 0, 255)
+
+            if isinstance(item, Projectile):
+                pygame.draw.rect(self.game_surface, (255, 0, 0), self.camera.convert_rect(item.hitbox), width = 1)
+
             # draw hitboxes
-            pygame.draw.rect(self.game_surface, (0, 0, 255), self.camera.convert_rect(item.rect), width = 1)
+            pygame.draw.rect(self.game_surface, outline_colour, self.camera.convert_rect(item.rect), width = 1)
 
         # and also draw room rects
         if self.debug_mode == 2:
