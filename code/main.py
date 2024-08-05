@@ -1,9 +1,3 @@
-# TODO:
-# Room clear rewards
-# |-> Weapon upgrades
-# |-> Weapon system - equip & inv
-# Different rooms - shop etc
-
 from __future__ import annotations
 
 import os
