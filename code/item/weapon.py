@@ -1,10 +1,10 @@
 from __future__ import annotations
-from typing import Type, TYPE_CHECKING
+from typing import Type, TYPE_CHECKING, TypeVar
 if TYPE_CHECKING:
-    from entity import Player, Entity
+    from entity import Player
     from world import FloorManager
 
-import pygame, math
+import pygame, random
 
 from engine import Sprite, Node, Logger
 from engine.types import *
@@ -282,3 +282,45 @@ class DashSpell(Spell):
         self.player.disable_movement_input = True
         self.add_child(DashSpell.__FrictionNormaliser(self))
         self.player.animation_manager.set_animation("dash-" + self.player.last_facing.overall)
+
+T = TypeVar("T")
+
+class ItemPool(Node):
+    def __init__(self, parent: Node) -> None:
+        super().__init__(parent)
+        self.id = "itempool"
+        self.primary_weapons = {
+            Sword: 1,
+            Spear: 1,
+        }
+
+        self.spells = {
+            FireballSpell: 1,
+            DashSpell: 1,
+        }
+
+        for _ in range(10):
+            print(self._choose_weighted(self.primary_weapons))
+
+    def _choose_weighted(self, weighted_dict: dict[T, int]) -> T:
+        if not weighted_dict: raise ValueError("Need to provide a non-empty weighted dictionary.")
+        total_weight = sum(weighted_dict.values())
+        n = random.randrange(total_weight)
+
+        for k, v in weighted_dict.items():
+            n -= v
+            if n < 0:
+                return k
+            
+        Logger.error("Something strange happened while rolling weights.", Exception())
+
+    def roll_weapon(self) -> Type[Weapon]:
+        weapon = self._choose_weighted(self.primary_weapons)
+        del self.primary_weapons[weapon]
+        return weapon
+    
+    def roll_spell(self) -> Type[Spell]:
+        spell = self._choose_weighted(self.spells)
+        del self.spells[spell]
+        return spell
+        

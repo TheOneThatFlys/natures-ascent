@@ -168,6 +168,9 @@ class Enemy(Entity):
             mask.set_alpha(alpha)
             self.image.blit(mask, (0, 0))
 
+    def on_hit(self, other: Sprite) -> None:
+        self.manager.play_sound("effect/enemy_hit", 0.5)
+
     def update(self) -> None:
         if self.falling_in:
             self.rect.y += self.fall_speed

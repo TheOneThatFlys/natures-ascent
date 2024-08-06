@@ -11,7 +11,7 @@ from util.constants import *
 from engine import Screen, Sprite, Node, Logger, ui
 from engine.types import *
 from entity import Player
-from item import MeleeWeaponAttack, Projectile
+from item import MeleeWeaponAttack, Projectile, ItemPool
 from world import FloorManager, Tile, Room
 
 from .common import TextButtonColours, TextButton, IconText
@@ -482,6 +482,7 @@ class Level(Screen):
         self.manager.add_groups(["render", "update", "collide", "enemy"])
         self.manager.add_object("level", self)
 
+        self.item_pool = self.add_child(ItemPool(self))
         self.floor_manager = self.add_child(FloorManager(self, room_size = 12))
         self.floor_manager.generate()
         self.player = self.manager.get_object("player")

@@ -8,7 +8,7 @@ from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 
-from item import Weapon, Spell, Sword, FireballSpell, DashSpell, Spear
+from item import Weapon, Spell, Sword, ItemPool
 
 from .entity import Entity
 from .stats import PlayerStats, player_stats
@@ -92,9 +92,10 @@ class Player(Entity):
         self.walking = False
         self.disable_movement_input = False
 
+        itempool: ItemPool = self.manager.get_object("itempool")
         self.inventory = self.add_child(Inventory(parent = self))
-        self.inventory.set_weapon(0, Spear)
-        self.inventory.set_weapon(1, DashSpell)
+        self.inventory.set_weapon(0, Sword)
+        self.inventory.set_weapon(1, itempool.roll_spell())
 
         self.attack_cd = 0
         self.spell_cd = 0
