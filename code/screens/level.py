@@ -196,8 +196,6 @@ class Map(ui.Element):
         self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
 
 class InventoryUI(ui.Element):
-    MAIN_SIZE = 96
-    SPELL_SIZE = 48
     def __init__(self, parent: ui.Element) -> None:
         super().__init__(parent, ui.Style(
             alignment = "bottom-left",
@@ -205,10 +203,16 @@ class InventoryUI(ui.Element):
             offset = (16, 16),
         ))
 
+        self.border = 4
+        self.padding = 4
+
+        self.primary_size = 96 + (self.border + self.padding) * 2
+        self.spell_size = 48 + (self.border + self.padding) * 2
+
         self.primary_slot = self.add_child(ui.Element(
             parent = self,
             style = ui.Style(
-                image = self._draw_slot_image(InventoryUI.MAIN_SIZE),
+                image = self._draw_slot_image(self.primary_size),
                 alignment = "bottom-left"
             )
         ))
@@ -216,16 +220,16 @@ class InventoryUI(ui.Element):
         self.spell_slot = self.primary_slot.add_child(ui.Element(
             parent = self.primary_slot,
             style = ui.Style(
-                image = self._draw_slot_image(InventoryUI.SPELL_SIZE),
+                image = self._draw_slot_image(self.spell_size),
                 alignment = "top-left",
-                offset = (0, -InventoryUI.SPELL_SIZE - 8)
+                offset = (0, -self.spell_size - 8)
             )
         ))
 
         self.spell_cd_overlay = self.spell_slot.add_child(ui.Element(
             parent = self.spell_slot,
             style = ui.Style(
-                size = (InventoryUI.SPELL_SIZE - 8, InventoryUI.SPELL_SIZE - 8),
+                size = (self.spell_size - 2 * self.border, self.spell_size - 2 * self.border),
                 offset = (4, 4),
                 alignment = "bottom-left",
                 alpha = 100,
@@ -239,14 +243,15 @@ class InventoryUI(ui.Element):
         self.player: Player = self.manager.get_object("player")
 
     def _draw_slot_image(self, size: int, icon_key: str = "") -> pygame.Surface:
+        extra_space = self.border + self.padding
         image = pygame.Surface((size, size))
         image.fill((91, 49, 56))
-        pygame.draw.rect(image, (51, 22, 31), (0, 0, size, size), 4)
+        pygame.draw.rect(image, (51, 22, 31), (0, 0, size , size), self.border)
 
         if icon_key:
             icon = self.manager.get_image(icon_key)
-            icon = pygame.transform.scale(icon, (size - 16, size - 16))
-            image.blit(icon, (8, 8))
+            icon = pygame.transform.scale(icon, (size - extra_space * 2, size - extra_space * 2))
+            image.blit(icon, (extra_space, extra_space))
         return image
 
     def update(self) -> None:
@@ -266,16 +271,16 @@ class InventoryUI(ui.Element):
             should_redraw = True
 
         if should_redraw:
-            self.primary_slot.style.image = self._draw_slot_image(InventoryUI.MAIN_SIZE, current_primary_slot)
+            self.primary_slot.style.image = self._draw_slot_image(self.primary_size, current_primary_slot)
             self.primary_slot.redraw_image()
 
-            self.spell_slot.style.image = self._draw_slot_image(InventoryUI.SPELL_SIZE, current_spell_slot)
+            self.spell_slot.style.image = self._draw_slot_image(self.spell_size, current_spell_slot)
             self.spell_slot.redraw_image()
 
         # calculate cooldown progress
-        if self.spell_slot:
-            height = self.player.spell_cd / self.player.inventory.spell.cooldown_time * (InventoryUI.SPELL_SIZE - 8)
-            self.spell_cd_overlay.style.size = (InventoryUI.SPELL_SIZE - 8, height)
+        if self.spell_slot: 
+            height = self.player.spell_cd / self.player.inventory.spell.cooldown_time * (self.spell_size - 2 * self.border)
+            self.spell_cd_overlay.style.size = (self.spell_size - 2 * self.border, height)
             self.spell_cd_overlay.redraw_image()
 
 class HudUI(ui.Element):

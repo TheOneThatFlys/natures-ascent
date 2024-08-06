@@ -8,7 +8,7 @@ from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction
 from util.constants import *
 
-from item import Weapon, Spell, Sword, FireballSpell, DashSpell
+from item import Weapon, Spell, Sword, FireballSpell, DashSpell, Spear
 
 from .entity import Entity
 from .stats import PlayerStats, player_stats
@@ -93,7 +93,7 @@ class Player(Entity):
         self.disable_movement_input = False
 
         self.inventory = self.add_child(Inventory(parent = self))
-        self.inventory.set_weapon(0, Sword)
+        self.inventory.set_weapon(0, Spear)
         self.inventory.set_weapon(1, DashSpell)
 
         self.attack_cd = 0
@@ -108,10 +108,12 @@ class Player(Entity):
                 anim = parse_spritesheet(rows[i], frame_size = (32 * PIXEL_SCALE, 32 * PIXEL_SCALE))
                 self.animation_manager.add_animation(type + "-" + dir, anim)
 
-        attack_rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/sword_attack"), 2), frame_count = 4, direction = "y")
-        for i, dir in enumerate(directions):
-            anim = parse_spritesheet(attack_rows[i], frame_size = (32 * PIXEL_SCALE * 3, 32 * PIXEL_SCALE * 3))
-            self.animation_manager.add_animation("sword_attack" + "-" + dir, anim)
+        attack_types = ["sword_attack", "spear_attack"]
+        for type in attack_types:
+            attack_rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/" + type), 2), frame_count = 4, direction = "y")
+            for i, dir in enumerate(directions):
+                anim = parse_spritesheet(attack_rows[i], frame_size = (32 * PIXEL_SCALE * 3, 32 * PIXEL_SCALE * 3))
+                self.animation_manager.add_animation(type + "-" + dir, anim)
 
     def get_inputs(self) -> None:
         keys = pygame.key.get_pressed()
@@ -157,17 +159,16 @@ class Player(Entity):
 
         self.add_velocity(dv)
 
-        current_animation = self.animation_manager.current
-        if "walk" in current_animation or "idle" in current_animation:
-            self.eval_anim()
-
     def eval_anim(self) -> None:
         if self.walking:
             # use last attack direction if in attack anim, else use walk direction
             direction = self.last_facing.attack if self.attack_cd > 0 else self.last_facing.walk
-            self.animation_manager.set_animation("walk-" + direction)
+            proposed_key = "walk-" + direction
         else:
-            self.animation_manager.set_animation("idle-" + self.last_facing.overall)
+            proposed_key = "idle-" + self.last_facing.overall
+
+        if proposed_key != self.animation_manager.current:
+            self.animation_manager.set_animation(proposed_key)
 
     def on_hit(self, other: Sprite) -> None:
         self.manager.play_sound(sound_name = "effect/hit", volume = 0.2)
@@ -203,6 +204,8 @@ class Player(Entity):
 
             if current_spell.animation_key:
                 self.animation_manager.set_animation(current_spell.animation_key + "-" + self.animation_manager.current.split("-")[1])
+            return True
+        return False
         
     def add_health(self, value: int) -> None:
         self.health += value
@@ -219,6 +222,9 @@ class Player(Entity):
         if self.spell_cd < 0:
             self.spell_cd = 0
 
-        if "damage" in self.animation_manager.current or "attack" in self.animation_manager.current or "dash" in self.animation_manager.current:
+        current_animation = self.animation_manager.current
+        if "walk" in current_animation or "idle" in current_animation:
+            self.eval_anim()
+        else:
             if self.animation_manager.finished:
                 self.eval_anim()

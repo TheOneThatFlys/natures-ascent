@@ -46,7 +46,7 @@ class MeleeWeaponAttack(Sprite):
         self.knockback = knockback
 
         self.life = total_life
-        self.rect = pygame.Rect(0, 0, width, length)
+        self.rect = pygame.Rect(0, 0, length, width)
         self.hit_frames = hit_frames
         self.frames_alive = 0
         self._hit_enemies = [] # keep track of hit enemies
@@ -137,7 +137,7 @@ class Projectile(Sprite):
                 self.kill()
                 return
 class Sword(Weapon):
-    def __init__(self, parent: Player):
+    def __init__(self, parent: Player) -> None:
         super().__init__(
             parent,
             animation_key = "sword_attack",
@@ -156,7 +156,33 @@ class Sword(Weapon):
             direction = direction,
             damage = self.damage,
             knockback = self.knockback,
-            width = 48, length = 64,
+            width = 64, length = 48,
+            total_life = ANIMATION_FRAME_TIME * 4,
+            hit_frames = [(ANIMATION_FRAME_TIME, ANIMATION_FRAME_TIME * 2)]
+        ))
+
+class Spear(Weapon):
+    def __init__(self, parent: Player) -> None:
+        super().__init__(
+            parent,
+            cooldown_time = ANIMATION_FRAME_TIME * 4,
+            animation_key = "spear_attack",
+            icon_key = "items/spear",
+            sound_key = "effect/spear_swoosh"
+        )
+
+        self.damage = 10.0
+        self.knockback = 15.0
+
+    def attack(self, direction: Direction) -> None:
+        super().attack(direction)
+        self.player.add_child(MeleeWeaponAttack(
+            parent = self.player,
+            direction = direction,
+            damage = self.damage,
+            knockback = self.knockback,
+            width = 32,
+            length = 64,
             total_life = ANIMATION_FRAME_TIME * 3,
             hit_frames = [(ANIMATION_FRAME_TIME, ANIMATION_FRAME_TIME * 2)]
         ))

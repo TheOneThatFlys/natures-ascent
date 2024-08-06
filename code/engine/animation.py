@@ -19,6 +19,7 @@ class AnimationManager(Node):
         self._current_index = 0
 
         self.finished = False
+        self.played_once = False
 
     def _recenter_parent(self) -> None:
         # recalculate parent offset so its centered
@@ -40,13 +41,13 @@ class AnimationManager(Node):
 
     def set_animation(self, key: str) -> pygame.Surface:
         """Plays the specified animation and returns first frame."""
-        if key != self._current:
-            self._current = key
-            self._current_index = 0
-            self.finished = False
-            # reset frame cooldown so no latency
-            # when swapping animations
-            self._counter = self._frame_time
+        self._current = key
+        self._current_index = 0
+        self.finished = False
+        self.played_once = False
+        # reset frame cooldown so no latency
+        # when swapping animations
+        self._counter = self._frame_time
 
         return self._animations[key][0]
 
@@ -55,12 +56,19 @@ class AnimationManager(Node):
 
     def update(self) -> None:
         self._counter += self.manager.dt
+        if not self.finished and self._counter >= self._frame_time - 1: 
+            if self._current_index == 0 and self.played_once:
+                self.finished = True
+                
         if self._counter >= self._frame_time:
             self.parent.image = self._animations[self._current][self._current_index]
             self._recenter_parent()
+
+
             self._current_index += 1
+
+            self._counter = 0
             if self._current_index == len(self._animations[self._current]):
                 self._current_index = 0
-                self.finished = True
-            self._counter = 0
+                self.played_once = True
 

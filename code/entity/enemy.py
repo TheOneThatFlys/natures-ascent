@@ -206,7 +206,9 @@ class Slime(Enemy):
         super().update()
 
         if self.time_since_seen_player <= self.stats.attention_span:
-            self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))
+            animation_key = util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center)
+            if animation_key != self.animation_manager.current:
+                self.animation_manager.set_animation(animation_key)
 
 class BossAttack(Sprite):
     def __init__(self, parent: Enemy, attack_time: int = 0):
