@@ -84,13 +84,11 @@ class Entity(Sprite):
             self.iframes = self.stats.iframes
 
             self.health -= damage
+            self.on_hit(other)
+            self.time_since_hit = 0
 
             if self.health <= 0:
                 self.kill()
-
-            self.time_since_hit = 0
-
-            self.on_hit(other)
 
     def on_hit(self, other: Sprite) -> None:
         pass

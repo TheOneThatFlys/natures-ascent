@@ -8,7 +8,7 @@ import pygame
 
 from typing import Type
 from engine import Screen, Manager, Logger
-from screens import Level, Menu, Settings, CreditsScreen
+from screens import Level, Menu, Settings, CreditsScreen, GameOverviewScreen
 from util import DebugWindow, SaveHelper, AutoSaver
 
 from engine.types import *
@@ -50,6 +50,7 @@ class Game(DebugExpandable):
         self.add_screen("menu", Menu)
         self.add_screen("settings", Settings)
         self.add_screen("credits", CreditsScreen)
+        self.add_screen("overview", GameOverviewScreen)
         self.set_screen("menu")
 
         self.load_config()
@@ -67,12 +68,12 @@ class Game(DebugExpandable):
         """Add screen object to screen dictionary, key being screen.name"""
         self._screens[name] = screen
 
-    def set_screen(self, screen_name: str) -> None:
+    def set_screen(self, screen_name: str, **init_kwargs) -> None:
         """Sets the current screen based on screen name"""
         if screen_name == self.current_screen: return
         self.manager.cleanup()
         self.current_screen = screen_name
-        self.current_screen_instance = self._screens[screen_name](self)
+        self.current_screen_instance = self._screens[screen_name](self, **init_kwargs)
 
     def set_windowed(self, new_size: Vec2) -> None:
         """Resizes the active window to the new resolution provided."""

@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import pygame
-from typing import Type
+from typing import Type, TYPE_CHECKING
+if TYPE_CHECKING:
+    from screens import Level
 
 from engine import Node, Sprite
 from engine.types import *
@@ -212,6 +214,11 @@ class Player(Entity):
         self.health += value
         if self.health > self.stats.health:
             self.health = self.stats.health
+
+    def kill(self) -> None:
+        super().kill()
+        level: Level = self.manager.get_object("level")
+        level.parent.set_screen("overview", game_data = level.get_overview_data())
 
     def update(self) -> None:
         super().update()

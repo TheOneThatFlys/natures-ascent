@@ -289,18 +289,18 @@ class ItemPool(Node):
     def __init__(self, parent: Node) -> None:
         super().__init__(parent)
         self.id = "itempool"
-        self.primary_weapons = {
-            Sword: 1,
+
+        self.weapons = [Sword, Spear]
+        self.spells = [FireballSpell, DashSpell]
+
+        self.weapon_weights = {
             Spear: 1,
         }
 
-        self.spells = {
+        self.spell_weights = {
             FireballSpell: 1,
             DashSpell: 1,
         }
-
-        for _ in range(10):
-            print(self._choose_weighted(self.primary_weapons))
 
     def _choose_weighted(self, weighted_dict: dict[T, int]) -> T:
         if not weighted_dict: raise ValueError("Need to provide a non-empty weighted dictionary.")
@@ -315,12 +315,12 @@ class ItemPool(Node):
         Logger.error("Something strange happened while rolling weights.", Exception())
 
     def roll_weapon(self) -> Type[Weapon]:
-        weapon = self._choose_weighted(self.primary_weapons)
-        del self.primary_weapons[weapon]
+        weapon = self._choose_weighted(self.weapon_weights)
+        del self.weapon_weights[weapon]
         return weapon
     
     def roll_spell(self) -> Type[Spell]:
-        spell = self._choose_weighted(self.spells)
-        del self.spells[spell]
+        spell = self._choose_weighted(self.spell_weights)
+        del self.spell_weights[spell]
         return spell
         

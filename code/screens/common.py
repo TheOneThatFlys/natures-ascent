@@ -116,3 +116,21 @@ class IconText(Element):
             self.image.blit(self.icon, self.icon.get_rect(left = text_rect.right + self.padding, centery = self.rect.height / 2))
 
         self.calculate_position()
+
+@dataclass
+class PersistantGameData:
+    """Data that is persistant across levels and runs"""
+    player_position: pygame.Vector2
+    player_velocity: pygame.Vector2
+    player_health: float
+    player_iframes: float
+
+    weapon_id: int
+    spell_id: int
+
+    coins: int
+
+    rooms_discovered: list[Vec2]
+    rooms_cleared: list[Vec2]
+
+    seed: float

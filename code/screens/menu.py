@@ -103,12 +103,6 @@ class Menu(Screen):
         self.master_container.style.image = util.draw_background(new_res)
         super().on_resize(new_res)
 
-    def render(self, window: pygame.Surface) -> None:
-        self.master_container.render(window)
-
-    def update(self) -> None:
-        self.master_container.update()
-
 class ScrollableText(Element):
     def __init__(self, parent: Element, style: Style, text: str, text_padding: int = 0, scroll_strength: int = 30) -> None:
         self.text = text

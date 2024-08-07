@@ -510,6 +510,9 @@ class Level(Screen):
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
         self.pause_ui = PauseUI(self)
 
+    def get_overview_data(self) -> dict:
+        return {}
+
     def cycle_debug(self) -> None:
         """
         Cycles current debug mode.

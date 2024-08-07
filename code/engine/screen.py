@@ -43,4 +43,7 @@ class Screen(Node):
         pass
 
     def render(self, surface: pygame.Surface) -> None:
-        pass
+        self.master_container.render(surface)
+
+    def update(self) -> None:
+        self.master_container.update()
