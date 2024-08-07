@@ -109,9 +109,9 @@ class IconText(Element):
         if self.icon_alignment == "left":
             icon_rect = self.icon.get_rect(centery = self.rect.height / 2, x = 0)
             self.image.blit(self.icon, icon_rect)
-            self.image.blit(text_surf, text_surf.get_rect(left = icon_rect.right + self.padding, bottom = self.rect.height))
+            self.image.blit(text_surf, text_surf.get_rect(left = icon_rect.right + self.padding, centery = self.rect.height / 2))
         else:
-            text_rect = text_surf.get_rect(x = 0, bottom = self.rect.height)
+            text_rect = text_surf.get_rect(x = 0, centery = self.rect.height / 2)
             self.image.blit(text_surf, text_rect)
             self.image.blit(self.icon, self.icon.get_rect(left = text_rect.right + self.padding, centery = self.rect.height / 2))
 
