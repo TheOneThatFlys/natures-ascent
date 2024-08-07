@@ -82,6 +82,7 @@ class Manager(DebugExpandable):
     
     @music_volume.setter
     def music_volume(self, v) -> None:
+        self._music_volume = v
         if self.music_current != "":
             current_music = self.get_sound(self.music_current)
             current_music.set_volume(v * 3)
