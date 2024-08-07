@@ -496,7 +496,7 @@ class Level(Screen):
         for _ in range(debug_mode):
             self.cycle_debug()
 
-        self.manager.stop_music()
+        self.manager.play_sound("music/forest", loop = True, fade_ms = 1000)
 
     def _add_ui_components(self) -> None:
         self.master_ui = ui.Element(

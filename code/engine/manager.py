@@ -221,7 +221,7 @@ class Manager(DebugExpandable):
         self.get_sound(self.music_current).stop()
         self.music_current = ""
 
-    def play_sound(self, sound_name: str, volume: float = 1.0, loop = False) -> None:
+    def play_sound(self, sound_name: str, volume: float = 1.0, loop = False, fade_ms: int = 0) -> None:
         is_music = sound_name.startswith("music/")
         if is_music:
             # if trying to play the same track twice, just continue current
@@ -238,4 +238,4 @@ class Manager(DebugExpandable):
         volume_multiplier = 3 * self._music_volume if is_music else 10 * self._sfx_volume
         s.set_volume(volume * volume_multiplier)
         n_loops = -1 if loop else 0
-        s.play(n_loops)
+        s.play(n_loops, fade_ms = fade_ms)
