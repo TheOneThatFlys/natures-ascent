@@ -10,7 +10,7 @@ import random, pickle, os
 from engine import Screen, Sprite, Node, ui
 from engine.types import *
 from entity import Player
-from item import MeleeWeaponAttack, Projectile, ItemPool
+from item import MeleeWeaponAttack, Projectile, ItemPool, Coin, Health
 from world import FloorManager, Tile, Room
 from util.constants import *
 from util import SaveHelper, AutoSaver
@@ -530,6 +530,8 @@ class Level(Screen):
             seed = self.floor_manager.seed,
             rooms_discovered = [coord for (coord, room) in self.floor_manager.rooms.items() if room.activated],
             rooms_cleared = [coord for (coord, room) in self.floor_manager.rooms.items() if room.completed],
+            coin_pickups = [x.rect.center for x in self.children if isinstance(x, Coin)],
+            health_pickups = [x.rect.center for x in self.children if isinstance(x, Health)]
         )
     
     def get_overview_encoded(self) -> None:
@@ -564,6 +566,12 @@ class Level(Screen):
 
         # set camera position
         self.camera.pos = pygame.Vector2(data.player_position)
+
+        # add pickups
+        for pos in data.coin_pickups:
+            self.add_child(Coin(self, pos, 0))
+        for pos in data.health_pickups:
+            self.add_child(Health(self, pos))
 
     def can_autosave(self) -> bool:
         current_room = self.floor_manager.get_room_at_world_pos(self.player.rect.center)

@@ -133,3 +133,6 @@ class PersistantGameData:
 
     rooms_discovered: list[Vec2]
     rooms_cleared: list[Vec2]
+
+    coin_pickups: list[Vec2]
+    health_pickups: list[Vec2]

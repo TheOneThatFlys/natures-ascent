@@ -295,7 +295,8 @@ class Room(Node):
                 self.temp_doors.add(self.add_child(TempDoor(self, direction)))
 
     def on_completion(self) -> None:
-        self.add_child(Health(self, self.bounding_rect.center))
+        level = self.manager.get_object("level")
+        level.add_child(Health(level, self.bounding_rect.center))
 
     def force_completion(self) -> None:
         self._possible_enemies = {}
