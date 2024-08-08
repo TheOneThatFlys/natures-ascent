@@ -314,6 +314,20 @@ class ItemPool(Node):
             
         Logger.error("Something strange happened while rolling weights.", Exception())
 
+    def get_weapon_id(self, t: Type[Weapon] | None) -> int:
+        if t == None: return -1
+        return self.weapons.index(t)
+    
+    def get_spell_id(self, t: Type[Spell] | None) -> int:
+        if t == None: return -1
+        return self.spells.index(t)
+
+    def get_weapon(self, id: int) -> Type[Weapon]:
+        return self.weapons[id]
+    
+    def get_spell(self, id: int) -> Type[Spell]:
+        return self.spells[id]
+
     def roll_weapon(self) -> Type[Weapon]:
         weapon = self._choose_weighted(self.weapon_weights)
         del self.weapon_weights[weapon]

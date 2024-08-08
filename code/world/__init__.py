@@ -1,2 +1,2 @@
 from .tile import Tile, TileSet
-from .gen import FloorManager, Room
+from .floor import FloorManager, Room

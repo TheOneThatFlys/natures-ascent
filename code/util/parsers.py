@@ -46,11 +46,11 @@ def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, f
 class SaveHelper:
     @staticmethod
     def encode_data(data: bytes) -> str:
-        return str(base64.b64encode(data))[2:-1]
+        return str(base64.b85encode(data))[2:-1]
 
     @staticmethod
     def decode_data(data: str) -> bytes:
-        return base64.b64decode(data)
+        return base64.b85decode(data)
 
     @staticmethod
     def save_file(data: str | bytes, filepath: str, obfuscate: bool = False) -> None:
@@ -64,7 +64,7 @@ class SaveHelper:
                 os.mkdir(accumulated_path)
         
         data_to_save = SaveHelper.encode_data(data) if obfuscate else data
-        with open(filepath, "wb" if isinstance(data, bytes) else "w") as f:
+        with open(filepath, "wb" if isinstance(data_to_save, bytes) else "w") as f:
             f.write(data_to_save)
 
     @staticmethod

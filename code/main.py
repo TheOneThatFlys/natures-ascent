@@ -54,7 +54,7 @@ class Game(DebugExpandable):
         self.set_screen("menu")
 
         self.load_config()
-        self.settings_saver = AutoSaver(self, os.path.join("saves", "config.json"), 60 * 120, ignore_limit = True)
+        self.settings_saver = AutoSaver(self, CONFIG_SAVE_PATH, 60 * 120, ignore_limit = True)
 
     @Logger.time(msg = "Loaded assets in %t seconds.")
     def load_assets(self):
@@ -114,19 +114,17 @@ class Game(DebugExpandable):
         return json.dumps(config, indent=4)
     
     def load_config(self) -> None:
-        save_path = os.path.join("saves", "config.json")
-
         default_config = {
             "window-mode": "windowed",
             "sfx-vol": 0.1,
             "music-vol": 0.1
         }
 
-        if not os.path.exists(save_path):
+        if not os.path.exists(CONFIG_SAVE_PATH):
             # load default values
             config = default_config
         else:
-            config = json.loads(SaveHelper.load_file(os.path.join("saves", "config.json")))
+            config = json.loads(SaveHelper.load_file(CONFIG_SAVE_PATH))
            
         try:
             cfg_option = config["sfx-vol"]

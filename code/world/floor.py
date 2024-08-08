@@ -297,6 +297,12 @@ class Room(Node):
     def on_completion(self) -> None:
         self.add_child(Health(self, self.bounding_rect.center))
 
+    def force_completion(self) -> None:
+        self._possible_enemies = {}
+        self._activated = True
+        self._completed = True
+        self.dark_overlay.queue_death()
+
     def update(self) -> None:
         if not self._activated:
             if self.bounding_rect.contains(self.player.rect):
@@ -329,6 +335,9 @@ class SpawnRoom(Room):
             con = random.choice(room_directions)
             if con in self.connections: continue
             self.connections.append(con)
+
+    def activate(self) -> None:
+        pass
 
     def place_in_world(self) -> None:
         super().place_in_world()

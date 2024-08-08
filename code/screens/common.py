@@ -119,9 +119,8 @@ class IconText(Element):
 
 @dataclass
 class PersistantGameData:
-    """Data that is persistant across levels and runs"""
-    player_position: pygame.Vector2
-    player_velocity: pygame.Vector2
+    """Data that is persistant across the whole run i.e. current run data"""
+    player_position: Vec2
     player_health: float
     player_iframes: float
 
@@ -130,7 +129,7 @@ class PersistantGameData:
 
     coins: int
 
+    seed: float
+
     rooms_discovered: list[Vec2]
     rooms_cleared: list[Vec2]
-
-    seed: float

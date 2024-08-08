@@ -5,16 +5,17 @@ if TYPE_CHECKING:
     from ..main import Game
 
 import pygame
-import random
+import random, pickle, os
 
-from util.constants import *
 from engine import Screen, Sprite, Node, Logger, ui
 from engine.types import *
 from entity import Player
 from item import MeleeWeaponAttack, Projectile, ItemPool
 from world import FloorManager, Tile, Room
+from util.constants import *
+from util import SaveHelper
 
-from .common import TextButtonColours, TextButton, IconText
+from .common import TextButtonColours, TextButton, IconText, PersistantGameData
 from .settings import SettingsUI
 
 class HealthBar(ui.Element):
@@ -475,8 +476,12 @@ class PauseUI(ui.Element):
         super().render(surface)
 
 class Level(Screen):
-    def __init__(self, game: Game, debug_mode: int = 0) -> None:
+    def __init__(self, game: Game, load_from_file: bool = False) -> None:
         super().__init__(parent = game)
+        game_data = None
+        if load_from_file and os.path.exists(RUN_SAVE_PATH):
+            game_data: PersistantGameData = pickle.loads(SaveHelper.load_file(RUN_SAVE_PATH, True))
+
         self.game_surface = pygame.Surface(self.rect.size)
 
         self.manager.add_groups(["render", "update", "collide", "enemy"])
@@ -484,8 +489,8 @@ class Level(Screen):
 
         self.item_pool = self.add_child(ItemPool(self))
         self.floor_manager = self.add_child(FloorManager(self, room_size = 12))
-        self.floor_manager.generate()
-        self.player = self.manager.get_object("player")
+        self.floor_manager.generate(game_data.seed if game_data else None)
+        self.player: Player = self.manager.get_object("player")
         self.camera = self.add_child(FollowCameraLayered(self, target_sprite = self.player, follow_speed = 0.1))
 
         self.debug_mode = 0
@@ -493,10 +498,10 @@ class Level(Screen):
 
         self._add_ui_components()
 
-        for _ in range(debug_mode):
-            self.cycle_debug()
-
         self.manager.play_sound("music/forest", loop = True, fade_ms = 1000)
+
+        if game_data:
+            self.load_from_data(game_data)
 
     def _add_ui_components(self) -> None:
         self.master_ui = ui.Element(
@@ -510,8 +515,51 @@ class Level(Screen):
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
         self.pause_ui = PauseUI(self)
 
-    def get_overview_data(self) -> dict:
-        return {}
+    def get_overview_data(self) -> PersistantGameData:
+        return PersistantGameData(
+            player_position = self.player.rect.center,
+            player_health = self.player.health,
+            player_iframes = self.player.iframes,
+            weapon_id = self.item_pool.get_weapon_id(self.player.inventory.primary.__class__),
+            spell_id = self.item_pool.get_spell_id(self.player.inventory.spell.__class__),
+            coins = self.player.inventory.coins,
+            seed = self.floor_manager.seed,
+            rooms_discovered = [coord for (coord, room) in self.floor_manager.rooms.items() if room.activated],
+            rooms_cleared = [coord for (coord, room) in self.floor_manager.rooms.items() if room.completed],
+        )
+    
+    def save_run_data(self) -> None:
+        data = self.get_overview_data()
+        SaveHelper.save_file(pickle.dumps(data), RUN_SAVE_PATH, obfuscate=True)
+
+    def load_from_data(self, data: PersistantGameData) -> None:
+        # load player info
+        self.player.rect.center = data.player_position
+        self.player.health = data.player_health
+        self.player.iframes = data.player_iframes
+        self.player.inventory.coins = data.coins
+        
+        # set player weapons
+        if data.weapon_id == -1:
+            self.player.inventory.remove_weapon(0)
+        else:
+            self.player.inventory.set_weapon(0, self.item_pool.get_weapon(data.weapon_id))
+
+        if data.spell_id == -1:
+            self.player.inventory.remove_weapon(1)
+        else:
+            self.player.inventory.set_weapon(1, self.item_pool.get_spell(data.spell_id))
+
+        # load room states
+        for room_coord in data.rooms_discovered:
+            room = self.floor_manager.rooms[room_coord]
+            if room_coord in data.rooms_cleared:
+                room.force_completion()
+            else:
+                room.activate()
+
+        # set camera position
+        self.camera.pos = pygame.Vector2(data.player_position)
 
     def cycle_debug(self) -> None:
         """
