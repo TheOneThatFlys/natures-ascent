@@ -504,8 +504,9 @@ class Level(Screen):
 
         self._data_update_counter = 0
         self.run_autosaver = AutoSaver(self, RUN_SAVE_PATH, 60 * 30) # autosave run data every 30 seconds (only noticeable through crashes)
+        self.run_autosaver.data = self.get_overview_encoded()
 
-        self.manager.play_sound("music/forest", loop = True, fade_ms = 1000)
+        self.manager.transition_music("music/forest")
 
     def _add_ui_components(self) -> None:
         self.master_ui = ui.Element(
@@ -692,6 +693,7 @@ class Level(Screen):
         self._data_update_counter += self.manager.dt
         if self._data_update_counter > 30 and self.can_autosave():
             self.run_autosaver.data = self.get_overview_encoded()
+            self._data_update_counter = 0
 
     def render(self, surface: pygame.Surface) -> None:
         # clear game surface

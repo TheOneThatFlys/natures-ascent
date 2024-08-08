@@ -23,7 +23,7 @@ class EnemySpawnIndicator(Sprite):
 
     Will call parent.place_in_world on death after 1 second.
     """
-    def __init__(self, parent: Enemy) -> None:
+    def __init__(self, parent: Enemy, spawn_time: int = 60) -> None:
         super().__init__(parent, ["render", "update"], 0)
         self.animation_manager = self.add_child(AnimationManager(parent = self))
         self.animation_manager.add_animation("default", util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("tiles/spawn_warning"), 2), frame_size=(TILE_SIZE, TILE_SIZE)))
@@ -31,7 +31,7 @@ class EnemySpawnIndicator(Sprite):
         self.rect = self.image.get_rect(topleft = parent.rect.topleft)
 
         self.counter = 0
-        self.life_time = 60 + random.randint(0, 30)
+        self.life_time = spawn_time
 
     def update(self) -> None:
         self.animation_manager.update()
@@ -72,10 +72,9 @@ class Enemy(Entity):
         self.player = self.manager.get_object("player")
 
         # spawn in animation
-        self.spawn_time = 60
         self.spawn_counter = 0
 
-        self.spawn_indicator = self.add_child(EnemySpawnIndicator(parent = self))
+        self.spawn_indicator = self.add_child(EnemySpawnIndicator(parent = self, spawn_time = 60 + random.randint(0, 30)))
         self.falling_in = True
 
     def place_in_world(self) -> None:
@@ -171,6 +170,9 @@ class Enemy(Entity):
     def on_hit(self, other: Sprite) -> None:
         self.manager.play_sound("effect/enemy_hit", 0.5)
 
+    def on_land(self) -> None:
+        """Called when entity lands after spawn."""
+
     def update(self) -> None:
         if self.falling_in:
             self.rect.y += self.fall_speed
@@ -179,6 +181,7 @@ class Enemy(Entity):
                 self.falling_in = False # stop falling animation
                 self.z_index = 0 # reset z index
                 self.manager.play_sound(self.stats.enter_sound, volume=0.2)
+                self.on_land()
             return
 
         self.time_since_seen_player += self.manager.dt
@@ -340,8 +343,14 @@ class TreeBoss(Enemy):
         self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles, AttackFourBranches]
         self.current_attack: BossAttack | None = None
 
+        self.prev_playing = self.manager.music_current
+        self.manager.stop_music(300)
+
     def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
         return super().hit(other, damage, 0 if self.in_stationary_attack else kb_magnitude)
+
+    def on_land(self) -> None:
+        self.manager.play_sound("music/boss", loop=True)
 
     def update_ai(self) -> None:
         self.follow_player()
@@ -363,6 +372,10 @@ class TreeBoss(Enemy):
             if self.next_attack_timer <= 0:
                 self.current_attack = self.add_child(random.choice(self.possible_attacks)(self))
                 self.in_stationary_attack = True
+
+    def kill(self) -> None:
+        super().kill()
+        self.manager.play_sound(self.prev_playing, loop = True, fade_ms = 3000)
 
     def update(self) -> None:
         super().update()

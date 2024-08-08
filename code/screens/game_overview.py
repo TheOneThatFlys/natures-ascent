@@ -1,14 +1,15 @@
-import pygame
+import pygame, os
 
 from engine import Screen, Node
-from engine.ui import Text, Style, Button
+from engine.ui import Text, Style
+from util.constants import *
 
 from .common import TextButton, TextButtonColours
 
 class GameOverviewScreen(Screen):
     def __init__(self, parent: Node, game_data: dict) -> None:
         super().__init__(parent)
-        print(game_data)
+        os.remove(RUN_SAVE_PATH)
 
         temp_text = self.master_container.add_child(Text(
             parent = self.master_container,

@@ -110,7 +110,7 @@ class Menu(Screen):
             hover_sound = None,
         ))
 
-        self.manager.play_sound(sound_name = "music/menu", loop = True)
+        self.manager.transition_music("music/menu")
 
     def on_resize(self, new_res: Vec2) -> None:
         self.master_container.style.image = util.draw_background(new_res)

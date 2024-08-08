@@ -215,12 +215,20 @@ class Manager(DebugExpandable):
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]
     
-    def stop_music(self) -> None:
+    def stop_music(self, fade_ms: int = 0) -> None:
         # return if no music is playing
         if self.music_current == "": return
         
-        self.get_sound(self.music_current).stop()
+        if fade_ms > 0:
+            self.get_sound(self.music_current).fadeout(fade_ms)
+        else:
+            self.get_sound(self.music_current).stop()
         self.music_current = ""
+
+    def transition_music(self, new_key: str) -> None:
+        fade_in = 500 if self.music_current else 0
+        self.stop_music(fade_ms=100)
+        self.play_sound(new_key, loop=True, fade_ms=fade_in)
 
     def play_sound(self, sound_name: str, volume: float = 1.0, loop = False, fade_ms: int = 0) -> None:
         is_music = sound_name.startswith("music/")

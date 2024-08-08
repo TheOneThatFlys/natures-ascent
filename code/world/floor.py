@@ -359,6 +359,12 @@ class BossRoom(Room):
         )
         self.parent.remove_child(room)
 
+    def add_enemies(self) -> None:
+        for enemy_type, v in self._possible_enemies.items():
+            for _ in range(v):
+                e = self.add_child(enemy_type(self, self.bounding_rect.center))
+                self.enemies.add(e)
+
 class FloorManager(Node):
     def __init__(self, parent: Node, room_size: int = 8, target_num: int = 8) -> None:
         super().__init__(parent)
