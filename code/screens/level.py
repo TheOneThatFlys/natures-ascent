@@ -7,13 +7,13 @@ if TYPE_CHECKING:
 import pygame
 import random, pickle, os
 
-from engine import Screen, Sprite, Node, Logger, ui
+from engine import Screen, Sprite, Node, ui
 from engine.types import *
 from entity import Player
 from item import MeleeWeaponAttack, Projectile, ItemPool
 from world import FloorManager, Tile, Room
 from util.constants import *
-from util import SaveHelper
+from util import SaveHelper, AutoSaver
 
 from .common import TextButtonColours, TextButton, IconText, PersistantGameData
 from .settings import SettingsUI
@@ -429,6 +429,7 @@ class PauseUI(ui.Element):
         self.toggle_settings()
 
     def _on_exit_click(self) -> None:
+        self.parent.run_autosaver.force_save()
         self.parent.parent.set_screen("menu")
 
     def _draw_background(self, size: Vec2, border_width: int = 8) -> pygame.Surface:
@@ -498,10 +499,13 @@ class Level(Screen):
 
         self._add_ui_components()
 
-        self.manager.play_sound("music/forest", loop = True, fade_ms = 1000)
-
         if game_data:
             self.load_from_data(game_data)
+
+        self._data_update_counter = 0
+        self.run_autosaver = AutoSaver(self, RUN_SAVE_PATH, 60 * 30) # autosave run data every 30 seconds (only noticeable through crashes)
+
+        self.manager.play_sound("music/forest", loop = True, fade_ms = 1000)
 
     def _add_ui_components(self) -> None:
         self.master_ui = ui.Element(
@@ -528,9 +532,9 @@ class Level(Screen):
             rooms_cleared = [coord for (coord, room) in self.floor_manager.rooms.items() if room.completed],
         )
     
-    def save_run_data(self) -> None:
+    def get_overview_encoded(self) -> None:
         data = self.get_overview_data()
-        SaveHelper.save_file(pickle.dumps(data), RUN_SAVE_PATH, obfuscate=True)
+        return SaveHelper.encode_data(pickle.dumps(data))
 
     def load_from_data(self, data: PersistantGameData) -> None:
         # load player info
@@ -560,6 +564,10 @@ class Level(Screen):
 
         # set camera position
         self.camera.pos = pygame.Vector2(data.player_position)
+
+    def can_autosave(self) -> bool:
+        current_room = self.floor_manager.get_room_at_world_pos(self.player.rect.center)
+        return current_room.completed
 
     def cycle_debug(self) -> None:
         """
@@ -670,6 +678,12 @@ class Level(Screen):
         self.manager.groups["update"].update()
         self.master_ui.update()
         self.floor_manager.update()
+
+        # update run data every 0.5 seconds
+        self.run_autosaver.update()
+        self._data_update_counter += self.manager.dt
+        if self._data_update_counter > 30 and self.can_autosave():
+            self.run_autosaver.data = self.get_overview_encoded()
 
     def render(self, surface: pygame.Surface) -> None:
         # clear game surface

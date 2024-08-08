@@ -54,7 +54,7 @@ class Game(DebugExpandable):
         self.set_screen("menu")
 
         self.load_config()
-        self.settings_saver = AutoSaver(self, CONFIG_SAVE_PATH, 60 * 120, ignore_limit = True)
+        self.settings_saver = AutoSaver(self, CONFIG_SAVE_PATH, 60 * 120)
 
     @Logger.time(msg = "Loaded assets in %t seconds.")
     def load_assets(self):
