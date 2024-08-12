@@ -13,7 +13,7 @@ from .parsers import SaveHelper
 from .constants import *
 
 INDEX_SPECIAL_STRING = "$$"
-ALLOWED_REC_TYPES = (DebugExpandable, list, dict, set, tuple, pygame.Rect, pygame.FRect, pygame.Vector2)
+ALLOWED_REC_TYPES = (DebugExpandable, list, dict, set, tuple, pygame.Rect, pygame.FRect, pygame.Vector2, pygame.sprite.Group)
 SAVE_PATH = os.path.join("debug", "config.dat")
 
 class Path:
@@ -443,6 +443,8 @@ class AttributeEditor(Element):
                             thing_to_render = {"x": v.x, "y": v.y, "width": v.width, "height": v.height}
                         elif isinstance(v, pygame.Vector2):
                             thing_to_render = {"x": v.x, "y": v.y}
+                        elif isinstance(v, pygame.sprite.Group):
+                            thing_to_render = {f"{INDEX_SPECIAL_STRING}{str(index)}": sprite for index, sprite in enumerate(v.sprites())}
                         else:
                             methods = {x[0]: x[1] for x in inspect.getmembers(v, predicate = lambda x: inspect.ismethod(x) and len(inspect.signature(x).parameters) == 0)}
                             thing_to_render = {**v.__dict__, **methods} # merges 2 dicts
