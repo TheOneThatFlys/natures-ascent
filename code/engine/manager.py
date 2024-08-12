@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 import pygame, os
 from .logger import Logger
@@ -188,15 +188,24 @@ class Manager(DebugExpandable):
                 elif extension == "ttf":
                     loaded_asset = Font(fullpath)
 
-                elif extension == "mp3":
+                elif extension == "mp3" and "music" not in fullpath: # don't load music files as they will be streamed
                     loaded_asset = pygame.mixer.Sound(fullpath)
 
                 if loaded_asset:
                     # trim path down
-                    key = fullpath.removeprefix(os.path.join("assets", ext_dir_map[extension]) + "\\").removesuffix("." + extension)
+                    key = fullpath.removeprefix(os.path.join("assets", ext_dir_map[extension]) + os.sep).removesuffix(os.extsep + extension)
                     # replace backslashes with forward
-                    key = key.replace("\\", "/")
+                    key = key.replace(os.sep, "/")
                     self.assets[ext_dir_map[extension]][key] = loaded_asset
+
+    def get_path_from_key(self, key: str, type: Literal["image", "font", "sound"]) -> str:
+        type_ext_map = {
+            "image": "png",
+            "font": "ttf",
+            "sound": "mp3",
+        }
+
+        return os.path.join("assets", type, *key.split("/")) + os.extsep + type_ext_map[type]
 
     def get_image(self, name: str) -> pygame.Surface:
         try:
@@ -215,36 +224,17 @@ class Manager(DebugExpandable):
     def get_sound(self, name: str) -> pygame.mixer.Sound:
         return self.assets["sound"][name]
     
-    def stop_music(self, fade_ms: int = 0) -> None:
-        # return if no music is playing
-        if self.music_current == "": return
-        
-        if fade_ms > 0:
-            self.get_sound(self.music_current).fadeout(fade_ms)
-        else:
-            self.get_sound(self.music_current).stop()
-        self.music_current = ""
+    def play_music(self, key: str, volume: float = 1.0, fade_ms: int = 0) -> None:
+        pygame.mixer.music.load(self.get_path_from_key(key, "sound"))
+        pygame.mixer.music.set_volume(volume * self.music_volume * 3)
+        pygame.mixer.music.play(-1, fade_ms=fade_ms)
 
-    def transition_music(self, new_key: str) -> None:
-        fade_in = 500 if self.music_current else 0
-        self.stop_music(fade_ms=100)
-        self.play_sound(new_key, loop=True, fade_ms=fade_in)
+    def stop_music(self, fade_ms: int = 0) -> None:
+        pygame.mixer.music.fadeout(fade_ms)
 
     def play_sound(self, sound_name: str, volume: float = 1.0, loop = False, fade_ms: int = 0) -> None:
-        is_music = sound_name.startswith("music/")
-        if is_music:
-            # if trying to play the same track twice, just continue current
-            if self.music_current == sound_name:
-                return
-            
-            # stop previously playing music
-            if self.music_current != "":
-                self.get_sound(self.music_current).stop()
-
-            self.music_current = sound_name
-
         s = self.get_sound(sound_name)
-        volume_multiplier = 3 * self._music_volume if is_music else 10 * self._sfx_volume
+        volume_multiplier = 10 * self._sfx_volume
         s.set_volume(volume * volume_multiplier)
         n_loops = -1 if loop else 0
         s.play(n_loops, fade_ms = fade_ms)

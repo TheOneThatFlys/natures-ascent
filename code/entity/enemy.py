@@ -343,14 +343,13 @@ class TreeBoss(Enemy):
         self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles, AttackFourBranches]
         self.current_attack: BossAttack | None = None
 
-        self.prev_playing = self.manager.music_current
         self.manager.stop_music(300)
 
     def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
         return super().hit(other, damage, 0 if self.in_stationary_attack else kb_magnitude)
 
     def on_land(self) -> None:
-        self.manager.play_sound("music/boss", loop=True)
+        self.manager.play_music("music/boss")
 
     def update_ai(self) -> None:
         self.follow_player()
@@ -375,7 +374,7 @@ class TreeBoss(Enemy):
 
     def kill(self) -> None:
         super().kill()
-        self.manager.play_sound(self.prev_playing, loop = True, fade_ms = 3000)
+        self.manager.play_music("music/forest", fade_ms=5000)
 
     def update(self) -> None:
         super().update()
