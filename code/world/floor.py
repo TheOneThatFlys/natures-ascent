@@ -533,9 +533,6 @@ class FloorManager(Node):
         self.rooms[origin] = room
         self.add_child(room)
         return room
-    
-    def _DEBUG_tp_to_boss(self):
-        self.player.rect.topleft = [room.bounding_rect.center for (_, room) in self.rooms.items() if "boss" in room.tags][0]
 
     def update(self) -> None:
         for _, room in self.rooms.items():

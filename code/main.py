@@ -6,13 +6,27 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import sys, platform, uuid, datetime, json
 import pygame
 
-from typing import Type
-from engine import Screen, Manager, Logger
+from typing import Type, Callable, Any, TypeVar
+from engine import Screen, Manager, Logger, Node
 from screens import Level, Menu, Settings, CreditsScreen, GameOverviewScreen
 from util import DebugWindow, SaveHelper, AutoSaver
 
 from engine.types import *
 from util.constants import *
+
+class DebugPalette(Node):
+    """Holds helper functions for faster debugging."""
+    def __init__(self, parent: Node) -> None:
+        super().__init__(parent)
+        self.game: Game = self.manager.game
+
+    def go_to_boss(self):
+        player = self.manager.get_object("player")
+        fm = self.manager.get_object("floor-manager")
+        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "boss" in room.tags][0]
+
+    def kill_player(self):
+        self.manager.get_object("player").kill()
 
 class Game(DebugExpandable):
     # main game class that manages screens and pygame events
@@ -38,6 +52,7 @@ class Game(DebugExpandable):
 
         if IN_DEBUG:
             self.debug_window = DebugWindow(self)
+            self.debug_palette = DebugPalette(self.debug_window)
             self.manager.add_window(self.debug_window.window, "debug")
 
         # dictionary to hold screens
