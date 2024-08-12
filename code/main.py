@@ -20,13 +20,16 @@ class DebugPalette(Node):
         super().__init__(parent)
         self.game: Game = self.manager.game
 
-    def go_to_boss(self):
+    def go_to_boss(self) -> None:
         player = self.manager.get_object("player")
         fm = self.manager.get_object("floor-manager")
         player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "boss" in room.tags][0]
 
-    def kill_player(self):
+    def kill_player(self) -> None:
         self.manager.get_object("player").kill()
+
+    def force_win(self) -> None:
+        self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data(), end_type = "win")
 
 class Game(DebugExpandable):
     # main game class that manages screens and pygame events

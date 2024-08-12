@@ -220,7 +220,7 @@ class Player(Entity):
     def kill(self) -> None:
         super().kill()
         level: Level = self.manager.get_object("level")
-        level.parent.set_screen("overview", game_data = level.get_overview_data())
+        level.parent.set_screen("overview", game_data = level.get_overview_data(), end_type = "die")
 
     def update(self) -> None:
         super().update()

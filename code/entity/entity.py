@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-import pygame
+import pygame, random
 from typing import Literal
 from engine import Sprite, AnimationManager, Node
 from util.constants import *
+from util import polar_to_cart
 
 from .stats import EntityStats
 from .bar import HealthBar
@@ -95,7 +96,12 @@ class Entity(Sprite):
     def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
         if self.iframes == 0:
             kbv = pygame.Vector2(self.rect.center) - other.rect.center
-            kbv.scale_to_length(kb_magnitude)
+            if kb_magnitude == 0:
+                kbv = pygame.Vector2(0, 0)
+            elif kbv.magnitude() == 0:
+                kbv = polar_to_cart(random.randint(0, 360), kb_magnitude)
+            else:
+                kbv.scale_to_length(kb_magnitude)
             self.add_velocity(kbv)
 
             self.iframes = self.stats.iframes
