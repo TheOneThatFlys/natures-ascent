@@ -129,7 +129,7 @@ class Enemy(Entity):
         return True
 
     def check_player_collision(self) -> None:
-        if self.rect.colliderect(self.player.rect):
+        if self.collides(self.player):
             self.player.hit(self, kb_magnitude = 10, damage = self.stats.contact_damage)
 
     def avoid_others(self) -> None:
@@ -206,7 +206,9 @@ class Slime(Enemy):
             self.animation_manager.add_animation(dir, util.parse_spritesheet(rows[i], frame_count = 2))
         
         self.image = self.animation_manager.set_animation(random.choice(directions))
-        self.rect = self.image.get_frect(topleft = position)
+        self.rect = self.image.get_frect(center = position)
+
+        self.hitbox = pygame.Rect(0, 0, self.rect.width - 4, self.rect.height - 4)
 
     def update(self) -> None:
         super().update()
@@ -342,6 +344,9 @@ class TreeBoss(Enemy):
         self.in_attack_timer = 0
         self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles, AttackFourBranches]
         self.current_attack: BossAttack | None = None
+
+        self.hitbox = pygame.Rect(0, 0, self.rect.width - 32, self.rect.height - 16)
+        self.hitbox_offset = pygame.Vector2(0, 8)
 
         self.manager.stop_music(300)
 

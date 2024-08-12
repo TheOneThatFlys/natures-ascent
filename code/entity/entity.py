@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pygame
 from typing import Literal
 from engine import Sprite, AnimationManager, Node
@@ -11,6 +13,8 @@ HealthBarMode = Literal["normal", "always-show", "always-hide"]
 class Entity(Sprite):
     """
     Class representing a sprite that has health with colliders, i.e player and enemies.
+    
+    ``self.image``, ``self.rect`` and optionally ``self._hitbox`` need to be defined in subclasses.
     """
     def __init__(self, parent: Node, stats: EntityStats, health_bar_mode: HealthBarMode = "normal") -> None:
         super().__init__(parent, groups = ["render", "update"])
@@ -34,17 +38,30 @@ class Entity(Sprite):
             )
         )
 
-        self.hitbox_squish = 2
+        self.collision_box_squish = 2
 
         if health_bar_mode == "always-hide" or health_bar_mode == "normal":
             self.health_bar.hide()
         else:
             self.health_bar.show()
 
+        self.hitbox_offset = pygame.Vector2()
+
+    @property
+    def hitbox(self) -> pygame.Rect:
+        return getattr(self, "_hitbox", self.rect)
+        
+    @hitbox.setter
+    def hitbox(self, value: pygame.Rect) -> None:
+        self._hitbox = value
+
+    def collides(self, other: Entity) -> bool:
+        return self.hitbox.colliderect(other.hitbox)
+
     def check_collision_vertical(self, collide_group: list[Sprite]) -> None:
         if self.velocity.y == 0: return
         # get future position of hitbox
-        future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
+        future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.collision_box_squish, self.rect.width, self.rect.height / self.collision_box_squish)
         for sprite in collide_group:
             if sprite == self: continue
             if sprite.rect.colliderect(future_collision_rect):
@@ -60,7 +77,7 @@ class Entity(Sprite):
     def check_collision_horizontal(self, collide_group: list[Sprite]) -> None:
         if self.velocity.x == 0: return
         # see Entity.check_collision_vertical()
-        future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.hitbox_squish, self.rect.width, self.rect.height / self.hitbox_squish)
+        future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.collision_box_squish, self.rect.width, self.rect.height / self.collision_box_squish)
         for sprite in collide_group:
             if sprite == self: continue
             if sprite.rect.colliderect(future_collision_rect):
@@ -113,6 +130,7 @@ class Entity(Sprite):
     def update(self) -> None:
         super().update()
         self.move()
+        self.hitbox.center = self.rect.center + self.hitbox_offset
         self.animation_manager.update()
         self.iframes -= self.manager.dt
         if self.iframes < 0:

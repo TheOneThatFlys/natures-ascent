@@ -62,7 +62,7 @@ class MeleeWeaponAttack(Sprite):
     def _check_enemy_collisions(self) -> None:
         # check if hitting enemy
         for enemy in self.manager.groups["enemy"].sprites():
-            if self.rect.colliderect(enemy.rect) and not enemy in self._hit_enemies:
+            if self.rect.colliderect(enemy.hitbox) and not enemy in self._hit_enemies:
                 enemy.hit(self.manager.get_object("player"), damage = self.damage, kb_magnitude = self.knockback)
                 self._hit_enemies.append(enemy)
 
@@ -126,7 +126,7 @@ class Projectile(Sprite):
         self.rect.topleft += self.velocity
         self.hitbox.center = self.rect.center
         for enemy in self.manager.groups["enemy"]:
-            if enemy.rect.colliderect(self.hitbox):
+            if enemy.hitbox.colliderect(self.hitbox):
                 enemy.hit(self, damage = self.damage, kb_magnitude = self.knockback)
                 self.kill()
                 return

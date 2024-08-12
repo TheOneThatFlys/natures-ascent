@@ -85,8 +85,10 @@ class Player(Entity):
         
         self._load_animations()
         self.image = self.animation_manager.set_animation("idle-right")
-
         self.rect = self.image.get_frect(topleft = start_pos)
+
+        self.hitbox = pygame.Rect(0, 0, self.rect.width - 18, self.rect.height)
+        self.hitbox_offset = pygame.Vector2(2, 0)
 
         self.health_bar.health_colour = (60, 222, 34)
 

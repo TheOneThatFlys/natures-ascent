@@ -9,8 +9,8 @@ import random, pickle, os
 
 from engine import Screen, Sprite, Node, ui
 from engine.types import *
-from entity import Player
-from item import MeleeWeaponAttack, Projectile, ItemPool, Coin, Health
+from entity import Player, HealthBar
+from item import MeleeWeaponAttack, ItemPool, Coin, Health
 from world import FloorManager, Tile, Room
 from util.constants import *
 from util import SaveHelper, AutoSaver
@@ -18,7 +18,7 @@ from util import SaveHelper, AutoSaver
 from .common import TextButtonColours, TextButton, IconText, PersistantGameData
 from .settings import SettingsUI
 
-class HealthBar(ui.Element):
+class HealthBarUI(ui.Element):
     BAR_PADDING = 4
     def __init__(self, parent: Node, health_colour: Colour, shadow_colour: Colour, border_colour: Colour, background_colour: Colour, text_colour: Colour) -> None:
         super().__init__(
@@ -74,7 +74,7 @@ class HealthBar(ui.Element):
 
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
-class Map(ui.Element):
+class MapUI(ui.Element):
     BORDER_SIZE = 4
     def __init__(self, parent: Node, style: ui.Style, scale = 32) -> None:
         super().__init__(parent, style = style)
@@ -290,7 +290,7 @@ class HudUI(ui.Element):
         super().__init__(parent, style = ui.Style(alpha = 0, visible = True, size = parent.rect.size))
 
         self.health_bar = self.add_child(
-            HealthBar(
+            HealthBarUI(
                 self,
                 health_colour = (99, 169, 65),
                 shadow_colour = (46, 109, 53),
@@ -301,7 +301,7 @@ class HudUI(ui.Element):
         )
 
         self.map = self.add_child(
-            Map(
+            MapUI(
                 parent = self,
                 style = ui.Style(
                     alignment = "top-right",
@@ -649,8 +649,8 @@ class Level(Screen):
             if not hasattr(item, "rect") or item.rect == None: continue
             # ignore self
             if item == self: continue
-            # ignore ui elements
-            if isinstance(item, ui.Element): continue
+            # ignore specific elements
+            if isinstance(item, (ui.Element, HealthBar)): continue
 
             # draw z indexes on debug 3
             if self.debug_mode == 3 and hasattr(item, "z_index"):
@@ -665,11 +665,11 @@ class Level(Screen):
             # draw active damage hitboxes
             outline_colour = (255, 0, 0) if isinstance(item, MeleeWeaponAttack) and item.in_hit_frames() else (0, 0, 255)
 
-            if isinstance(item, Projectile):
-                pygame.draw.rect(self.game_surface, (255, 0, 0), self.camera.convert_rect(item.hitbox), width = 1)
-
-            # draw hitboxes
+            # draw collision boxes
             pygame.draw.rect(self.game_surface, outline_colour, self.camera.convert_rect(item.rect), width = 1)
+            # draw hitboxes
+            if hasattr(item, "hitbox"):
+                pygame.draw.rect(self.game_surface, (255, 0, 0), self.camera.convert_rect(item.hitbox), width = 1)
 
         # and also draw room rects
         if self.debug_mode == 2:
