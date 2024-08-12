@@ -23,12 +23,12 @@ class EnemySpawnIndicator(Sprite):
 
     Will call parent.place_in_world on death after 1 second.
     """
-    def __init__(self, parent: Enemy, spawn_time: int = 60) -> None:
+    def __init__(self, parent: Enemy, position: Vec2 = None, spawn_time: int = 60,) -> None:
         super().__init__(parent, ["render", "update"], 0)
         self.animation_manager = self.add_child(AnimationManager(parent = self))
         self.animation_manager.add_animation("default", util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("tiles/spawn_warning"), 2), frame_size=(TILE_SIZE, TILE_SIZE)))
         self.image = self.animation_manager.set_animation("default")
-        self.rect = self.image.get_rect(topleft = parent.rect.topleft)
+        self.rect = self.image.get_rect(center = position)
 
         self.counter = 0
         self.life_time = spawn_time
@@ -63,7 +63,7 @@ class Enemy(Entity):
         self.animation_manager.add_animation("__TEMP", [self.manager.get_image("error")])
         self.image = self.animation_manager.set_animation("__TEMP")
 
-        self.rect = self.image.get_frect(topleft = position)
+        self.rect = self.image.get_frect(center = position)
 
         # some useful info for subclasses
         self.time_since_seen_player = math.inf
@@ -74,7 +74,7 @@ class Enemy(Entity):
         # spawn in animation
         self.spawn_counter = 0
 
-        self.spawn_indicator = self.add_child(EnemySpawnIndicator(parent = self, spawn_time = 60 + random.randint(0, 30)))
+        self.spawn_indicator = self.add_child(EnemySpawnIndicator(parent = self, spawn_time = 60 + random.randint(0, 30), position = position))
         self.falling_in = True
 
     def place_in_world(self) -> None:
@@ -335,7 +335,7 @@ class TreeBoss(Enemy):
 
         self.image = self.animation_manager.set_animation("down")
         self.rect = self.image.get_frect(center = position)
-
+        
         self.in_stationary_attack = False
 
         self.next_attack_timer = self.ATTACK_INTERVAL
