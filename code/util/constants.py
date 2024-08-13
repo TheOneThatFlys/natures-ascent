@@ -16,3 +16,5 @@ ANIMATION_FRAME_TIME = 10
 
 RUN_SAVE_PATH = os.path.join("saves", "current_run.dat")
 CONFIG_SAVE_PATH = os.path.join("saves", "config.json")
+
+INTERACT_DISTANCE = TILE_SIZE * 1.5

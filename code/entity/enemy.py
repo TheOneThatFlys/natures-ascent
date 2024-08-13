@@ -355,6 +355,7 @@ class TreeBoss(Enemy):
 
     def on_land(self) -> None:
         self.manager.play_music("music/boss")
+        self.manager.get_object("camera").shake(10, 10)
 
     def update_ai(self) -> None:
         self.follow_player()

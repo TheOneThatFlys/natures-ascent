@@ -598,17 +598,17 @@ class Level(Screen):
         self.pause_ui.toggle(self.game_surface)
 
     def on_key_down(self, key: int, unicode: str) -> None:
-        if key == pygame.K_ESCAPE:
+        if key == self.manager.keybinds["pause"]:
             self.toggle_pause()
             
-        elif key == pygame.K_F3:
-            self.cycle_debug()
-
-        elif key == pygame.K_EQUALS:
+        elif key == self.manager.keybinds["map-zoom-in"]:
             self.hud_ui.map.increase_scale()
 
-        elif key == pygame.K_MINUS:
+        elif key == self.manager.keybinds["map-zoom-out"]:
             self.hud_ui.map.decrease_scale()
+
+        elif key == pygame.K_F3 and IN_DEBUG:
+            self.cycle_debug()
 
     def on_resize(self, new_res: Vec2) -> None:
         super().on_resize(new_res)

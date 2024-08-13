@@ -42,13 +42,13 @@ class Manager(DebugExpandable):
 
         # stores loaded assets
         self.assets: dict = {"image": {}, "sound": {}, "font": {}}
-
-        # store current playing music
-        self.music_current: str = ""
         
         # store volume percentages (0-1 inclusive)
         self._sfx_volume = 0.1
         self._music_volume = 0.1
+
+        # store keybinds
+        self.keybinds: dict[str, int] = {}
 
         self.fps: int = fps
         self._dt_adjusted: float = 1
@@ -83,9 +83,7 @@ class Manager(DebugExpandable):
     @music_volume.setter
     def music_volume(self, v) -> None:
         self._music_volume = v
-        if self.music_current != "":
-            current_music = self.get_sound(self.music_current)
-            current_music.set_volume(v * 3)
+        pygame.mixer.music.set_volume(v * 3)
 
     def update_dt(self) -> None:
         """Updates delta time for current frame. Should be called every frame"""

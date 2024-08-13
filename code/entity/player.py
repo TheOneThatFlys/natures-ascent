@@ -73,7 +73,7 @@ class Inventory(Node):
         raise IndexError()
 
 class InteractionOverlay(Sprite):
-    def __init__(self, parent: Sprite, max_distance: float = TILE_SIZE * 2) -> None:
+    def __init__(self, parent: Sprite, max_distance: float) -> None:
         super().__init__(parent, groups = ["render", "update"])
 
         self.image = pygame.Surface((0, 0))
@@ -133,7 +133,7 @@ class Player(Entity):
         self.inventory.set_weapon(0, Sword)
         self.inventory.set_weapon(1, itempool.roll_spell())
 
-        self.interact_overlay = self.add_child(InteractionOverlay(self))
+        self.interact_overlay = self.add_child(InteractionOverlay(self, INTERACT_DISTANCE))
 
         self.attack_cd = 0
         self.spell_cd = 0
@@ -161,34 +161,34 @@ class Player(Entity):
         dv = pygame.Vector2()
         self.walking = False
         if not self.disable_movement_input:
-            if keys[pygame.K_w]:
+            if keys[self.manager.keybinds["move-up"]]:
                 dv.y -= 1
                 self.last_facing.set("walk", "up")
                 self.walking = True
-            if keys[pygame.K_s]:
+            if keys[self.manager.keybinds["move-down"]]:
                 dv.y += 1
                 self.last_facing.set("walk", "down")
                 self.walking = True
-            if keys[pygame.K_a]:
+            if keys[self.manager.keybinds["move-left"]]:
                 dv.x -= 1
                 self.last_facing.set("walk", "left")
                 self.walking = True
-            if keys[pygame.K_d]:
+            if keys[self.manager.keybinds["move-right"]]:
                 dv.x += 1
                 self.last_facing.set("walk", "right")
                 self.walking = True
 
         # attack
-        if keys[pygame.K_RIGHT]:
+        if keys[self.manager.keybinds["attack-right"]]:
             self.try_attack("right")
-        elif keys[pygame.K_LEFT]:
+        elif keys[self.manager.keybinds["attack-left"]]:
             self.try_attack("left")
-        elif keys[pygame.K_UP]:
+        elif keys[self.manager.keybinds["attack-up"]]:
             self.try_attack("up")
-        elif keys[pygame.K_DOWN]:
+        elif keys[self.manager.keybinds["attack-down"]]:
             self.try_attack("down")
         
-        if keys[pygame.K_SPACE]:
+        if keys[self.manager.keybinds["spell"]]:
             self.try_spell()
 
         # normalise vector so that diagonal movement is the

@@ -127,7 +127,8 @@ class Game(DebugExpandable):
         config = {
             "window-mode": self.get_window_mode(),
             "sfx-vol": self.manager.sfx_volume,
-            "music-vol": self.manager.music_volume
+            "music-vol": self.manager.music_volume,
+            "keybinds": self.manager.keybinds
         }
         return json.dumps(config, indent=4)
     
@@ -135,7 +136,22 @@ class Game(DebugExpandable):
         default_config = {
             "window-mode": "windowed",
             "sfx-vol": 0.1,
-            "music-vol": 0.1
+            "music-vol": 0.1,
+            "keybinds": {
+                "move-up": pygame.K_w,
+                "move-down": pygame.K_s,
+                "move-left": pygame.K_a,
+                "move-right": pygame.K_d,
+                "attack-up": pygame.K_UP,
+                "attack-down": pygame.K_DOWN,
+                "attack-left": pygame.K_LEFT,
+                "attack-right": pygame.K_RIGHT,
+                "spell": pygame.K_SPACE,
+                "interact": pygame.K_e,
+                "pause": pygame.K_ESCAPE,
+                "map-zoom-in": pygame.K_EQUALS,
+                "map-zoom-out": pygame.K_MINUS,
+            }
         }
 
         if not os.path.exists(CONFIG_SAVE_PATH):
@@ -175,6 +191,21 @@ class Game(DebugExpandable):
         except Exception as e:
             Logger.warn(f"Could not load config option [window-mode]. Defaulting to value {default_config['window-mode']} ({e})")
 
+        try:
+            cfg_option = config["keybinds"]
+            for key in default_config["keybinds"].keys():
+                if key not in cfg_option:
+                    Logger.warn(f"Keybind to action {key} not found, loading default keybind instead.")
+                    cfg_option[key] = default_config["keybinds"][key]
+                if not isinstance(cfg_option[key], int):
+                    Logger.warn(f"Keybind for action {key} is invalid type, loading default keybind instead.")   
+                    cfg_option[key] = default_config["keybinds"][key]
+
+            self.manager.keybinds = cfg_option
+        except Exception as e:
+            Logger.warn(f"Could not load config option [keybinds]. Loading default keybinds instead ({e.with_traceback()})")
+            self.manager.keybinds = default_config["keybinds"]
+
     def update_save(self) -> None:
         self.settings_saver.data = self.get_config_as_string()
         self.settings_saver.update()
@@ -213,13 +244,6 @@ class Game(DebugExpandable):
                         if event.key == pygame.K_F9:
                             self.load_assets()
                             self.current_screen_instance = self._screens[self.current_screen](self)
-                        # screen changes
-                        elif event.key == pygame.K_F10:
-                            self.set_windowed(STARTUP_SCREEN_SIZE)
-                        elif event.key == pygame.K_F11:
-                            self.set_fullscreen(borderless = True)
-                        elif event.key == pygame.K_F12:
-                            self.set_fullscreen()
 
                     screen_instance.on_key_down(event.key, event.unicode)
 
