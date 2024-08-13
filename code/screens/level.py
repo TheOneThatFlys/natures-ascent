@@ -19,7 +19,6 @@ from .common import TextButtonColours, TextButton, IconText, PersistantGameData
 from .settings import SettingsUI
 
 class HealthBarUI(ui.Element):
-    BAR_PADDING = 4
     def __init__(self, parent: Node, health_colour: Colour, shadow_colour: Colour, border_colour: Colour, background_colour: Colour, text_colour: Colour) -> None:
         super().__init__(
             parent = parent,
@@ -37,6 +36,9 @@ class HealthBarUI(ui.Element):
             font = self.manager.get_font("alagard", 16)
         )))
 
+        self.bar_padding = 4
+        self.shading_size = 4
+
         self.health_colour = health_colour
         self.shadow_colour = shadow_colour
         self.border_colour = border_colour
@@ -50,18 +52,18 @@ class HealthBarUI(ui.Element):
         border_rect = self.image.get_rect()
         
         health_rect = pygame.Rect(
-            self.BAR_PADDING,
-            self.BAR_PADDING,
-            (self.player.health / self.player.stats.health) * (self.rect.width - 2 * self.BAR_PADDING),
-            self.rect.height - 2 * self.BAR_PADDING
-            )
+            self.bar_padding,
+            self.bar_padding,
+            (self.player.health / self.player.stats.health) * (self.rect.width - 2 * self.bar_padding),
+            self.rect.height - 2 * self.bar_padding
+        )
         
         shadow_rect = health_rect.copy()
-        shadow_rect.height = self.BAR_PADDING * 2
-        shadow_rect.bottom = border_rect.height - self.BAR_PADDING
+        shadow_rect.height = self.shading_size
+        shadow_rect.bottom = border_rect.height - self.bar_padding
 
         shading_rect = health_rect.copy()
-        shading_rect.width = self.rect.width - 2 * self.BAR_PADDING
+        shading_rect.width = self.rect.width - 2 * self.bar_padding
 
         # only have round right if one max health
         right_radius = 4 if self.player.health == self.player.stats.health else 0
@@ -285,7 +287,6 @@ class InventoryUI(ui.Element):
             self.spell_cd_overlay.redraw_image()
 
 class HudUI(ui.Element):
-    BAR_PADDING = 4
     def __init__(self, parent: Node) -> None:
         super().__init__(parent, style = ui.Style(alpha = 0, visible = True, size = parent.rect.size))
 
@@ -485,7 +486,7 @@ class Level(Screen):
 
         self.game_surface = pygame.Surface(self.rect.size)
 
-        self.manager.add_groups(["render", "update", "collide", "enemy"])
+        self.manager.add_groups(["render", "update", "collide", "enemy", "interact"])
         self.manager.add_object("level", self)
 
         self.item_pool = self.add_child(ItemPool(self))

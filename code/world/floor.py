@@ -11,6 +11,7 @@ from item import Coin, Health
 from util.constants import *
 
 from .tile import Tile, TileSet
+from .interactable import TutorialSign
 
 room_directions: list[Direction] = ["left", "right", "up", "down"]
 opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
@@ -320,6 +321,8 @@ class Room(Node):
 class SpawnRoom(Room):
     def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:
         super().__init__(parent, origin, room_size, [], [], ["spawn"])
+
+        self.add_child(TutorialSign(self, (self.bounding_rect.centerx - TILE_SIZE / 2, self.bounding_rect.y + TILE_SIZE)))
 
         portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
         portal_sprite.image = pygame.transform.scale(self.manager.get_image("tiles/spawn_portal"), (TILE_SIZE * 6, TILE_SIZE * 6))

@@ -4,10 +4,11 @@ import pygame
 from typing import Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from screens import Level
+    from world import Interactable
 
 from engine import Node, Sprite
 from engine.types import *
-from util import parse_spritesheet, scale_surface_by, get_closest_direction
+from util import parse_spritesheet, scale_surface_by, get_closest_direction, create_outline
 from util.constants import *
 
 from item import Weapon, Spell, Sword, ItemPool
@@ -71,6 +72,37 @@ class Inventory(Node):
             return self.secondary
         raise IndexError()
 
+class InteractionOverlay(Sprite):
+    def __init__(self, parent: Sprite, max_distance: float = TILE_SIZE * 2) -> None:
+        super().__init__(parent, groups = ["render", "update"])
+
+        self.image = pygame.Surface((0, 0))
+        self.rect = self.image.get_rect()
+
+        self.max_distance = max_distance
+
+        self.current_focus: Interactable | None = None
+
+    def update(self) -> None:
+        closest_object: Interactable = min(
+            self.manager.groups["interact"],
+            key = lambda sprite: (pygame.Vector2(sprite.rect.center) - self.parent.rect.center).magnitude()
+        )
+
+        if (pygame.Vector2(closest_object.rect.center) - self.parent.rect.center).magnitude() > self.max_distance: closest_object = None
+
+        if closest_object != self.current_focus:
+            if self.current_focus != None: self.current_focus.on_unfocus()
+            if closest_object == None:
+                self.image = pygame.Surface((0, 0))
+            else:
+                self.image = create_outline(closest_object.image, pixel_scale = 4)
+                closest_object.on_focus()
+                self.rect = self.image.get_rect()
+                self.rect.center = closest_object.rect.center
+
+            self.current_focus = closest_object
+
 class Player(Entity):
     def __init__(self, parent: Node, start_pos: pygame.Vector2) -> None:
         super().__init__(
@@ -100,6 +132,8 @@ class Player(Entity):
         self.inventory = self.add_child(Inventory(parent = self))
         self.inventory.set_weapon(0, Sword)
         self.inventory.set_weapon(1, itempool.roll_spell())
+
+        self.interact_overlay = self.add_child(InteractionOverlay(self))
 
         self.attack_cd = 0
         self.spell_cd = 0
