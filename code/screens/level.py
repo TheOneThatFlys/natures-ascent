@@ -420,7 +420,7 @@ class PauseUI(ui.Element):
 
     def calculate_settings_size(self) -> pygame.Vector2:
         if self.pause_frame == None:
-            return pygame.Vector2()
+            return pygame.Vector2(STARTUP_SCREEN_SIZE)
         return pygame.Vector2(self.pause_frame.get_size())
 
     def _on_resume_click(self) -> None:

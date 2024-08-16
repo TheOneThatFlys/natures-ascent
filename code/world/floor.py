@@ -187,6 +187,7 @@ class Room(Node):
                 # if enemy is not completly in bounds, i.e colliding with a wall, generate a new position
                 while not self.inside_rect.contains(e.rect):
                     e.rect.center = generate_pos()
+                    e.spawn_indicator.rect.center = e.rect.center
 
     def place_in_world(self) -> None:
         """Adds the room's tiles and enemies into the world"""
