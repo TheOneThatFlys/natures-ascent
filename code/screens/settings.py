@@ -6,7 +6,7 @@ if TYPE_CHECKING:
 import pygame
 from engine import Screen, Node
 from engine.types import *
-from engine.ui import Element, Style, Text, Button, Dropdown, Slider
+from engine.ui import Element, Style, Text, Button, Dropdown, Slider, ScrollableElement
 from util import parse_spritesheet
 from util.constants import *
 
@@ -15,18 +15,312 @@ from .common import TextButtonColours
 _do_nothing = lambda: None
 
 class DividerX(Element):
-    def __init__(self, parent: Element, y: int, thickness: int = 2) -> None:
+    def __init__(self, parent: Element, y: int, thickness: int = 2, length: int = -1) -> None:
         self.thickness = thickness
+        self.length = length
         super().__init__(parent, style = Style(
             colour = (26, 30, 36),
             alignment = "top-center",
             offset = (0, y),
-            size = (parent.style.size[0], thickness)
         ))
 
     def redraw_image(self) -> None:
-        self.style.size = (self.parent.style.size[0], self.thickness)
+        self.style.size = (self.parent.style.size[0] if self.length == -1 else self.length, self.thickness)
         super().redraw_image()
+
+class KeybindSelector(Element):
+    """Size provided in style is size of one keybind row"""
+    def __init__(self, parent: Element, style: Style):
+        super().__init__(parent, style = style)
+
+        self.buttons: dict[str, Button] = {}
+        self.considering = None
+        self.key_translations: dict[str, str] = {
+            "LEFT SHIFT": "SHIFT",
+            "RIGHT SHIFT": "RSHIFT",
+            "LEFT CTRL": "CTRL",
+            "RIGHT CTRL": "RCTRL",
+            "LEFT ALT": "ALT",
+            "RIGHT ALT": "RALT",
+            "LEFT META": "META",
+            "RIGHT META": "RMETA",
+            "ESCAPE": "ESC",
+            "PAGE UP": "PGUP",
+            "PAGE DOWN": "PGDN",
+            "CAPS LOCK": "CAPS",
+            "NUM LOCK": "NUM",
+            "SCROLL LOCK": "SCROLL",
+            "BACKSPACE": "BACK",
+            "INSERT": "INS",
+            "DELETE": "DEL",
+        }
+
+        self.create_rows()
+
+    def create_rows(self) -> None:
+        i = 0
+        for action, key in self.manager.keybinds.items():
+            # text
+            self.add_child(Text(
+                parent = self,
+                text = action,
+                style = Style(
+                    alignment = "center-left",
+                    font = self.manager.get_font("alagard", 20),
+                    offset = (0, i * self.style.size[1]),
+                    colour = self.style.colour,
+                    fore_colour = self.style.fore_colour
+                )
+            ))
+            # button
+            b = self.add_child(Button(
+                parent = self,
+                hover_sound = None,
+                on_click = self._on_keybind_click,
+                click_args = (action,),
+                style = Style(
+                    image = self.manager.get_image("menu/keybind_button"),
+                    alignment = "center-right",
+                    offset = (0, i * self.style.size[1]),
+                )
+            ))
+
+            b.add_child(Text(
+                parent = b,
+                text = self.translate_key(key),
+                style = Style(
+                    font = self.manager.get_font("alagard", 20),
+                    fore_colour = (255, 255, 255),
+                    alignment = "center-center"
+                )
+            ))
+
+            self.buttons[action] = b
+            i += 1
+
+    def _on_keybind_click(self, action: str) -> None:
+        self.select_button(action)
+
+    def translate_key(self, key: int) -> None:
+        """Translate a key enum into a max 6 letter string."""
+        name = pygame.key.name(key).upper()
+        if name in self.key_translations:
+            return self.key_translations[name]
+        return name
+
+    def select_button(self, action: str) -> None:
+        if self.considering:
+            self.buttons[self.considering].style.image = self.manager.get_image("menu/keybind_button")
+            self.buttons[self.considering].redraw_image()
+
+        self.considering = action
+        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button_selected")
+        self.buttons[action].redraw_image()
+
+    def deselect_button(self, action: str) -> None:
+        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button")
+        self.buttons[action].redraw_image()
+        self.considering = None
+
+    def on_key_down(self, key: int, unicode: str) -> None:
+        super().on_key_down(key, unicode)
+        if self.considering:
+            self.manager.keybinds[self.considering] = key
+            self.buttons[self.considering].children[0].set_text(self.translate_key(key))
+            self.deselect_button(self.considering)
+
+    def on_mouse_down(self, button: int) -> None:
+        if self.considering:
+            self.deselect_button(self.considering)
+        super().on_mouse_down(button)
+
+class SettingsScrollable(ScrollableElement):
+    def __init__(self, parent: Element, size: Vec2, yoffset: int):
+        super().__init__(parent, focus_only = False, scroll_factor = 10, style = Style(
+            size = size,
+            alignment = "top-center",
+            offset = (0, yoffset),
+            alpha = 0,
+        ))
+
+        button_colours = TextButtonColours()
+
+        ROW_WIDTH = size[0]
+        ROW_HEIGHT = 40
+        self.horizontal_container_1 = self.add_child(Element(self, style = Style(
+            alpha = 0,
+            size = (ROW_WIDTH, ROW_HEIGHT),
+            alignment = "top-center",
+            offset = (0, 4)
+        )))
+
+        self.horizontal_container_2 = self.add_child(Element(self, style = Style(
+            alpha = 0,
+            size = (ROW_WIDTH, ROW_HEIGHT),
+            alignment = "top-center",
+            offset = (0, self.horizontal_container_1.style.offset[1] + ROW_HEIGHT)
+        )))
+
+        self.horizontal_container_3 = self.add_child(Element(self, style = Style(
+            alpha = 0,
+            size = (ROW_WIDTH, ROW_HEIGHT),
+            alignment = "top-center",
+            offset = (0, self.horizontal_container_2.style.offset[1] + ROW_HEIGHT)
+        )))
+
+        self.window_mode_dropdown = self.horizontal_container_1.add_child(Dropdown(
+            parent = self.horizontal_container_1,
+            options = ["Windowed", "Fullscreen", "Borderless"],
+            on_change = self._on_window_mode_change,
+            style = Style(
+                alignment = "center-right",
+                font = self.manager.get_font("alagard", 20),
+                fore_colour = (255, 255, 255),
+                image = self.manager.get_image("menu/dropdown_head")
+            ),
+            button_style = Style(
+                size = (128, 40),
+                colour = (142, 82, 82),
+                font = self.manager.get_font("alagard", 20),
+                fore_colour = (255, 255, 255)
+            ),
+            hover_style = Style(image = None, size = (128, 40), colour = (186, 117, 106))
+        ))
+
+        self.window_mode_text = self.horizontal_container_1.add_child(Text(
+            parent = self.horizontal_container_1,
+            text = "Window Mode",
+            style = Style(
+                fore_colour = button_colours.colour,
+                font = self.manager.get_font("alagard", 20),
+                alignment = "center-left",
+            ),
+        ))
+
+        self.sfx_volume_text = self.horizontal_container_2.add_child(Text(
+            parent = self.horizontal_container_2,
+            text = "SFX Volume",
+            style = Style(
+                fore_colour = button_colours.colour,
+                font = self.manager.get_font("alagard", 20),
+                alignment = "center-left",
+            ),
+        ))
+
+        self.sfx_slider = self.horizontal_container_2.add_child(Slider(
+            parent = self.horizontal_container_2,
+            style = Style(
+                alignment = "center-right",
+                image = self.manager.get_image("menu/slider_bar"),
+            ),
+            knob_style = Style(
+                image = self.manager.get_image("menu/slider_knob"),
+            ),
+            on_change = self._on_sfx_change,
+            on_unfocus = self._on_sfx_unfocus
+        ))
+
+        self.sfx_slider_annotation = self.horizontal_container_2.add_child(Text(
+            parent = self.horizontal_container_2,
+            text = str(int(self.manager.sfx_volume * 100)),
+            style = Style(
+                alignment = "center-left",
+                offset = (self.horizontal_container_2.rect.width + 12, 0),
+                fore_colour = button_colours.colour,
+                font = self.manager.get_font("alagard", 20)
+            )
+        ))
+
+        self.music_volume_text = self.horizontal_container_3.add_child(Text(
+            parent = self.horizontal_container_3,
+            text = "Music Volume",
+            style = Style(
+                fore_colour = button_colours.colour,
+                font = self.manager.get_font("alagard", 20),
+                alignment = "center-left",
+            ),
+        ))
+
+        self.music_slider = self.horizontal_container_3.add_child(Slider(
+            parent = self.horizontal_container_3,
+            style = Style(
+                alignment = "center-right",
+                image = self.manager.get_image("menu/slider_bar"),
+            ),
+            knob_style = Style(
+                image = self.manager.get_image("menu/slider_knob"),
+            ),
+            on_change = self._on_music_change
+        ))
+
+        self.music_slider_annotation = self.horizontal_container_3.add_child(Text(
+            parent = self.horizontal_container_3,
+            text = str(int(self.manager.music_volume * 100)),
+            style = Style(
+                alignment = "center-left",
+                offset = (self.horizontal_container_2.rect.width + 12, 0),
+                fore_colour = button_colours.colour,
+                font = self.manager.get_font("alagard", 20)
+            )
+        ))
+
+        self.sfx_slider.set_value(self.manager.sfx_volume)
+        self.music_slider.set_value(self.manager.music_volume)
+        window_mode = self.manager.game.get_window_mode()
+        self.window_mode_dropdown.set_selected(window_mode[0].upper()+window_mode[1:])
+
+        self.section_divider = self.add_child(DividerX(self, self.horizontal_container_3.style.offset[1] + ROW_HEIGHT, length = ROW_WIDTH))
+
+        self.controls_header = self.add_child(Text(
+            parent = self,
+            text = "Controls",
+            style = Style(
+                alignment = "top-center",
+                offset = (0, self.section_divider.style.offset[1] + self.section_divider.rect.height + 4),
+                fore_colour = button_colours.colour,
+                colour = button_colours.colour_shadow,
+                font = self.manager.get_font("alagard", 32),
+                text_shadow = 2
+            )
+        ))
+
+        self.keybinds = self.add_child(KeybindSelector(self, style = Style(
+            alpha = 0,
+            size = (ROW_WIDTH, ROW_HEIGHT),
+            alignment = "top-center",
+            offset = (0, self.controls_header.style.offset[1] + self.controls_header.rect.height),
+            fore_colour = button_colours.colour
+        )))
+
+        # send item 1 to back
+        self.children.remove(self.horizontal_container_1)
+        self.children.append(self.horizontal_container_1)
+
+    def _on_window_mode_change(self, mode: str) -> None:
+        match mode:
+            case "Windowed":
+                self.manager.game.set_windowed(STARTUP_SCREEN_SIZE)
+            case "Borderless":
+                self.manager.game.set_fullscreen(borderless=True)
+            case "Fullscreen":
+                self.manager.game.set_fullscreen()
+            case _:
+                raise TypeError(f"Unknown window mode: {mode}")
+
+    def _on_sfx_change(self, value: float) -> None:
+        self.manager.sfx_volume = value
+        self.sfx_slider_annotation.set_text(str(int(value * 100)))
+
+    def _on_music_change(self, value: float) -> None:
+        self.manager.music_volume = value
+        self.music_slider_annotation.set_text(str(int(value * 100)))
+
+    def _on_sfx_unfocus(self, value: float) -> None:
+        self.manager.play_sound("effect/hit", volume = 0.2)
+
+    def on_resize(self, size: Vec2) -> None:
+        self.style.size = (384, self.parent.rect.height - self.style.offset[1] - 24)
+        super().on_resize(size)
 
 class SettingsUI(Element):
     def __init__(self, parent: Node, size: Vec2, exit_binding: Callable[[], None] = _do_nothing) -> None:
@@ -68,154 +362,11 @@ class SettingsUI(Element):
 
         self.divider1 = self.add_child(DividerX(self, self.title_text.style.offset[1] + self.title_text.rect.height))
 
-        ROW_HEIGHT = 40
-        self.horizontal_container_1 = self.add_child(Element(self, style = Style(
-            alpha = 0,
-            size = (384, ROW_HEIGHT),
-            alignment = "top-center",
-            offset = (0, self.title_text.style.offset[1] + self.title_text.rect.height + 32)
-        )))
-
-        self.horizontal_container_2 = self.add_child(Element(self, style = Style(
-            alpha = 0,
-            size = (384, ROW_HEIGHT),
-            alignment = "top-center",
-            offset = (0, self.horizontal_container_1.style.offset[1] + ROW_HEIGHT)
-        )))
-
-        self.horizontal_container_3 = self.add_child(Element(self, style = Style(
-            alpha = 0,
-            size = (384, ROW_HEIGHT),
-            alignment = "top-center",
-            offset = (0, self.horizontal_container_2.style.offset[1] + ROW_HEIGHT)
-        )))
-
-        # send item 1 to back
-        self.children.remove(self.horizontal_container_1)
-        self.children.append(self.horizontal_container_1)
-
-        self.window_mode_dropdown = self.horizontal_container_1.add_child(Dropdown(
-            parent = self.horizontal_container_1,
-            options = ["Windowed", "Fullscreen", "Borderless"],
-            on_change = self._on_window_mode_change,
-            style = Style(
-                alignment = "center-right",
-                font = self.manager.get_font("alagard", 20),
-                fore_colour = (255, 255, 255),
-                image = self.manager.get_image("menu/dropdown_head")
-            ),
-            button_style = Style(
-                size = (128, 40),
-                colour = (142, 82, 82),
-                font = self.manager.get_font("alagard", 20),
-                fore_colour = (255, 255, 255)
-            ),
-            hover_style = Style(image = None, size = (128, 40), colour = (186, 117, 106))
-        ))
-
-        self.window_mode_text = self.horizontal_container_1.add_child(Text(
-            parent = self.horizontal_container_1,
-            text = "Window Mode",
-            style = Style(
-                fore_colour = (99, 169, 65),
-                font = self.manager.get_font("alagard", 20),
-                alignment = "center-left",
-            ),
-        ))
-
-        self.sfx_volume_text = self.horizontal_container_2.add_child(Text(
-            parent = self.horizontal_container_2,
-            text = "SFX Volume",
-            style = Style(
-                fore_colour = (99, 169, 65),
-                font = self.manager.get_font("alagard", 20),
-                alignment = "center-left",
-            ),
-        ))
-
-        self.sfx_slider = self.horizontal_container_2.add_child(Slider(
-            parent = self.horizontal_container_2,
-            style = Style(
-                alignment = "center-right",
-                image = self.manager.get_image("menu/slider_bar"),
-            ),
-            knob_style = Style(
-                image = self.manager.get_image("menu/slider_knob"),
-            ),
-            on_change = self._on_sfx_change,
-            on_unfocus = self._on_sfx_unfocus
-        ))
-
-        self.sfx_slider_annotation = self.horizontal_container_2.add_child(Text(
-            parent = self.horizontal_container_2,
-            text = str(int(self.manager.sfx_volume * 100)),
-            style = Style(
-                alignment = "center-left",
-                offset = (self.horizontal_container_2.rect.width + 12, 0),
-                fore_colour = (99, 169, 65),
-                font = self.manager.get_font("alagard", 20)
-            )
-        ))
-
-        self.music_volume_text = self.horizontal_container_3.add_child(Text(
-            parent = self.horizontal_container_3,
-            text = "Music Volume",
-            style = Style(
-                fore_colour = (99, 169, 65),
-                font = self.manager.get_font("alagard", 20),
-                alignment = "center-left",
-            ),
-        ))
-
-        self.music_slider = self.horizontal_container_3.add_child(Slider(
-            parent = self.horizontal_container_3,
-            style = Style(
-                alignment = "center-right",
-                image = self.manager.get_image("menu/slider_bar"),
-            ),
-            knob_style = Style(
-                image = self.manager.get_image("menu/slider_knob"),
-            ),
-            on_change = self._on_music_change
-        ))
-
-        self.music_slider_annotation = self.horizontal_container_3.add_child(Text(
-            parent = self.horizontal_container_3,
-            text = str(int(self.manager.music_volume * 100)),
-            style = Style(
-                alignment = "center-left",
-                offset = (self.horizontal_container_2.rect.width + 12, 0),
-                fore_colour = (99, 169, 65),
-                font = self.manager.get_font("alagard", 20)
-            )
-        ))
-
-        self.sfx_slider.set_value(self.manager.sfx_volume)
-        self.music_slider.set_value(self.manager.music_volume)
-        window_mode = self.manager.game.get_window_mode()
-        self.window_mode_dropdown.set_selected(window_mode[0].upper()+window_mode[1:])
-
-    def _on_window_mode_change(self, mode: str) -> None:
-        match mode:
-            case "Windowed":
-                self.manager.game.set_windowed(STARTUP_SCREEN_SIZE)
-            case "Borderless":
-                self.manager.game.set_fullscreen(borderless=True)
-            case "Fullscreen":
-                self.manager.game.set_fullscreen()
-            case _:
-                raise TypeError(f"Unknown window mode: {mode}")
-
-    def _on_sfx_change(self, value: float) -> None:
-        self.manager.sfx_volume = value
-        self.sfx_slider_annotation.set_text(str(int(value * 100)))
-
-    def _on_music_change(self, value: float) -> None:
-        self.manager.music_volume = value
-        self.music_slider_annotation.set_text(str(int(value * 100)))
-
-    def _on_sfx_unfocus(self, value: float) -> None:
-        self.manager.play_sound("effect/hit", volume = 0.2)
+        self.settings = self.add_child(SettingsScrollable(
+            parent = self,
+            size = (384, self.rect.height - self.divider1.style.offset[1] - 26),
+            yoffset = self.divider1.style.offset[1] + 2)
+        )
 
     def _draw_background(self, size: Vec2) -> pygame.Surface:
         image = pygame.Surface(size)
