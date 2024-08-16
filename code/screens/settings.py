@@ -63,7 +63,7 @@ class KeybindSelector(Element):
             # text
             self.add_child(Text(
                 parent = self,
-                text = action,
+                text = action.replace("-", " ").title(),
                 style = Style(
                     alignment = "center-left",
                     font = self.manager.get_font("alagard", 20),
