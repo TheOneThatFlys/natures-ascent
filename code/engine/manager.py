@@ -47,6 +47,9 @@ class Manager(DebugExpandable):
         self._sfx_volume = 0.1
         self._music_volume = 0.1
 
+        # store current music to prevent multiple playback
+        self._current_music: str = ""
+
         # store keybinds
         self.keybinds: dict[str, int] = {}
 
@@ -223,12 +226,15 @@ class Manager(DebugExpandable):
         return self.assets["sound"][name]
     
     def play_music(self, key: str, volume: float = 1.0, fade_ms: int = 0) -> None:
-        pygame.mixer.music.load(self.get_path_from_key(key, "sound"))
-        pygame.mixer.music.set_volume(volume * self.music_volume * 3)
-        pygame.mixer.music.play(-1, fade_ms=fade_ms)
+        if self._current_music != key:    
+            pygame.mixer.music.load(self.get_path_from_key(key, "sound"))
+            pygame.mixer.music.set_volume(volume * self.music_volume * 3)
+            pygame.mixer.music.play(-1, fade_ms=fade_ms)
+            self._current_music = key
 
     def stop_music(self, fade_ms: int = 0) -> None:
         pygame.mixer.music.fadeout(fade_ms)
+        self._current_music = ""
 
     def play_sound(self, sound_name: str, volume: float = 1.0, loop = False, fade_ms: int = 0) -> None:
         s = self.get_sound(sound_name)
