@@ -39,6 +39,7 @@ class Button(Element):
 
     def on_mouse_down(self, mouse_button: int) -> None:
         super().on_mouse_down(mouse_button)
+        if mouse_button != 1: return
         if self.rect.collidepoint(self.manager.get_mouse_pos(self.style.window)) and self.enabled:
             if self.click_sound: self.manager.play_sound(self.click_sound, 0.3)
             self.on_click(*self.click_args)
