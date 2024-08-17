@@ -15,7 +15,7 @@ from world import FloorManager, Tile, Room
 from util.constants import *
 from util import SaveHelper, AutoSaver
 
-from .common import TextButtonColours, TextButton, IconText, PersistantGameData
+from .common import TextButtonColours, TextButton, IconText, PersistantGameData, OverviewData
 from .settings import SettingsUI
 
 class HealthBarUI(ui.Element):
@@ -499,6 +499,8 @@ class Level(Screen):
         self.debug_mode = 0
         self.paused = False
 
+        self.time_in_run = 0
+
         self._add_ui_components()
 
         if game_data:
@@ -506,7 +508,8 @@ class Level(Screen):
 
         self._data_update_counter = 0
         self.run_autosaver = AutoSaver(self, RUN_SAVE_PATH, 60 * 30) # autosave run data every 30 seconds (only noticeable through crashes)
-        self.run_autosaver.data = self.get_overview_encoded()
+        self.run_autosaver.data = self.get_game_data_encoded()
+
 
         self.manager.play_music("music/forest")
 
@@ -522,7 +525,7 @@ class Level(Screen):
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
         self.pause_ui = PauseUI(self)
 
-    def get_overview_data(self) -> PersistantGameData:
+    def get_game_data(self) -> PersistantGameData:
         return PersistantGameData(
             player_position = self.player.rect.center,
             player_health = self.player.health,
@@ -531,14 +534,15 @@ class Level(Screen):
             spell_id = self.item_pool.get_spell_id(self.player.inventory.spell.__class__),
             coins = self.player.inventory.coins,
             seed = self.floor_manager.seed,
+            time = self.time_in_run,
             rooms_discovered = [coord for (coord, room) in self.floor_manager.rooms.items() if room.activated],
             rooms_cleared = [coord for (coord, room) in self.floor_manager.rooms.items() if room.completed],
             coin_pickups = [x.rect.center for x in self.children if isinstance(x, Coin)],
             health_pickups = [x.rect.center for x in self.children if isinstance(x, Health)]
         )
     
-    def get_overview_encoded(self) -> None:
-        data = self.get_overview_data()
+    def get_game_data_encoded(self) -> None:
+        data = self.get_game_data()
         return SaveHelper.encode_data(pickle.dumps(data))
 
     def load_from_data(self, data: PersistantGameData) -> None:
@@ -567,6 +571,9 @@ class Level(Screen):
             else:
                 room.activate()
 
+        # load run time
+        self.time_in_run = data.time
+
         # set camera position
         self.camera.pos = pygame.Vector2(data.player_position)
 
@@ -575,6 +582,15 @@ class Level(Screen):
             self.add_child(Coin(self, pos, 0))
         for pos in data.health_pickups:
             self.add_child(Health(self, pos))
+
+    def get_overview_data(self) -> OverviewData:
+        return OverviewData(
+            score = self.calculate_score(),
+            time = self.time_in_run
+        )
+    
+    def calculate_score(self) -> int:
+        return 0
 
     def can_autosave(self) -> bool:
         current_room = self.floor_manager.get_room_at_world_pos(self.player.rect.center)
@@ -643,6 +659,12 @@ class Level(Screen):
         else:
             self.master_ui.on_mouse_up(button)
 
+    def on_scroll(self, dx: int, dy: int) -> None:
+        if self.paused:
+            self.pause_ui.on_scroll(dx, dy)
+        else:
+            self.master_ui.on_scroll(dx, dy)
+
     def debug(self) -> None:
         if self.debug_mode == 0: return
 
@@ -694,8 +716,11 @@ class Level(Screen):
         self.run_autosaver.update()
         self._data_update_counter += self.manager.dt
         if self._data_update_counter > 30 and self.can_autosave():
-            self.run_autosaver.data = self.get_overview_encoded()
+            self.run_autosaver.data = self.get_game_data_encoded()
             self._data_update_counter = 0
+
+        # add run time
+        self.time_in_run += self.manager.dt / 60
 
     def render(self, surface: pygame.Surface) -> None:
         # clear game surface

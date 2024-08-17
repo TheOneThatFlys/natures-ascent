@@ -22,7 +22,8 @@ class ScrollableElement(Element):
 
     def _calculate_scroll_bounds(self) -> None:
         lowest_point = max([child.rect.bottom for child in self.get_all_children()])
-        self._scroll_min = -(lowest_point - self.rect.bottom) - 4
+        self._scroll_min = -(lowest_point - self.rect.bottom)
+        if self._scroll_min != 0: self._scroll_min -= 4
 
     T = TypeVar("T")
     def add_child(self, child: T) -> T:
@@ -47,8 +48,13 @@ class ScrollableElement(Element):
     def on_resize(self, new_res: Vec2) -> None:
         super().on_resize(new_res)
         for child in self.get_all_children()[1:]:
-                child.rect.y += self._scroll_amount
+            child.rect.y += self._scroll_amount
         self._calculate_scroll_bounds()
+
+        if self._scroll_amount < self._scroll_min:
+            self._scroll_amount = self._scroll_min
+        if self._scroll_amount > self._scroll_max:
+            self._scroll_amount = self._scroll_max
 
     def render(self, surface: pygame.Surface) -> None:
         blacklisted = []

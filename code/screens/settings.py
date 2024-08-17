@@ -10,23 +10,9 @@ from engine.ui import Element, Style, Text, Button, Dropdown, Slider, Scrollable
 from util import parse_spritesheet
 from util.constants import *
 
-from .common import TextButtonColours
+from .common import TextButtonColours, DividerX
 
 _do_nothing = lambda: None
-
-class DividerX(Element):
-    def __init__(self, parent: Element, y: int, thickness: int = 2, length: int = -1) -> None:
-        self.thickness = thickness
-        self.length = length
-        super().__init__(parent, style = Style(
-            colour = (26, 30, 36),
-            alignment = "top-center",
-            offset = (0, y),
-        ))
-
-    def redraw_image(self) -> None:
-        self.style.size = (self.parent.style.size[0] if self.length == -1 else self.length, self.thickness)
-        super().redraw_image()
 
 class KeybindSelector(Element):
     """Size provided in style is size of one keybind row"""

@@ -117,9 +117,23 @@ class IconText(Element):
 
         self.calculate_position()
 
+class DividerX(Element):
+    def __init__(self, parent: Element, y: int, thickness: int = 2, length: int = -1, colour: Colour = (26, 30, 36)) -> None:
+        self.thickness = thickness
+        self.length = length
+        super().__init__(parent, style = Style(
+            colour = colour,
+            alignment = "top-center",
+            offset = (0, y),
+        ))
+
+    def redraw_image(self) -> None:
+        self.style.size = (self.parent.style.size[0] if self.length == -1 else self.length, self.thickness)
+        super().redraw_image()
+
 @dataclass
 class PersistantGameData:
-    """Data that is persistant across the whole run i.e. current run data"""
+    """Data that is persistant across the whole run i.e. current run data."""
     player_position: Vec2
     player_health: float
     player_iframes: float
@@ -131,8 +145,16 @@ class PersistantGameData:
 
     seed: float
 
+    time: float
+
     rooms_discovered: list[Vec2]
     rooms_cleared: list[Vec2]
 
     coin_pickups: list[Vec2]
     health_pickups: list[Vec2]
+
+@dataclass
+class OverviewData:
+    """Data that is displayed on the game end screen."""
+    score: int
+    time: float
