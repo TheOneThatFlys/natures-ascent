@@ -417,6 +417,7 @@ class PauseUI(ui.Element):
             self.settings_ui.style.size = self.calculate_settings_size()
             for item in self.settings_ui.get_all_children():
                 item.redraw_image()
+            self.settings_ui.on_resize(self.settings_ui.style.size)
 
     def calculate_settings_size(self) -> pygame.Vector2:
         if self.pause_frame == None:
