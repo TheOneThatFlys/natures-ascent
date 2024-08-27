@@ -510,7 +510,6 @@ class Level(Screen):
         self.run_autosaver = AutoSaver(self, RUN_SAVE_PATH, 60 * 30) # autosave run data every 30 seconds (only noticeable through crashes)
         self.run_autosaver.data = self.get_game_data_encoded()
 
-
         self.manager.play_music("music/forest")
 
     def _add_ui_components(self) -> None:
@@ -617,8 +616,12 @@ class Level(Screen):
     def on_key_down(self, key: int, unicode: str) -> None:
         if key == self.manager.keybinds["pause"]:
             self.toggle_pause()
+
+        if self.paused:
+            self.pause_ui.on_key_down(key, unicode)
+            return
             
-        elif key == self.manager.keybinds["map-zoom-in"]:
+        if key == self.manager.keybinds["map-zoom-in"]:
             self.hud_ui.map.increase_scale()
 
         elif key == self.manager.keybinds["map-zoom-out"]:

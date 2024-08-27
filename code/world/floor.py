@@ -10,8 +10,8 @@ from entity import Player, Enemy, Slime, TreeBoss
 from item import Coin, Health
 from util.constants import *
 
-from .tile import Tile, TileSet
-from .interactable import TutorialSign
+from .tile import Tile, TileSet, TileCollection
+from .interactable import Sign
 
 room_directions: list[Direction] = ["left", "right", "up", "down"]
 opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
@@ -147,8 +147,9 @@ class Room(Node):
         self.connections: list[Direction] = []
         self.door_positions: list[tuple[int, int]] = []
 
-        # store reference to each wall tile
+        # store reference to each wall tile and floor tile
         self.wall_tiles: dict[Vec2, Tile] = {}
+        self.floor_tiles: dict[Vec2, Tile] = {}
 
         # store each alive enemy
         self.enemies = pygame.sprite.Group()
@@ -233,6 +234,15 @@ class Room(Node):
             for y in range(self.room_size):
                 self.add_tile(self.parent.grass_tileset.get(random.randint(0, 3)), (x, y), False)
 
+    def optimise_tiles(self) -> None:
+        """Combine tiles into a single sprite for faster rendering"""
+        self.add_child(TileCollection(self, self.floor_tiles.values(), z_index = -1))
+
+        # kill original tiles
+        for tile in self.floor_tiles.values():
+            tile.kill()
+        self.floor_tiles = {}
+
     def get_door_position(self, direction: Direction) -> tuple[Vec2, Vec2]:
         """Get the relative room coordinates of the doors in the specified direction"""
         second_offset = ()
@@ -285,6 +295,8 @@ class Room(Node):
         if collider:
             self.wall_tiles[relative_position] = tile
             self.collide_sprites.add(tile)
+        else:
+            self.floor_tiles[relative_position] = tile
         self.add_child(tile)
 
     def activate(self) -> None:
@@ -323,7 +335,11 @@ class SpawnRoom(Room):
     def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:
         super().__init__(parent, origin, room_size, [], [], ["spawn"])
 
-        self.add_child(TutorialSign(self, (self.bounding_rect.centerx - TILE_SIZE / 2, self.bounding_rect.y + TILE_SIZE)))
+        self.add_child(Sign(
+            self,
+            (self.bounding_rect.centerx - TILE_SIZE / 2, self.bounding_rect.y + TILE_SIZE),
+            f"Press {pygame.key.name(self.manager.keybinds["interact"])} to interact with this sign, but you already knew that, otherwise you wouldn't be reading this."
+        ))
 
         portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
         portal_sprite.image = pygame.transform.scale(self.manager.get_image("tiles/spawn_portal"), (TILE_SIZE * 6, TILE_SIZE * 6))
@@ -350,24 +366,40 @@ class SpawnRoom(Room):
         self.dark_overlay.kill()
         self._activated = True
 
-class BossRoom(Room):
-    def __init__(self, room: Room, boss: Type[Enemy]) -> None:
+class SpecialRoom(Room):
+    def __init__(self, room: Room) -> None:
         super().__init__(
             parent = room.parent,
             origin = room.origin,
             room_size = room.room_size,
             forced_doors = room.connections,
             blacklisted_doors = [direction for direction in room_directions if direction not in room.connections],
-            tags = ["boss"],
-            enemies = {boss: 1}
+            tags = [],
+            enemies = {}
         )
         self.parent.remove_child(room)
+
+class BossRoom(SpecialRoom):
+    def __init__(self, room: Room, boss: Type[Enemy]) -> None:
+        super().__init__(room)
+        self.enemies = {boss: 1}
+        self.tags.append("boss")
 
     def add_enemies(self) -> None:
         for enemy_type, v in self._possible_enemies.items():
             for _ in range(v):
                 e = self.add_child(enemy_type(self, self.bounding_rect.center))
                 self.enemies.add(e)
+
+class ItemRoom(SpecialRoom):
+    def __init__(self, room: Room, item_seed: float) -> None:
+        super().__init__(room)
+
+        self.tags.append("item")
+
+        # self.add_child(ItemChest())
+
+        self.item_seed = item_seed
 
 class FloorManager(Node):
     def __init__(self, parent: Node, room_size: int = 8, target_num: int = 8) -> None:
@@ -403,7 +435,7 @@ class FloorManager(Node):
 
             if new_room_pos in self.rooms: continue
 
-            new_room = self._gen_1x1(new_room_pos)
+            new_room = self._create_room(new_room_pos)
 
             # push new room connections to stack
             for con in new_room.connections:
@@ -412,6 +444,12 @@ class FloorManager(Node):
         # create boss room
         furthest_room = max([room for room in self.rooms.values() if len(room.connections) == 1], key = lambda room: pygame.Vector2(room.origin).magnitude())
         self.rooms[furthest_room.origin] = self.add_child(BossRoom(furthest_room, boss = TreeBoss))
+
+        # create item rooms
+        for _ in range(2):
+            # find a random room that is not special
+            room = random.choice([room for room in self.rooms.values() if not isinstance(room, (SpecialRoom, SpawnRoom))])
+            self.rooms[room.origin] = self.add_child(ItemRoom(room, random.random()))
 
         self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE)))
 
@@ -426,6 +464,33 @@ class FloorManager(Node):
     def _get_type_of_tile(self, wall_tiles: dict[Vec2, Tile], all_tiles: dict[Vec2, Tile] , coord: Vec2) -> Literal["wall", "floor", "world"]:
         return "wall" if coord in wall_tiles else "floor" if coord in all_tiles else "world"
 
+    def _create_room(self, origin: Vec2, tags: list[str] = []) -> Room:
+        # look through neighbours and force connections with them
+        forced_connections = []
+        blacklisted_connections = []
+        for direction, vector in direction_vector.items():
+            neighbour_pos = origin[0] + vector[0], origin[1] + vector[1]
+            if neighbour_pos in self.rooms:
+                neighbour_room = self.rooms[neighbour_pos]
+                if opposite_directions[direction] in neighbour_room.connections:
+                    forced_connections.append(direction)
+                else:
+                    blacklisted_connections.append(direction)
+
+        room = Room(
+            parent = self,
+            origin = origin,
+            room_size = self.room_size,
+            forced_doors = forced_connections,
+            blacklisted_doors = blacklisted_connections,
+            enemies = {Slime: 3},
+            tags = tags,
+        )
+
+        self.rooms[origin] = room
+        self.add_child(room)
+        return room
+    
     def get_room_at_world_pos(self, world_position: Vec2) -> Room:
         return self.rooms[(world_position[0] // self.room_size // TILE_SIZE, world_position[1] // self.room_size // TILE_SIZE)]
 
@@ -511,32 +576,9 @@ class FloorManager(Node):
 
             tile.image = self.wall_tileset.get(tile_index)
 
-    def _gen_1x1(self, origin: Vec2, tags: list[str] = []) -> Room:
-        # look through neighbours and force connections with them
-        forced_connections = []
-        blacklisted_connections = []
-        for direction, vector in direction_vector.items():
-            neighbour_pos = origin[0] + vector[0], origin[1] + vector[1]
-            if neighbour_pos in self.rooms:
-                neighbour_room = self.rooms[neighbour_pos]
-                if opposite_directions[direction] in neighbour_room.connections:
-                    forced_connections.append(direction)
-                else:
-                    blacklisted_connections.append(direction)
-
-        room = Room(
-            parent = self,
-            origin = origin,
-            room_size = self.room_size,
-            forced_doors = forced_connections,
-            blacklisted_doors = blacklisted_connections,
-            enemies = {Slime: 3},
-            tags = tags,
-        )
-
-        self.rooms[origin] = room
-        self.add_child(room)
-        return room
+        # optimise tiles
+        for room in self.rooms.values():
+            room.optimise_tiles()
 
     def update(self) -> None:
         for _, room in self.rooms.items():

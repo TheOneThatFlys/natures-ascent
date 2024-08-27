@@ -54,8 +54,11 @@ def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
             
             # offset the main loop pointer by the length of the escape clause
             index = inside_loop_idx + 1
+        # %% escape
+        elif text[index + 1] == "%":
+            current_section += "%"
+            index += 2
         # invalid escape clause
-        # TODO: add %% escape to mean render raw % sign
         else:
             raise ValueError(f"Rich text render of '{text}' failed: % with no opening bracket.")
 

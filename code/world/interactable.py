@@ -1,7 +1,9 @@
 import pygame
 
 from engine import Node, Sprite, Logger
+from engine.types import *
 from util.constants import *
+from util import render_multiline
 
 class Interactable(Sprite):
     def __init__(self, parent: Node, groups: list[str] = []) -> None:
@@ -19,24 +21,43 @@ class Interactable(Sprite):
         """Called when current interact focus is removed from object."""
         pass
 
-class TutorialSign(Interactable):
-    def __init__(self, parent: Node, position) -> None:
+class Sign(Interactable):
+    def __init__(self, parent: Node, position: Vec2, text: str) -> None:
         super().__init__(parent)
         self.image = pygame.transform.scale_by(self.manager.get_image("tiles/sign"), PIXEL_SCALE)
         self.rect = self.image.get_rect(topleft = position)
 
-        self.key_hint = Sprite(self)
-        self.key_hint.image = pygame.Surface((16, 16))
-        self.key_hint.image.fill((255, 255, 255))
-        self.key_hint.rect = self.key_hint.image.get_rect(centerx = self.rect.centerx, bottom = self.rect.top - 8)
-        self.add_child(self.key_hint)
+        rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, (255, 255, 255), TILE_SIZE * 3, alignment = "center")
+
+        self.text_box = Sprite(self)
+        self.text_box.image = pygame.Surface((rendered_text.get_width() + 8, rendered_text.get_height() + 8))
+        self.text_box.rect = self.text_box.image.get_rect(centerx = self.rect.centerx, bottom = self.rect.top - 8)
+        self.text_box.z_index = 1
+        
+        self.text_box.image.fill((91, 49, 56))
+        pygame.draw.rect(self.text_box.image, (51, 22, 31), self.text_box.image.get_rect(), 2)
+        self.text_box.image.blit(rendered_text, rendered_text.get_rect(center = (self.text_box.image.get_width() / 2, self.text_box.image.get_height() / 2)))
+
+        self.add_child(self.text_box)
+
+        self.text_active = False
+
+    def activate_text(self) -> None:
+        if not self.text_active:
+            self.text_active = True
+            self.text_box.add(self.manager.groups["render"])
+
+    def deactivate_text(self) -> None:
+        if self.text_active:
+            self.text_active = False
+            self.text_box.remove(self.manager.groups["render"])
 
     def interact(self) -> None:
-        pass
-
-    def on_focus(self) -> None:
-        self.key_hint.add(self.manager.groups["render"])
+        if self.text_active:
+            self.deactivate_text()
+        else:
+            self.activate_text()
 
     def on_unfocus(self) -> None:
-        self.key_hint.remove(self.manager.groups["render"])
+        self.deactivate_text()
     

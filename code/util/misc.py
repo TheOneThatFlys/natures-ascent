@@ -1,5 +1,7 @@
 import pygame, math
+from typing import Optional, Literal
 from engine.types import *
+from engine.ui import render_rich_text
 
 def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Surface:
     """Scales a pygame surface by a given factor and returns it (NOT IN PLACE)"""
@@ -121,3 +123,40 @@ def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: 
                     newa[ny][nx] = image.map_rgb(outline_colour)
 
     return pygame.transform.scale_by(new, pixel_scale)
+
+AlignmentType = Literal["left", "center", "right"]
+def render_multiline(font: pygame.font.Font, text: str, colour: Colour, max_width: int, antialias: bool = True, alignment: AlignmentType = "left") -> pygame.Surface:
+    """Render text with linewrap, supports rich text"""
+
+    lines = []
+    words = text.split(" ")
+    current_line = ""
+    for word in words:
+        line_length = font.size(current_line + " " + word)[0]
+        if line_length > max_width:
+            lines.append(current_line)
+            current_line = word
+        else:
+            current_line += " " + word
+    if current_line != "":
+        lines.append(current_line)
+
+    rendered_lines = [font.render(line, antialias, colour) for line in lines]
+
+    surf = pygame.Surface((
+        max(s.get_width() for s in rendered_lines),
+        sum(s.get_height() for s in rendered_lines)
+    ), pygame.SRCALPHA)
+
+    line_height = max(s.get_height() for s in rendered_lines)
+    for i, line in enumerate(rendered_lines):
+        rect = line.get_rect(y = line_height * i)
+        if alignment == "left":
+            rect.x = 0
+        elif alignment == "center":
+            rect.centerx = surf.get_width() / 2
+        elif alignment == "right":
+            rect.right = surf.get_width()
+        surf.blit(line, rect)
+
+    return surf

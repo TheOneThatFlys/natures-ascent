@@ -55,7 +55,9 @@ class GameOverviewScreen(Screen):
             parent = self.master_container,
             text = f"{time.strftime("%H:%M:%S", time.gmtime(game_data.time))}.{str(round(game_data.time % 1, 3)).removeprefix("0.")}",
             style = Style(
-                fore_colour = (255, 255, 255),
+                fore_colour = colours.hover_colour,
+                colour = colours.hover_colour_shadow,
+                text_shadow = 1,
                 font = self.manager.get_font("alagard", 24),
                 alignment = "top-center",
                 offset = (0, self.time_text.rect.bottom + 8)
@@ -75,11 +77,13 @@ class GameOverviewScreen(Screen):
             )
         ))
 
-        self.time_value = self.master_container.add_child(Text(
+        self.score_value = self.master_container.add_child(Text(
             parent = self.master_container,
             text = str(game_data.score),
             style = Style(
-                fore_colour = (255, 255, 255),
+                fore_colour = colours.hover_colour,
+                colour = colours.hover_colour_shadow,
+                text_shadow = 1,
                 font = self.manager.get_font("alagard", 24),
                 alignment = "top-center",
                 offset = (0, self.score_text.rect.bottom + 8)

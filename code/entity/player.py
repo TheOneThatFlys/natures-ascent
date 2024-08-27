@@ -103,6 +103,10 @@ class InteractionOverlay(Sprite):
 
             self.current_focus = closest_object
 
+        pressed = pygame.key.get_just_pressed()
+        if pressed[self.manager.keybinds["interact"]] and self.current_focus != None:
+            self.current_focus.interact()
+
 class Player(Entity):
     def __init__(self, parent: Node, start_pos: pygame.Vector2) -> None:
         super().__init__(
