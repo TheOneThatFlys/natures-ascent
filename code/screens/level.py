@@ -12,8 +12,8 @@ from engine.types import *
 from entity import Player, HealthBar
 from item import MeleeWeaponAttack, ItemPool, Coin, Health
 from world import FloorManager, Tile, Room
-from util.constants import *
 from util import SaveHelper, AutoSaver
+from util.constants import *
 
 from .common import TextButtonColours, TextButton, IconText, PersistantGameData, OverviewData
 from .settings import SettingsUI
@@ -85,10 +85,10 @@ class MapUI(ui.Element):
         self.player: Player = self.manager.get_object("player")
         self.scale = scale
 
-        self.border_colour = (51, 22, 31)
-        self.background_colour = (91, 49, 56)
-        self.room_colour = (162, 109, 91)
-        self.unactivated_colour = self.border_colour
+        self.border_colour = UI_DARKBROWN
+        self.background_colour = UI_BROWN
+        self.room_colour = UI_LIGHTBROWN
+        self.unactivated_colour = UI_DARKBROWN
 
         self.player_icon = pygame.transform.scale_by(self.manager.get_image("map/player_icon"), 0.5)
         self.spawn_icon = self.manager.get_image("map/spawn")
@@ -105,7 +105,7 @@ class MapUI(ui.Element):
             padding = 4,
             style = ui.Style(
                 font = self.manager.get_font("alagard", 16),
-                fore_colour = (218, 224, 234),
+                fore_colour = TEXT_WHITE,
                 alignment = "bottom-right",
                 offset = (TILE_SIZE / 8, TILE_SIZE / 8)
             )
@@ -236,7 +236,7 @@ class InventoryUI(ui.Element):
                 offset = (4, 4),
                 alignment = "bottom-left",
                 alpha = 100,
-                colour = (200, 200, 200)
+                colour = LIGHTGRAY
             )
         ))
 
@@ -248,8 +248,8 @@ class InventoryUI(ui.Element):
     def _draw_slot_image(self, size: int, icon_key: str = "") -> pygame.Surface:
         extra_space = self.border + self.padding
         image = pygame.Surface((size, size))
-        image.fill((91, 49, 56))
-        pygame.draw.rect(image, (51, 22, 31), (0, 0, size , size), self.border)
+        image.fill(UI_BROWN)
+        pygame.draw.rect(image, UI_DARKBROWN, (0, 0, size , size), self.border)
 
         if icon_key:
             icon = self.manager.get_image(icon_key)
@@ -293,11 +293,11 @@ class HudUI(ui.Element):
         self.health_bar = self.add_child(
             HealthBarUI(
                 self,
-                health_colour = (99, 169, 65),
-                shadow_colour = (46, 109, 53),
-                border_colour = (51, 22, 31),
-                background_colour = (91, 49, 56),
-                text_colour = (51, 22, 31)
+                health_colour = PLAYER_GREEN,
+                shadow_colour = PLAYER_DARKGREEN,
+                border_colour = UI_DARKBROWN,
+                background_colour = UI_BROWN,
+                text_colour = UI_DARKBROWN
             )
         )
 
@@ -320,7 +320,7 @@ class HudUI(ui.Element):
             padding = 4,
             style = ui.Style(
                 font = self.manager.get_font("alagard", 16),
-                fore_colour = (218, 224, 234),
+                fore_colour = TEXT_WHITE,
                 alignment = "top-right",
                 offset = (self.map.explored_text.style.offset[0] + self.map.style.offset[0], self.map.rect.bottom + 8)
             )
@@ -356,8 +356,6 @@ class PauseUI(ui.Element):
             )
         ))
 
-        button_colours = TextButtonColours()
-
         self.pause_text = self.main_element.add_child(ui.Text(
             parent = self.main_element,
             text = "Paused",
@@ -365,8 +363,8 @@ class PauseUI(ui.Element):
                 alignment = "top-center",
                 font = self.manager.get_font("alagard", 54),
                 offset = (0, TILE_SIZE / 3),
-                fore_colour = button_colours.colour,
-                colour = button_colours.colour_shadow,
+                fore_colour = TEXT_GREEN,
+                colour = TEXT_DARKGREEN,
                 text_shadow = 2
             )
         ))
@@ -376,10 +374,12 @@ class PauseUI(ui.Element):
             style = ui.Style(
                 alignment = "bottom-center",
                 offset = (0, - TILE_SIZE / 8),
-                colour = (26, 30, 36),
+                colour = BG_DARKNAVY,
                 size = (self.main_element.rect.width * 0.8, 4),
             )
         ))
+
+        button_colours = TextButtonColours()
 
         self.resume_button = self.main_element.add_child(TextButton(
             parent = self.main_element,
@@ -436,8 +436,8 @@ class PauseUI(ui.Element):
 
     def _draw_background(self, size: Vec2, border_width: int = 8) -> pygame.Surface:
         surf = pygame.Surface(size)
-        surf.fill((37, 44, 55))
-        pygame.draw.rect(surf, (26, 30, 36), [0, 0, *size], width = border_width)
+        surf.fill(BG_NAVY)
+        pygame.draw.rect(surf, BG_DARKNAVY, [0, 0, *size], width = border_width)
         return surf
 
     def _blur_image(self, image: pygame.Surface, strength: int = 4) -> pygame.Surface:
@@ -683,26 +683,26 @@ class Level(Screen):
             if self.debug_mode == 3 and hasattr(item, "z_index"):
                 text_pos = self.camera.convert_coords(pygame.Vector2(item.rect.center))
                 if self.rect.collidepoint(text_pos):
-                    z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, (0, 255, 0))
+                    z_text = self.manager.get_font("alagard", 16).render(str(item.z_index), False, GREEN)
                     self.game_surface.blit(z_text, z_text.get_rect(center = text_pos))
 
             # ignore tiles unless on debug 2
             if isinstance(item, Tile) and self.debug_mode != 2: continue
 
             # draw active damage hitboxes
-            outline_colour = (255, 0, 0) if isinstance(item, MeleeWeaponAttack) and item.in_hit_frames() else (0, 0, 255)
+            outline_colour = RED if isinstance(item, MeleeWeaponAttack) and item.in_hit_frames() else BLUE
 
             # draw collision boxes
             pygame.draw.rect(self.game_surface, outline_colour, self.camera.convert_rect(item.rect), width = 1)
             # draw hitboxes
             if hasattr(item, "hitbox"):
-                pygame.draw.rect(self.game_surface, (255, 0, 0), self.camera.convert_rect(item.hitbox), width = 1)
+                pygame.draw.rect(self.game_surface, RED, self.camera.convert_rect(item.hitbox), width = 1)
 
         # and also draw room rects
         if self.debug_mode == 2:
             for room in self.floor_manager.rooms.values():
-                pygame.draw.rect(self.game_surface, (0, 255, 0), self.camera.convert_rect(room.bounding_rect), 1)
-                pygame.draw.rect(self.game_surface, (0, 255, 0), self.camera.convert_rect(room.inside_rect), 3)
+                pygame.draw.rect(self.game_surface, GREEN, self.camera.convert_rect(room.bounding_rect), 1)
+                pygame.draw.rect(self.game_surface, GREEN, self.camera.convert_rect(room.inside_rect), 3)
 
     def update(self) -> None:
         # check for pause override
@@ -726,8 +726,8 @@ class Level(Screen):
         self.time_in_run += self.manager.dt / 60
 
     def render(self, surface: pygame.Surface) -> None:
-        # clear game surface
-        self.game_surface.fill((51, 22, 31))
+        # clear game surface, which also fills in walls
+        self.game_surface.fill(UI_DARKBROWN)
 
         # render objects with layered camera
         self.camera.render(

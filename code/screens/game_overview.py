@@ -18,14 +18,12 @@ class GameOverviewScreen(Screen):
         self.master_container.style.image = self._draw_background(self.rect.size)
         self.master_container.redraw_image()
 
-        colours = TextButtonColours()
-
         self.title_text = self.master_container.add_child(Text(
             parent = self.master_container,
             text = "Run Complete" if end_type == "win" else "You Died",
             style = Style(
-                fore_colour = colours.colour,
-                colour = colours.colour_shadow,
+                fore_colour = TEXT_GREEN,
+                colour = TEXT_DARKGREEN,
                 text_shadow = 2,
                 font = self.manager.get_font("alagard", 72),
                 alignment = "top-center",
@@ -42,8 +40,8 @@ class GameOverviewScreen(Screen):
             parent = self.master_container,
             text = "Time Elapsed",
             style = Style(
-                fore_colour = colours.colour,
-                colour = colours.colour_shadow,
+                fore_colour = TEXT_GREEN,
+                colour = TEXT_DARKGREEN,
                 text_shadow = 2,
                 font = self.manager.get_font("alagard", 32),
                 alignment = "top-center",
@@ -55,8 +53,8 @@ class GameOverviewScreen(Screen):
             parent = self.master_container,
             text = f"{time.strftime("%H:%M:%S", time.gmtime(game_data.time))}.{str(round(game_data.time % 1, 3)).removeprefix("0.")}",
             style = Style(
-                fore_colour = colours.hover_colour,
-                colour = colours.hover_colour_shadow,
+                fore_colour = TEXT_BROWN,
+                colour = TEXT_DARKBROWN,
                 text_shadow = 1,
                 font = self.manager.get_font("alagard", 24),
                 alignment = "top-center",
@@ -68,8 +66,8 @@ class GameOverviewScreen(Screen):
             parent = self.master_container,
             text = "Score",
             style = Style(
-                fore_colour = colours.colour,
-                colour = colours.colour_shadow,
+                fore_colour = TEXT_GREEN,
+                colour = TEXT_DARKGREEN,
                 text_shadow = 2,
                 font = self.manager.get_font("alagard", 32),
                 alignment = "top-center",
@@ -81,8 +79,8 @@ class GameOverviewScreen(Screen):
             parent = self.master_container,
             text = str(game_data.score),
             style = Style(
-                fore_colour = colours.hover_colour,
-                colour = colours.hover_colour_shadow,
+                fore_colour = TEXT_BROWN,
+                colour = TEXT_DARKBROWN,
                 text_shadow = 1,
                 font = self.manager.get_font("alagard", 24),
                 alignment = "top-center",
@@ -103,7 +101,7 @@ class GameOverviewScreen(Screen):
             parent = self.continue_container,
             text = "Continue",
             yoffset = 0,
-            colours = colours,
+            colours = TextButtonColours(),
             on_click = self._on_continue,
         ))
 
@@ -111,8 +109,8 @@ class GameOverviewScreen(Screen):
 
     def _draw_background(self, size: Vec2) -> pygame.Surface:
         image = pygame.Surface(size)
-        image.fill((37, 44, 55))
-        pygame.draw.rect(image, (26, 30, 36), (0, 0, *size), 24)
+        image.fill(BG_NAVY)
+        pygame.draw.rect(image, BG_DARKNAVY, (0, 0, *size), 24)
         return image
 
     def on_resize(self, new_res: Vec2) -> None:

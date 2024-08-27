@@ -27,15 +27,15 @@ class Sign(Interactable):
         self.image = pygame.transform.scale_by(self.manager.get_image("tiles/sign"), PIXEL_SCALE)
         self.rect = self.image.get_rect(topleft = position)
 
-        rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, (255, 255, 255), TILE_SIZE * 3, alignment = "center")
+        rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, TEXT_WHITE, TILE_SIZE * 3, alignment = "center")
 
         self.text_box = Sprite(self)
         self.text_box.image = pygame.Surface((rendered_text.get_width() + 8, rendered_text.get_height() + 8))
         self.text_box.rect = self.text_box.image.get_rect(centerx = self.rect.centerx, bottom = self.rect.top - 8)
         self.text_box.z_index = 1
         
-        self.text_box.image.fill((91, 49, 56))
-        pygame.draw.rect(self.text_box.image, (51, 22, 31), self.text_box.image.get_rect(), 2)
+        self.text_box.image.fill(UI_ALTBROWN)
+        pygame.draw.rect(self.text_box.image, UI_BROWN, self.text_box.image.get_rect(), 2)
         self.text_box.image.blit(rendered_text, rendered_text.get_rect(center = (self.text_box.image.get_width() / 2, self.text_box.image.get_height() / 2)))
 
         self.add_child(self.text_box)

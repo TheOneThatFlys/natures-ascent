@@ -33,9 +33,9 @@ class Entity(Sprite):
         self.health_bar = self.add_child(
             HealthBar(
                 self,
-                border_colour = (0, 0, 0),
+                border_colour = UI_DARKBROWN,
                 border_size = 2,
-                health_colour = (255, 10, 10),
+                health_colour = ENEMY_RED,
             )
         )
 

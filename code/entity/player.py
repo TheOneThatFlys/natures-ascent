@@ -126,7 +126,7 @@ class Player(Entity):
         self.hitbox = pygame.Rect(0, 0, self.rect.width - 18, self.rect.height)
         self.hitbox_offset = pygame.Vector2(2, 0)
 
-        self.health_bar.health_colour = (60, 222, 34)
+        self.health_bar.health_colour = PLAYER_GREEN
 
         self.last_facing = LastFacing()
         self.walking = False

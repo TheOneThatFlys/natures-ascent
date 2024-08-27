@@ -35,7 +35,7 @@ class DarkOverlay(Sprite):
         self.update_alpha()
 
     def draw_image(self) -> None:
-        self.image.fill((0, 0, 0))
+        self.image.fill(BLACK)
         floor_manager: FloorManager = self.manager.get_object("floor-manager")
 
         # draw door fades

@@ -1,7 +1,8 @@
 import pygame, math
 from typing import Optional, Literal
 from engine.types import *
-from engine.ui import render_rich_text
+
+from .constants import *
 
 def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Surface:
     """Scales a pygame surface by a given factor and returns it (NOT IN PLACE)"""
@@ -10,24 +11,21 @@ def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Sur
 
 def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7, offset: int = 0, border_radius: int = 0) -> pygame.Surface:
     """Draw a striped background of given sized and scale onto surface"""
-    COLOUR_ONE = (37, 44, 55)
-    COLOUR_TWO = (26, 30, 36)
-
     bg = pygame.Surface((screen_size[0] / pixel_scale, screen_size[1] / pixel_scale), pygame.SRCALPHA)
-    bg.fill(COLOUR_ONE)
-    pygame.draw.rect(bg, COLOUR_TWO, [0, 0, *bg.get_size()], width = line_thickness // 2)
+    bg.fill(BG_NAVY)
+    pygame.draw.rect(bg, BG_DARKNAVY, [0, 0, *bg.get_size()], width = line_thickness // 2)
 
     n_lines = int((max(screen_size[0], screen_size[1]) + min(screen_size[0], screen_size[1])) / pixel_scale / line_thickness)
     for x in range(n_lines):
         if x % 2 == 0:
             d = x * line_thickness + line_thickness / 2 + offset
             e = line_thickness
-            pygame.draw.line(bg, COLOUR_TWO, (d + e, -e), (-e, d + e), line_thickness)
+            pygame.draw.line(bg, BG_DARKNAVY, (d + e, -e), (-e, d + e), line_thickness)
 
     if border_radius > 0:
         mask = pygame.Surface(bg.get_size())
-        pygame.draw.rect(mask, (255, 255, 255), [0, 0, *mask.get_size()], border_radius = border_radius)
-        mask.set_colorkey((0, 0, 0))
+        pygame.draw.rect(mask, WHITE, [0, 0, *mask.get_size()], border_radius = border_radius)
+        mask.set_colorkey(BLACK)
         mask = pygame.mask.from_surface(mask)
         bg = mask.to_surface(setsurface = bg, unsetcolor = None)
 
@@ -91,7 +89,7 @@ def sign(n: float) -> Literal[1, -1, 0]:
     if n < 0: return -1
     return 0
 
-def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: Colour = (255, 255, 255)) -> pygame.Surface:
+def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: Colour = WHITE) -> pygame.Surface:
     """Creates an outline around the image using the image's alpha values. The resulting image is the image size + 2 * ``pixel_scale`` to account for extra space."""
     # scale image to pixel scale
     img = pygame.transform.scale_by(image, 1 / pixel_scale)
@@ -127,7 +125,6 @@ def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: 
 AlignmentType = Literal["left", "center", "right"]
 def render_multiline(font: pygame.font.Font, text: str, colour: Colour, max_width: int, antialias: bool = True, alignment: AlignmentType = "left") -> pygame.Surface:
     """Render text with linewrap, supports rich text"""
-
     lines = []
     words = text.split(" ")
     current_line = ""

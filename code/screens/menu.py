@@ -36,20 +36,15 @@ class Menu(Screen):
                 style = Style(
                     alignment = "top-center",
                     offset = (0, 64),
-                    fore_colour = (99, 169, 65),
-                    colour = (23, 68, 41),
+                    fore_colour = TEXT_GREEN,
+                    colour = TEXT_DARKGREEN,
                     text_shadow = 2,
                     font = self.manager.get_font("alagard", 72),
                 )
             )
         )
 
-        button_colours = TextButtonColours(
-            colour = (99, 169, 65),
-            colour_shadow = (23, 68, 41),
-            hover_colour = (95, 41, 46),
-            hover_colour_shadow = (51, 22, 31)
-        )
+        button_colours = TextButtonColours()
 
         can_continue_run = os.path.exists(RUN_SAVE_PATH)
 
@@ -157,8 +152,8 @@ class CreditsScreen(Screen):
                 style = Style(
                     alignment = "top-center",
                     offset = (0, 64),
-                    fore_colour = (99, 169, 65),
-                    colour = (23, 68, 41),
+                    fore_colour = TEXT_GREEN,
+                    colour = TEXT_DARKGREEN,
                     text_shadow = 2,
                     font = self.manager.get_font("alagard", 72),
                 )
@@ -182,7 +177,7 @@ This game created for entertainment purposes only. Any attempt to to use this pr
                     font = self.manager.get_font("alagard", 16),
                     size = (self.rect.width - 100, self.rect.height - 200),
                     colour = (0, 0, 0, 0),
-                    fore_colour = (255, 255, 255),
+                    fore_colour = TEXT_WHITE,
                 )
             )
         )

@@ -10,7 +10,7 @@ from engine.ui import Element, Style, Text, Button, Dropdown, Slider, Scrollable
 from util import parse_spritesheet
 from util.constants import *
 
-from .common import TextButtonColours, DividerX
+from .common import DividerX
 
 _do_nothing = lambda: None
 
@@ -76,7 +76,7 @@ class KeybindSelector(Element):
                 text = self.translate_key(key),
                 style = Style(
                     font = self.manager.get_font("alagard", 20),
-                    fore_colour = (255, 255, 255),
+                    fore_colour = TEXT_WHITE,
                     alignment = "center-center"
                 )
             ))
@@ -129,8 +129,6 @@ class SettingsScrollable(ScrollableElement):
             alpha = 0,
         ))
 
-        button_colours = TextButtonColours()
-
         ROW_WIDTH = size[0]
         ROW_HEIGHT = 40
         self.horizontal_container_1 = self.add_child(Element(self, style = Style(
@@ -161,23 +159,23 @@ class SettingsScrollable(ScrollableElement):
             style = Style(
                 alignment = "center-right",
                 font = self.manager.get_font("alagard", 20),
-                fore_colour = (255, 255, 255),
+                fore_colour = TEXT_WHITE,
                 image = self.manager.get_image("menu/dropdown_head")
             ),
             button_style = Style(
                 size = (128, 40),
-                colour = (142, 82, 82),
+                colour = UI_ALTBROWN,
                 font = self.manager.get_font("alagard", 20),
-                fore_colour = (255, 255, 255)
+                fore_colour = TEXT_WHITE
             ),
-            hover_style = Style(image = None, size = (128, 40), colour = (186, 117, 106))
+            hover_style = Style(image = None, size = (128, 40), colour = UI_ALTLIGHTBROWN)
         ))
 
         self.window_mode_text = self.horizontal_container_1.add_child(Text(
             parent = self.horizontal_container_1,
             text = "Window Mode",
             style = Style(
-                fore_colour = button_colours.colour,
+                fore_colour = TEXT_GREEN,
                 font = self.manager.get_font("alagard", 20),
                 alignment = "center-left",
             ),
@@ -187,7 +185,7 @@ class SettingsScrollable(ScrollableElement):
             parent = self.horizontal_container_2,
             text = "SFX Volume",
             style = Style(
-                fore_colour = button_colours.colour,
+                fore_colour = TEXT_GREEN,
                 font = self.manager.get_font("alagard", 20),
                 alignment = "center-left",
             ),
@@ -212,7 +210,7 @@ class SettingsScrollable(ScrollableElement):
             style = Style(
                 alignment = "center-left",
                 offset = (self.horizontal_container_2.rect.width + 12, 0),
-                fore_colour = button_colours.colour,
+                fore_colour = TEXT_GREEN,
                 font = self.manager.get_font("alagard", 20)
             )
         ))
@@ -221,7 +219,7 @@ class SettingsScrollable(ScrollableElement):
             parent = self.horizontal_container_3,
             text = "Music Volume",
             style = Style(
-                fore_colour = button_colours.colour,
+                fore_colour = TEXT_GREEN,
                 font = self.manager.get_font("alagard", 20),
                 alignment = "center-left",
             ),
@@ -245,7 +243,7 @@ class SettingsScrollable(ScrollableElement):
             style = Style(
                 alignment = "center-left",
                 offset = (self.horizontal_container_2.rect.width + 12, 0),
-                fore_colour = button_colours.colour,
+                fore_colour = TEXT_GREEN,
                 font = self.manager.get_font("alagard", 20)
             )
         ))
@@ -263,8 +261,8 @@ class SettingsScrollable(ScrollableElement):
             style = Style(
                 alignment = "top-center",
                 offset = (0, self.section_divider.style.offset[1] + self.section_divider.rect.height + 4),
-                fore_colour = button_colours.colour,
-                colour = button_colours.colour_shadow,
+                fore_colour = TEXT_GREEN,
+                colour = TEXT_DARKGREEN,
                 font = self.manager.get_font("alagard", 32),
                 text_shadow = 2
             )
@@ -275,7 +273,7 @@ class SettingsScrollable(ScrollableElement):
             size = (ROW_WIDTH, ROW_HEIGHT),
             alignment = "top-center",
             offset = (0, self.controls_header.style.offset[1] + self.controls_header.rect.height),
-            fore_colour = button_colours.colour
+            fore_colour = TEXT_GREEN
         )))
 
         # send item 1 to back
@@ -319,16 +317,14 @@ class SettingsUI(Element):
             )
         )
 
-        button_colours = TextButtonColours()
-
         self.title_text = self.add_child(Text(
             parent = self,
             text = "Settings",
             style = Style(
                 alignment = "top-center",
                 offset = (0, 32),
-                fore_colour = button_colours.colour,
-                colour = button_colours.colour_shadow,
+                fore_colour = TEXT_GREEN,
+                colour = TEXT_DARKGREEN,
                 font = self.manager.get_font("alagard", 72),
                 text_shadow = 2
             )
@@ -356,8 +352,8 @@ class SettingsUI(Element):
 
     def _draw_background(self, size: Vec2) -> pygame.Surface:
         image = pygame.Surface(size)
-        image.fill((37, 44, 55))
-        pygame.draw.rect(image, (26, 30, 36), (0, 0, *size), 24)
+        image.fill(BG_NAVY)
+        pygame.draw.rect(image, BG_DARKNAVY, (0, 0, *size), 24)
         return image
     
     def redraw_image(self) -> None:

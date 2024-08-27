@@ -5,14 +5,16 @@ from engine.ui import Element, Text, Style, Button
 from engine.types import *
 from typing import Callable, Iterable, Optional
 
+from util.constants import *
+
 @dataclass
 class TextButtonColours:
-    colour: Colour = (99, 169, 65)
-    colour_shadow: Colour = (23, 68, 41)
-    hover_colour: Colour = (95, 41, 46)
-    hover_colour_shadow: Colour = (51, 22, 31)
-    disabled_colour: Colour = (100, 100, 100)
-    disabled_colour_shadow: Colour = (10, 10, 10)
+    colour: Colour = TEXT_GREEN
+    colour_shadow: Colour = TEXT_DARKGREEN
+    hover_colour: Colour = TEXT_BROWN
+    hover_colour_shadow: Colour = TEXT_DARKBROWN
+    disabled_colour: Colour = TEXT_GRAY
+    disabled_colour_shadow: Colour = TEXT_DARKGRAY
 
 class TextButton(Button):
     def __init__(
@@ -118,7 +120,7 @@ class IconText(Element):
         self.calculate_position()
 
 class DividerX(Element):
-    def __init__(self, parent: Element, y: int, thickness: int = 2, length: int = -1, colour: Colour = (26, 30, 36)) -> None:
+    def __init__(self, parent: Element, y: int, thickness: int = 2, length: int = -1, colour: Colour = BG_DARKNAVY) -> None:
         self.thickness = thickness
         self.length = length
         super().__init__(parent, style = Style(
