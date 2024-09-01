@@ -111,7 +111,7 @@ class Manager(DebugExpandable):
     def remove_object(self, id: str) -> None:
         del self.objects[id]
 
-    def get_object(self, id: str):
+    def get_object(self, id: str) -> Node:
         return self.objects[id]
 
     def add_groups(self, names: list[str]) -> None:

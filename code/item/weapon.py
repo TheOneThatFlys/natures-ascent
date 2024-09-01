@@ -4,7 +4,7 @@ if TYPE_CHECKING:
     from entity import Player
     from world import FloorManager
 
-import pygame, random
+import pygame
 
 from engine import Sprite, Node, Logger
 from engine.types import *
@@ -19,7 +19,10 @@ class Weapon(Node):
     """
     def __init__(self, parent: Player, animation_key: str = "", sound_key: str = "", icon_key: str = "error", cooldown_time: int = 40) -> None:
         super().__init__(parent)
-        self.player = parent
+        try:
+            self.player: Player = self.manager.get_object("player")
+        except KeyError:
+            self.player = parent
 
         self.animation_key = animation_key
         self.sound_key = sound_key
@@ -283,58 +286,45 @@ class DashSpell(Spell):
         self.add_child(DashSpell.__FrictionNormaliser(self))
         self.player.animation_manager.set_animation("dash-" + self.player.last_facing.overall)
 
-T = TypeVar("T")
-
+Item = Weapon|Spell
 class ItemPool(Node):
     def __init__(self, parent: Node) -> None:
         super().__init__(parent)
         self.id = "itempool"
 
-        self.weapons = [Sword, Spear]
-        self.spells = [FireballSpell, DashSpell]
+        # store items for id tracking
+        self.items = [
+            Sword, Spear,
+            FireballSpell, DashSpell,
+        ]
 
-        self.weapon_weights = {
+        self.weights = {
             Spear: 1,
-        }
-
-        self.spell_weights = {
             FireballSpell: 1,
             DashSpell: 1,
         }
 
-    def _choose_weighted(self, weighted_dict: dict[T, int]) -> T:
-        if not weighted_dict: raise ValueError("Need to provide a non-empty weighted dictionary.")
-        total_weight = sum(weighted_dict.values())
-        n = random.randrange(total_weight)
-
-        for k, v in weighted_dict.items():
-            n -= v
-            if n < 0:
-                return k
-            
-        Logger.error("Something strange happened while rolling weights.", Exception())
-
-    def get_weapon_id(self, t: Type[Weapon] | None) -> int:
+        self.found_items: list[int] = []
+    
+    def get_item_id(self, t: Item|Type[Item]|None) -> int:
         if t == None: return -1
-        return self.weapons.index(t)
-    
-    def get_spell_id(self, t: Type[Spell] | None) -> int:
-        if t == None: return -1
-        return self.spells.index(t)
+        if not isinstance(t, Type): t = type(t)
+        return self.items.index(t)
 
-    def get_weapon(self, id: int) -> Type[Weapon]:
-        return self.weapons[id]
-    
-    def get_spell(self, id: int) -> Type[Spell]:
-        return self.spells[id]
+    def get_item(self, id: int) -> Type[Item]:
+        return self.items[id]
 
-    def roll_weapon(self) -> Type[Weapon]:
-        weapon = self._choose_weighted(self.weapon_weights)
-        del self.weapon_weights[weapon]
-        return weapon
+    def roll(self) -> Type[Item]:
+        a = util.choose_weighted(self.weights)
+        self.found_items.append(self.get_item_id(a))
+        del self.weights[a]
+        return a
     
-    def roll_spell(self) -> Type[Spell]:
-        spell = self._choose_weighted(self.spell_weights)
-        del self.spell_weights[spell]
-        return spell
+    def restore_from_found(self, found: list[int]) -> None:
+        self.found_items = found
+        for item_id in found:
+            del self.weights[self.get_item(item_id)]
+        
+    def is_empty(self) -> None:
+        return len(self.items) == 0
         

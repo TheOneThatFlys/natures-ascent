@@ -11,7 +11,7 @@ from engine.types import *
 from util import parse_spritesheet, scale_surface_by, get_closest_direction, create_outline
 from util.constants import *
 
-from item import Weapon, Spell, Sword, ItemPool
+from item import Weapon, Spell, Sword
 
 from .entity import Entity
 from .stats import PlayerStats, player_stats
@@ -83,6 +83,15 @@ class InteractionOverlay(Sprite):
 
         self.current_focus: Interactable | None = None
 
+    def update_outline(self) -> None:
+        if self.current_focus == None:
+            self.image = pygame.Surface((0, 0))
+        else:
+            self.image = create_outline(self.current_focus.image, pixel_scale = self.current_focus.pixel_scale)
+            self.rect = self.image.get_rect(center = self.current_focus.rect.center)
+            self.z_index = self.current_focus.z_index
+            self.current_focus.on_focus()
+
     def update(self) -> None:
         closest_object: Interactable = min(
             self.manager.groups["interact"],
@@ -93,15 +102,11 @@ class InteractionOverlay(Sprite):
 
         if closest_object != self.current_focus:
             if self.current_focus != None: self.current_focus.on_unfocus()
-            if closest_object == None:
-                self.image = pygame.Surface((0, 0))
-            else:
-                self.image = create_outline(closest_object.image, pixel_scale = 4)
-                closest_object.on_focus()
-                self.rect = self.image.get_rect()
-                self.rect.center = closest_object.rect.center
-
             self.current_focus = closest_object
+            self.update_outline()
+
+        if self.current_focus != None:
+            self.rect.center = self.current_focus.rect.center
 
         pressed = pygame.key.get_just_pressed()
         if pressed[self.manager.keybinds["interact"]] and self.current_focus != None:
@@ -132,10 +137,8 @@ class Player(Entity):
         self.walking = False
         self.disable_movement_input = False
 
-        itempool: ItemPool = self.manager.get_object("itempool")
         self.inventory = self.add_child(Inventory(parent = self))
         self.inventory.set_weapon(0, Sword)
-        self.inventory.set_weapon(1, itempool.roll_spell())
 
         self.interact_overlay = self.add_child(InteractionOverlay(self, INTERACT_DISTANCE))
 

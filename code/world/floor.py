@@ -7,11 +7,12 @@ from typing import Literal, Type
 from engine.types import *
 from engine import Node, Sprite
 from entity import Player, Enemy, Slime, TreeBoss
-from item import Coin, Health
+from item import Health, Coin
+import util
 from util.constants import *
 
 from .tile import Tile, TileSet, TileCollection
-from .interactable import Sign
+from .interactable import Sign, ItemChest, PickupChest
 
 room_directions: list[Direction] = ["left", "right", "up", "down"]
 opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
@@ -112,7 +113,7 @@ class TempDoor(Sprite):
             d = "up"
         else:
             d = direction
-        self.image = pygame.transform.scale_by(self.manager.get_image("tiles/door_" + d), 2)
+        self.image = pygame.transform.scale_by(self.manager.get_image("world/door_" + d), 2)
         if direction == "right":
             self.image = pygame.transform.flip(self.image, True, False)
 
@@ -310,7 +311,17 @@ class Room(Node):
 
     def on_completion(self) -> None:
         level = self.manager.get_object("level")
-        level.add_child(Health(level, self.bounding_rect.center))
+        # randomly decide if health or chest should spawn
+        itempool = self.manager.get_object("itempool")
+        if random.random() < ITEM_SPAWN_CHANCE and not itempool.is_empty():
+            level.add_child(ItemChest(level, self.bounding_rect.center, itempool.roll()))
+        else:
+            loot_table = {
+                (Health, 1): 1,
+                (Coin, 10): 2,
+            }
+            pickup_type, n = util.choose_weighted(loot_table)
+            level.add_child(PickupChest(level, self.bounding_rect.center, pickup_type, n))
 
     def force_completion(self) -> None:
         self._possible_enemies = {}
@@ -342,7 +353,7 @@ class SpawnRoom(Room):
         ))
 
         portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
-        portal_sprite.image = pygame.transform.scale(self.manager.get_image("tiles/spawn_portal"), (TILE_SIZE * 6, TILE_SIZE * 6))
+        portal_sprite.image = pygame.transform.scale(self.manager.get_image("world/spawn_portal"), (TILE_SIZE * 6, TILE_SIZE * 6))
         portal_sprite.rect = portal_sprite.image.get_rect(center = self.bounding_rect.center)
         # render above floor and below player
         portal_sprite.z_index = -0.5
@@ -391,13 +402,11 @@ class BossRoom(SpecialRoom):
                 e = self.add_child(enemy_type(self, self.bounding_rect.center))
                 self.enemies.add(e)
 
-class ItemRoom(SpecialRoom):
+class UpgradeRoom(SpecialRoom):
     def __init__(self, room: Room, item_seed: float) -> None:
         super().__init__(room)
 
-        self.tags.append("item")
-
-        # self.add_child(ItemChest())
+        self.tags.append("upgrade")
 
         self.item_seed = item_seed
 
@@ -410,8 +419,8 @@ class FloorManager(Node):
         self.room_size = room_size
         self.target_num = target_num
 
-        self.wall_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("tiles/wall_tiles"), 2), TILE_SIZE)
-        self.grass_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("tiles/grass_tiles"), 2), TILE_SIZE)
+        self.wall_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("world/wall_tiles"), 2), TILE_SIZE)
+        self.grass_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("world/grass_tiles"), 2), TILE_SIZE)
 
         self.rooms: dict[Vec2, Room] = {}
 
@@ -445,11 +454,10 @@ class FloorManager(Node):
         furthest_room = max([room for room in self.rooms.values() if len(room.connections) == 1], key = lambda room: pygame.Vector2(room.origin).magnitude())
         self.rooms[furthest_room.origin] = self.add_child(BossRoom(furthest_room, boss = TreeBoss))
 
-        # create item rooms
-        for _ in range(2):
-            # find a random room that is not special
-            room = random.choice([room for room in self.rooms.values() if not isinstance(room, (SpecialRoom, SpawnRoom))])
-            self.rooms[room.origin] = self.add_child(ItemRoom(room, random.random()))
+        # create upgrade room
+        # find a random room that is not special
+        room = random.choice([room for room in self.rooms.values() if not isinstance(room, (SpecialRoom, SpawnRoom))])
+        self.rooms[room.origin] = self.add_child(UpgradeRoom(room, random.random()))
 
         self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE)))
 

@@ -6,9 +6,9 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 import sys, platform, uuid, datetime, json
 import pygame
 
-from typing import Type, Callable, Any, TypeVar
+from typing import Type
 from engine import Screen, Manager, Logger, Node
-from screens import Level, Menu, Settings, CreditsScreen, GameOverviewScreen
+from screens import Level, Menu, SettingsScreen, GameOverviewScreen
 from util import DebugWindow, SaveHelper, AutoSaver
 
 from engine.types import *
@@ -66,8 +66,7 @@ class Game(DebugExpandable):
 
         self.add_screen("level", Level)
         self.add_screen("menu", Menu)
-        self.add_screen("settings", Settings)
-        self.add_screen("credits", CreditsScreen)
+        self.add_screen("settings", SettingsScreen)
         self.add_screen("overview", GameOverviewScreen)
         self.set_screen("menu")
 

@@ -134,6 +134,22 @@ class DividerX(Element):
         super().redraw_image()
 
 @dataclass
+class ItemChestData:
+    position: Vec2
+    item_id: int
+
+@dataclass
+class PickupChestData:
+    position: Vec2
+    number: int
+    type: Literal["coin", "health"] 
+
+@dataclass
+class WorldItemData:
+    item_id: int
+    position: Vec2
+
+@dataclass
 class PersistantGameData:
     """Data that is persistant across the whole run i.e. current run data."""
     player_position: Vec2
@@ -154,6 +170,13 @@ class PersistantGameData:
 
     coin_pickups: list[Vec2]
     health_pickups: list[Vec2]
+
+    item_chests: list[ItemChestData]
+    pickup_chests: list[PickupChestData]
+    opened_chests: list[Vec2]
+
+    world_items: list[WorldItemData]
+    found_ids: list[int]
 
 @dataclass
 class OverviewData:

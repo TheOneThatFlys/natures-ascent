@@ -26,7 +26,7 @@ class EnemySpawnIndicator(Sprite):
     def __init__(self, parent: Enemy, position: Vec2 = None, spawn_time: int = 60,) -> None:
         super().__init__(parent, ["render", "update"], 0)
         self.animation_manager = self.add_child(AnimationManager(parent = self))
-        self.animation_manager.add_animation("default", util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("tiles/spawn_warning"), 2), frame_size=(TILE_SIZE, TILE_SIZE)))
+        self.animation_manager.add_animation("default", util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("enemy/spawn_warning"), 2), frame_size=(TILE_SIZE, TILE_SIZE)))
         self.image = self.animation_manager.set_animation("default")
         self.rect = self.image.get_rect(center = position)
 

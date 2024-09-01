@@ -91,20 +91,6 @@ class Menu(Screen):
             colours = button_colours
         ))
 
-        self.secret_button = self.tree_img.add_child(Button(
-            parent = self.tree_img,
-            style = Style(
-                size = (8, 8),
-                position = "relative",
-                alignment = "center-center",
-                visible = False
-            ),
-            hover_style = None,
-            on_click = self.parent.set_screen,
-            click_args = ["credits"],
-            hover_sound = None,
-        ))
-
         self.manager.play_music("music/menu")
 
     def on_resize(self, new_res: Vec2) -> None:
@@ -136,63 +122,3 @@ class ScrollableText(Element):
                 self._scroll_progress = 0
 
             self.redraw_image()
-
-class CreditsScreen(Screen):
-    def __init__(self, parent) -> None:
-        super().__init__(parent)
-
-        self.master_container.style.alpha = 255
-        self.master_container.style.image = util.draw_background(self.rect.size)
-        self.master_container.redraw_image()
-
-        self.title = self.master_container.add_child(
-            Text(
-                parent = self.master_container,
-                text = "Legal Disclaimer",
-                style = Style(
-                    alignment = "top-center",
-                    offset = (0, 64),
-                    fore_colour = TEXT_GREEN,
-                    colour = TEXT_DARKGREEN,
-                    text_shadow = 2,
-                    font = self.manager.get_font("alagard", 72),
-                )
-            )
-        )
-
-        self.text = self.master_container.add_child(
-            ScrollableText(
-                parent = self.master_container,
-                text = 
-"""
-By playing this game, you are submitting to the jurisdiction and internal governance of the developers. Any and all legal action will be met with equal and opposite opposition, and may, or may not, result in the incapacitation or permanant disfiguration of all parties involved.
-
-The developers of this game are not liable for any damages that occur during the consumption of the game. This is including, but not limited to: heatstroke, headaches, back pain, rabies, acne, stroke, chest pain, miscarriage, shingles, osteoporosis, flooding, volcano eruption, avalanche, tsunami, ovarian cysts, unknown discharges of any colour, sudden death, wildfires, dizziness, loss of smell, constipation, false sense of wellbeing, eternal happiness.
-
-This game created for entertainment purposes only. Any attempt to to use this product in an educational, promotional, or any other manner may result in unintended behaviour. This product is not to be used as protection from natural disasters, and repeated use may result in severe damage to the user's reproductive system. Reheating this product may result in the growth of unclassified bacteria and fungi; the developers take no responsibility for any and all resulting plagues or pandemics arisen from this.
-""",
-                style = Style(
-                    alignment = "top-center",
-                    offset = (0, self.title.rect.bottom + 16),
-                    font = self.manager.get_font("alagard", 16),
-                    size = (self.rect.width - 100, self.rect.height - 200),
-                    colour = (0, 0, 0, 0),
-                    fore_colour = TEXT_WHITE,
-                )
-            )
-        )
-
-    def on_key_down(self, key: int, unicode: str) -> None:
-        super().on_key_down(key, unicode)
-        if key == pygame.K_ESCAPE:
-            self.parent.set_screen("menu")
-
-    def on_resize(self, new_res: Vec2) -> None:
-        self.master_container.style.size = new_res
-        self.master_container.style.image = util.draw_background(new_res)
-        self.text.style.size = (self.rect.width - 100, self.rect.height - 200)
-
-        super().on_resize(new_res)
-
-    def render(self, window: pygame.Surface) -> None:
-        self.master_container.render(window)

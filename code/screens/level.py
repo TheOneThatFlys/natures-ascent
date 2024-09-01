@@ -11,11 +11,11 @@ from engine import Screen, Sprite, Node, ui
 from engine.types import *
 from entity import Player, HealthBar
 from item import MeleeWeaponAttack, ItemPool, Coin, Health
-from world import FloorManager, Tile, Room
+from world import FloorManager, Tile, Room, WorldItem, Chest, ItemChest, PickupChest
 from util import SaveHelper, AutoSaver
 from util.constants import *
 
-from .common import TextButtonColours, TextButton, IconText, PersistantGameData, OverviewData
+from .common import TextButtonColours, TextButton, IconText, PersistantGameData, OverviewData, ItemChestData, PickupChestData, WorldItemData
 from .settings import SettingsUI
 
 class HealthBarUI(ui.Element):
@@ -90,7 +90,7 @@ class MapUI(ui.Element):
         self.room_colour = UI_LIGHTBROWN
         self.unactivated_colour = UI_DARKBROWN
 
-        self.player_icon = pygame.transform.scale_by(self.manager.get_image("map/player_icon"), 0.5)
+        self.player_icon = self.manager.get_image("map/player_icon")
         self.spawn_icon = self.manager.get_image("map/spawn")
         self.done_icon = self.manager.get_image("map/check")
         self.boss_icon = self.manager.get_image("map/boss")
@@ -281,10 +281,12 @@ class InventoryUI(ui.Element):
             self.spell_slot.redraw_image()
 
         # calculate cooldown progress
-        if self.spell_slot: 
+        if current_spell_slot: 
             height = self.player.spell_cd / self.player.inventory.spell.cooldown_time * (self.spell_size - 2 * self.border)
-            self.spell_cd_overlay.style.size = (self.spell_size - 2 * self.border, height)
-            self.spell_cd_overlay.redraw_image()
+        else:
+            height = 0
+        self.spell_cd_overlay.style.size = (self.spell_size - 2 * self.border, height)
+        self.spell_cd_overlay.redraw_image()
 
 class HudUI(ui.Element):
     def __init__(self, parent: Node) -> None:
@@ -525,19 +527,47 @@ class Level(Screen):
         self.pause_ui = PauseUI(self)
 
     def get_game_data(self) -> PersistantGameData:
+        world_items = []
+        for item in [x for x in self.manager.groups["interact"] if isinstance(x, WorldItem)]:
+            id = self.item_pool.get_item_id(item.item)
+            world_items.append(WorldItemData(
+                item_id = id,
+                position = item.rect.center
+            ))
+
+        item_chests = []
+        pickup_chests = []
+        for x in self.manager.groups["interact"]:
+            if isinstance(x, ItemChest):
+                item_chests.append(ItemChestData(
+                    position = x.rect.center,
+                    item_id = self.item_pool.get_item_id(x.held_item)
+                ))
+            elif isinstance(x, PickupChest):
+                pickup_chests.append(PickupChestData(
+                    position = x.rect.center,
+                    number = x.number,
+                    type = "coin" if isinstance(x, Coin) else "health"
+                ))
+
         return PersistantGameData(
             player_position = self.player.rect.center,
             player_health = self.player.health,
             player_iframes = self.player.iframes,
-            weapon_id = self.item_pool.get_weapon_id(self.player.inventory.primary.__class__),
-            spell_id = self.item_pool.get_spell_id(self.player.inventory.spell.__class__),
+            weapon_id = self.item_pool.get_item_id(self.player.inventory.primary),
+            spell_id = self.item_pool.get_item_id(self.player.inventory.spell),
             coins = self.player.inventory.coins,
             seed = self.floor_manager.seed,
             time = self.time_in_run,
             rooms_discovered = [coord for (coord, room) in self.floor_manager.rooms.items() if room.activated],
             rooms_cleared = [coord for (coord, room) in self.floor_manager.rooms.items() if room.completed],
             coin_pickups = [x.rect.center for x in self.children if isinstance(x, Coin)],
-            health_pickups = [x.rect.center for x in self.children if isinstance(x, Health)]
+            health_pickups = [x.rect.center for x in self.children if isinstance(x, Health)],
+            opened_chests = [x.rect.center for x in self.children if isinstance(x, Chest) and x.opened],
+            found_ids = self.item_pool.found_items,
+            world_items = world_items,
+            item_chests = item_chests,
+            pickup_chests = pickup_chests
         )
     
     def get_game_data_encoded(self) -> None:
@@ -555,12 +585,12 @@ class Level(Screen):
         if data.weapon_id == -1:
             self.player.inventory.remove_weapon(0)
         else:
-            self.player.inventory.set_weapon(0, self.item_pool.get_weapon(data.weapon_id))
+            self.player.inventory.set_weapon(0, self.item_pool.get_item(data.weapon_id))
 
         if data.spell_id == -1:
             self.player.inventory.remove_weapon(1)
         else:
-            self.player.inventory.set_weapon(1, self.item_pool.get_spell(data.spell_id))
+            self.player.inventory.set_weapon(1, self.item_pool.get_item(data.spell_id))
 
         # load room states
         for room_coord in data.rooms_discovered:
@@ -581,6 +611,25 @@ class Level(Screen):
             self.add_child(Coin(self, pos, 0))
         for pos in data.health_pickups:
             self.add_child(Health(self, pos))
+
+        # add chests
+        for pos in data.opened_chests:
+            chest = self.add_child(Chest(self, pos, None))
+            chest.open()
+
+        for chest_data in data.item_chests:
+            item = self.item_pool.get_item(chest_data.item_id)
+            self.add_child(ItemChest(self, chest_data.position, item))
+        
+        for chest_data in data.pickup_chests:
+            pickup = Coin if chest_data.type == "coin" else Health
+            self.add_child(PickupChest(self, chest_data.position, pickup, chest_data.number))
+
+        # add items
+        for item_data in data.world_items:
+            item = self.add_child(self.item_pool.get_item(item_data.item_id)(self))
+            self.add_child(WorldItem(self, item_data.position, item))
+        self.item_pool.restore_from_found(data.found_ids)
 
     def get_overview_data(self) -> OverviewData:
         return OverviewData(

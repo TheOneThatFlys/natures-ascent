@@ -27,6 +27,12 @@ class Node(DebugExpandable):
     def remove_child(self, child: Node) -> Node:
         self.children.remove(child)
 
+    def transfer(self, new_parent: Node) -> Node:
+        """Transfer a node to a new parent"""
+        self.parent.remove_child(self)
+        self.parent = new_parent
+        new_parent.add_child(self)
+
     def get_all_children(self) -> list[Node]:
         """Recursively traverse through all the children of a node, similar to os.walk"""
         lst = [self]

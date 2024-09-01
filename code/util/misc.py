@@ -1,5 +1,5 @@
-import pygame, math
-from typing import Optional, Literal
+import pygame, math, random
+from typing import Optional, Literal, TypeVar
 from engine.types import *
 
 from .constants import *
@@ -157,3 +157,14 @@ def render_multiline(font: pygame.font.Font, text: str, colour: Colour, max_widt
         surf.blit(line, rect)
 
     return surf
+
+T = TypeVar("T")
+def choose_weighted(weighted_dict: dict[T, int]) -> T:
+        if not weighted_dict: raise ValueError("Need to provide a non-empty weighted dictionary.")
+        total_weight = sum(weighted_dict.values())
+        n = random.randrange(total_weight)
+
+        for k, v in weighted_dict.items():
+            n -= v
+            if n < 0:
+                return k

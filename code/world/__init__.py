@@ -1,3 +1,3 @@
 from .tile import Tile, TileSet
 from .floor import FloorManager, Room
-from .interactable import Interactable
+from .interactable import Interactable, WorldItem, Chest, ItemChest, PickupChest
