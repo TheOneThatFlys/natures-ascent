@@ -614,7 +614,7 @@ class Level(Screen):
 
         # add chests
         for pos in data.opened_chests:
-            chest = self.add_child(Chest(self, pos, None))
+            chest = self.add_child(Chest(self, pos))
             chest.open()
 
         for chest_data in data.item_chests:

@@ -126,7 +126,7 @@ class Projectile(Sprite):
             super().kill()
             return
 
-        self.rect.topleft += self.velocity
+        self.rect.topleft += self.velocity * self.manager.dt
         self.hitbox.center = self.rect.center
         for enemy in self.manager.groups["enemy"]:
             if enemy.hitbox.colliderect(self.hitbox):
@@ -139,6 +139,7 @@ class Projectile(Sprite):
             if self.hitbox.colliderect(tile.rect):
                 self.kill()
                 return
+            
 class Sword(Weapon):
     def __init__(self, parent: Player) -> None:
         super().__init__(
@@ -326,5 +327,5 @@ class ItemPool(Node):
             del self.weights[self.get_item(item_id)]
         
     def is_empty(self) -> None:
-        return len(self.items) == 0
+        return not self.weights
         
