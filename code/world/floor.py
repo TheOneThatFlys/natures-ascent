@@ -309,6 +309,8 @@ class Room(Node):
             if direction in self.connections:
                 self.temp_doors.add(self.add_child(TempDoor(self, direction)))
 
+        self.manager.play_sound("effect/door_close", 0.5)
+
     def on_completion(self) -> None:
         level = self.manager.get_object("level")
         # randomly decide if health or chest should spawn

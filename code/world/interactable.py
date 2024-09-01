@@ -112,6 +112,7 @@ class WorldItem(Interactable):
                 player.inventory.spell, self.item = self.item, player.inventory.spell
                 self.image = self.manager.get_image(self.item.icon_key)
                 player.interact_overlay.update_outline()
+        self.manager.play_sound("effect/item_pickup", 0.7)
 
     def update(self) -> None:
         self.t += self.manager.dt
@@ -138,6 +139,7 @@ class Chest(Interactable):
             self.opened = True
             self.image = self.opened_image
             self.remove(self.manager.groups["interact"])
+            self.manager.play_sound("effect/chest_open", 0.7)
             self.on_open()
 
     def on_open(self) -> None:
