@@ -395,7 +395,7 @@ class SpecialRoom(Room):
 class BossRoom(SpecialRoom):
     def __init__(self, room: Room, boss: Type[Enemy]) -> None:
         super().__init__(room)
-        self.enemies = {boss: 1}
+        self._possible_enemies = {boss: 1}
         self.tags.append("boss")
 
     def add_enemies(self) -> None:
