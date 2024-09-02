@@ -37,7 +37,7 @@ class Sign(Interactable):
         rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, TEXT_LIGHTBROWN, TILE_SIZE * 3, alignment = "center")
         shadow_text = render_multiline(self.manager.get_font("alagard", 16), text, UI_DARKBROWN, TILE_SIZE * 3, alignment = "center")
 
-        self.text_box = Sprite(self)
+        self.text_box = self.add_child(Sprite(self))
         self.text_box.image = pygame.Surface((rendered_text.get_width() + 16, rendered_text.get_height() + 16))
         self.text_box.rect = self.text_box.image.get_rect(centerx = self.rect.centerx, bottom = self.rect.top - 8)
         self.text_box.z_index = 1
@@ -72,7 +72,7 @@ class Sign(Interactable):
     def on_unfocus(self) -> None:
         super().on_unfocus()
         self.deactivate_text()
-    
+
 class WorldItem(Interactable):
     def __init__(self, parent: Node, position: Vec2, item: Weapon|Spell) -> None:
         super().__init__(parent, ["update"])
@@ -133,13 +133,13 @@ class Chest(Interactable):
 
     def interact(self) -> None:
         self.open()
+        self.manager.play_sound("effect/chest_open", 0.7)
 
     def open(self) -> None:
         if not self.opened:
             self.opened = True
             self.image = self.opened_image
             self.remove(self.manager.groups["interact"])
-            self.manager.play_sound("effect/chest_open", 0.7)
             self.on_open()
 
     def on_open(self) -> None:

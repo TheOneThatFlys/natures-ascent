@@ -14,6 +14,10 @@ from util import DebugWindow, SaveHelper, AutoSaver
 from engine.types import *
 from util.constants import *
 
+if IN_DEBUG:
+    from world import Chest, ItemChest
+    from item import Health
+
 class DebugPalette(Node):
     """Holds helper functions for faster debugging."""
     def __init__(self, parent: Node) -> None:
@@ -30,6 +34,28 @@ class DebugPalette(Node):
 
     def force_win(self) -> None:
         self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data(), end_type = "win")
+
+    def spawn_chest(self) -> None:
+        player = self.manager.get_object("player")
+        level = self.manager.get_object("level")
+        itempool = self.manager.get_object("itempool")
+        if not itempool.is_empty():
+            chest = level.add_child(ItemChest(level, player.rect.center, itempool.roll()))
+            colliding = True
+            while colliding:
+                colliding = False
+                for s in self.manager.groups["interact"]:
+                    if s == chest or not isinstance(s, Chest): continue
+                    if chest.rect.colliderect(s.rect):
+                        chest.rect.y += TILE_SIZE
+                        colliding = True
+        else:
+            Logger.warn("Item pool is empty, cannot spawn chest.")
+
+    def spawn_heart(self) -> None:
+        player = self.manager.get_object("player")
+        level = self.manager.get_object("level")
+        level.add_child(Health(level, (player.rect.centerx, player.rect.bottom + 16)))
 
 class Game(DebugExpandable):
     # main game class that manages screens and pygame events
@@ -64,6 +90,10 @@ class Game(DebugExpandable):
         self.current_screen: str = ""
         self.current_screen_instance: Screen
 
+        # store screen changes to defer to next frame, to prevent key errors
+        self._next_screen: str = ""
+        self._next_screen_kwargs: dict = {}
+
         self.add_screen("level", Level)
         self.add_screen("menu", Menu)
         self.add_screen("settings", SettingsScreen)
@@ -88,9 +118,8 @@ class Game(DebugExpandable):
     def set_screen(self, screen_name: str, **init_kwargs) -> None:
         """Sets the current screen based on screen name"""
         if screen_name == self.current_screen: return
-        self.manager.cleanup()
-        self.current_screen = screen_name
-        self.current_screen_instance = self._screens[screen_name](self, **init_kwargs)
+        self._next_screen = screen_name
+        self._next_screen_kwargs = init_kwargs
 
     def set_windowed(self, new_size: Vec2) -> None:
         """Resizes the active window to the new resolution provided."""
@@ -217,6 +246,14 @@ class Game(DebugExpandable):
             # calculate dt
             self.manager.update_dt()
 
+            # change screen if needed
+            if self._next_screen:
+                self.manager.cleanup()
+                self.current_screen = self._next_screen
+                self.current_screen_instance = self._screens[self._next_screen](self, **self._next_screen_kwargs)
+                self._next_screen = ""
+                self._next_screen_kwargs = {}
+
             # poll events
             for event in pygame.event.get():
                 screen_instance: Screen = self.current_screen_instance
@@ -291,7 +328,7 @@ def log_system_specs() -> None:
 
     Logger.info(f"Detected python version = {platform.python_version()}")
 
-def clean_debug_folder(max_logs) -> None:
+def clean_debug_folder(max_logs: int) -> None:
     """Make sure only the {max_logs} newest logs are in debug folder."""
     folder_path = os.path.join("debug")
     # get all files ending with .log (and not profile)

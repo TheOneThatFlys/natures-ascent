@@ -130,8 +130,9 @@ class Projectile(Sprite):
         self.hitbox.center = self.rect.center
         for enemy in self.manager.groups["enemy"]:
             if enemy.hitbox.colliderect(self.hitbox):
-                enemy.hit(self, damage = self.damage, kb_magnitude = self.knockback)
-                self.kill()
+                success = enemy.hit(self, damage = self.damage, kb_magnitude = self.knockback)
+                if success:
+                    self.kill()
                 return
             
         current_room = self.floor_manager.get_room_at_world_pos(self.rect.center)
@@ -286,6 +287,8 @@ class DashSpell(Spell):
         self.player.disable_movement_input = True
         self.add_child(DashSpell.__FrictionNormaliser(self))
         self.player.animation_manager.set_animation("dash-" + self.player.last_facing.overall)
+        cam = self.manager.get_object("camera")
+        cam.shake(2, 5)
 
 Item = Weapon|Spell
 class ItemPool(Node):

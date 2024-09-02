@@ -93,7 +93,8 @@ class Entity(Sprite):
         "Adds velocity to entity, i.e a force in an instant."
         self.velocity += velocity
 
-    def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
+    def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> bool:
+        """Attempt to hit this entity. Returns True if hit was successful."""
         if self.iframes == 0:
             kbv = pygame.Vector2(self.rect.center) - other.rect.center
             if kb_magnitude == 0:
@@ -112,6 +113,8 @@ class Entity(Sprite):
 
             if self.health <= 0:
                 self.kill()
+            return True
+        return False
 
     def on_hit(self, other: Sprite) -> None:
         pass

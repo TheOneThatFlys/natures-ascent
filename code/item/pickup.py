@@ -27,7 +27,7 @@ class Pickup(Sprite):
 
         self.rect.center = self.pos
 
-        if self.rect.colliderect(self.player.rect):
+        if self.rect.colliderect(self.player.hitbox):
             self.on_pickup()
             self.kill()
 
@@ -45,14 +45,15 @@ class Coin(Pickup):
     def on_pickup(self) -> None:
         self.manager.play_sound("effect/coin", 0.05)
         self.player.inventory.add_coin(value = 1)
-
+ 
 class Health(Pickup):
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position)
 
-        self.animation_manager.add_animation("still", [self.manager.get_image("items/heart")])
-        self.image = self.animation_manager.set_animation("still")
+        self.animation_manager.add_animation("beat", parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("items/heart"), 2), frame_count = 4))
+        self.image = self.animation_manager.set_animation("beat")
         self.rect = self.image.get_rect(center = self.pos)
 
     def on_pickup(self) -> None:
+        self.manager.play_sound("effect/health_pickup", 0.2)
         self.player.add_health(20)
