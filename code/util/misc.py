@@ -4,11 +4,6 @@ from engine.types import *
 
 from .constants import *
 
-def scale_surface_by(surface: pygame.Surface, scale_factor: float) -> pygame.Surface:
-    """Scales a pygame surface by a given factor and returns it (NOT IN PLACE)"""
-    new_size = surface.get_width() * scale_factor, surface.get_height() * scale_factor
-    return pygame.transform.scale(surface, new_size)
-
 def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7, offset: int = 0, border_radius: int = 0) -> pygame.Surface:
     """Draw a striped background of given sized and scale onto surface"""
     bg = pygame.Surface((screen_size[0] / pixel_scale, screen_size[1] / pixel_scale), pygame.SRCALPHA)

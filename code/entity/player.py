@@ -8,7 +8,7 @@ if TYPE_CHECKING:
 
 from engine import Node, Sprite
 from engine.types import *
-from util import parse_spritesheet, scale_surface_by, get_closest_direction, create_outline
+from util import parse_spritesheet, get_closest_direction, create_outline
 from util.constants import *
 
 from item import Weapon, Spell, Sword
@@ -149,16 +149,16 @@ class Player(Entity):
         types = ["idle", "damage", "walk", "dash"]
         directions = ["right", "left", "down", "up"]
         for type in types:
-            rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/" + type), 2), frame_count = 4, direction = "y")
+            rows = parse_spritesheet(self.manager.get_image("player/" + type), frame_count = 4, direction = "y")
             for i, dir in enumerate(directions):
-                anim = parse_spritesheet(rows[i], frame_size = (32 * PIXEL_SCALE, 32 * PIXEL_SCALE))
+                anim = parse_spritesheet(rows[i], frame_size = (16 * PIXEL_SCALE, 16 * PIXEL_SCALE))
                 self.animation_manager.add_animation(type + "-" + dir, anim)
 
         attack_types = ["sword_attack", "spear_attack"]
         for type in attack_types:
-            attack_rows = parse_spritesheet(scale_surface_by(self.manager.get_image("player/" + type), 2), frame_count = 4, direction = "y")
+            attack_rows = parse_spritesheet(self.manager.get_image("player/" + type), frame_count = 4, direction = "y")
             for i, dir in enumerate(directions):
-                anim = parse_spritesheet(attack_rows[i], frame_size = (32 * PIXEL_SCALE * 3, 32 * PIXEL_SCALE * 3))
+                anim = parse_spritesheet(attack_rows[i], frame_size = (16 * PIXEL_SCALE * 3, 16 * PIXEL_SCALE * 3))
                 self.animation_manager.add_animation(type + "-" + dir, anim)
 
     def get_inputs(self) -> None:

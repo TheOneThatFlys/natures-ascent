@@ -113,7 +113,7 @@ class TempDoor(Sprite):
             d = "up"
         else:
             d = direction
-        self.image = pygame.transform.scale_by(self.manager.get_image("world/door_" + d), 2)
+        self.image = self.manager.get_image("world/door_" + d)
         if direction == "right":
             self.image = pygame.transform.flip(self.image, True, False)
 
@@ -355,7 +355,7 @@ class SpawnRoom(Room):
         ))
 
         portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
-        portal_sprite.image = pygame.transform.scale(self.manager.get_image("world/spawn_portal"), (TILE_SIZE * 6, TILE_SIZE * 6))
+        portal_sprite.image = self.manager.get_image("world/spawn_portal")
         portal_sprite.rect = portal_sprite.image.get_rect(center = self.bounding_rect.center)
         # render above floor and below player
         portal_sprite.z_index = -0.5
@@ -421,8 +421,8 @@ class FloorManager(Node):
         self.room_size = room_size
         self.target_num = target_num
 
-        self.wall_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("world/wall_tiles"), 2), TILE_SIZE)
-        self.grass_tileset = TileSet(pygame.transform.scale_by(self.manager.get_image("world/grass_tiles"), 2), TILE_SIZE)
+        self.wall_tileset = TileSet(self.manager.get_image("world/wall_tiles"), TILE_SIZE)
+        self.grass_tileset = TileSet(self.manager.get_image("world/grass_tiles"), TILE_SIZE)
 
         self.rooms: dict[Vec2, Room] = {}
 

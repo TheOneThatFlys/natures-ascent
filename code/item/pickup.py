@@ -50,7 +50,7 @@ class Health(Pickup):
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position)
 
-        self.animation_manager.add_animation("beat", parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("items/heart"), 2), frame_count = 4))
+        self.animation_manager.add_animation("beat", parse_spritesheet(self.manager.get_image("items/heart"), frame_count = 4))
         self.image = self.animation_manager.set_animation("beat")
         self.rect = self.image.get_rect(center = self.pos)
 

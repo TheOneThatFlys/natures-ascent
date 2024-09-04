@@ -1,0 +1,7 @@
+Asset Used                         | Artist              | Link
+-----------------------------------|---------------------|---------------------------------------------------------------------
+Spawn portal                       | Cainos              | https://cainos.itch.io/pixel-art-top-down-basic
+Tileset Inspiration                | Anokolisa           | https://anokolisa.itch.io/dungeon-crawler-pixel-art-asset-pack
+Player walk, idle (Modified)       | Bagong Games        | https://bagong-games.itch.io/hana-caraka-base-character
+Fire particles                     | Raphael Hatencia    | https://ragnapixel.itch.io/particle-fx
+Menu tree image                    | Graph Script Dev    | https://graphscriptdev.itch.io/plant-trees

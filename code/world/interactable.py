@@ -31,7 +31,7 @@ class Interactable(Sprite):
 class Sign(Interactable):
     def __init__(self, parent: Node, position: Vec2, text: str) -> None:
         super().__init__(parent)
-        self.image = pygame.transform.scale_by(self.manager.get_image("world/sign"), PIXEL_SCALE)
+        self.image = self.manager.get_image("world/sign")
         self.rect = self.image.get_rect(topleft = position)
 
         rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, TEXT_LIGHTBROWN, TILE_SIZE * 3, alignment = "center")
@@ -125,7 +125,7 @@ class Chest(Interactable):
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent)
 
-        self.closed_image, self.opened_image = parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("world/chest"), PIXEL_SCALE), frame_count=2)
+        self.closed_image, self.opened_image = parse_spritesheet(self.manager.get_image("world/chest"), frame_count=2)
         self.image = self.closed_image
         self.rect = self.image.get_rect(center = position)
 

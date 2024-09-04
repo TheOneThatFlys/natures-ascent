@@ -12,7 +12,7 @@ from engine.types import *
 from entity import Player, HealthBar
 from item import MeleeWeaponAttack, ItemPool, Coin, Health
 from world import FloorManager, Tile, Room, WorldItem, Chest, ItemChest, PickupChest
-from util import SaveHelper, AutoSaver
+from util import SaveHelper, AutoSaver, parse_spritesheet
 from util.constants import *
 
 from .common import TextButtonColours, TextButton, IconText, PersistantGameData, OverviewData, ItemChestData, PickupChestData, WorldItemData
@@ -36,8 +36,8 @@ class HealthBarUI(ui.Element):
             font = self.manager.get_font("alagard", 16)
         )))
 
-        self.bar_padding = 4
-        self.shading_size = 4
+        self.bar_padding = PIXEL_SCALE
+        self.shading_size = PIXEL_SCALE
 
         self.health_colour = health_colour
         self.shadow_colour = shadow_colour
@@ -77,7 +77,6 @@ class HealthBarUI(ui.Element):
         self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
 
 class MapUI(ui.Element):
-    BORDER_SIZE = 4
     def __init__(self, parent: Node, style: ui.Style, scale = 32) -> None:
         super().__init__(parent, style = style)
 
@@ -85,22 +84,21 @@ class MapUI(ui.Element):
         self.player: Player = self.manager.get_object("player")
         self.scale = scale
 
+        self.border_size = PIXEL_SCALE
+
         self.border_colour = UI_DARKBROWN
         self.background_colour = UI_BROWN
         self.room_colour = UI_LIGHTBROWN
         self.unactivated_colour = UI_DARKBROWN
 
-        self.player_icon = self.manager.get_image("map/player_icon")
-        self.spawn_icon = self.manager.get_image("map/spawn")
-        self.done_icon = self.manager.get_image("map/check")
-        self.boss_icon = self.manager.get_image("map/boss")
+        self.spawn_icon, self.boss_icon, self.done_icon, self.player_icon = parse_spritesheet(self.manager.get_image("map/icons", 0.5), assume_square=True)
 
         self.update_map()
 
         self.explored_text = self.add_child(IconText(
             parent = self,
             text = "0/0",
-            icon = self.manager.get_image("map/explored"),
+            icon = self.manager.get_image("map/explored", 0.5),
             icon_alignment = "right",
             padding = 4,
             style = ui.Style(
@@ -133,7 +131,7 @@ class MapUI(ui.Element):
         return pygame.Surface((0, 0))
 
     def update_map(self) -> None:
-        self.map_surf = pygame.Surface((self.style.size[0] - self.BORDER_SIZE * 2, self.style.size[1] - self.BORDER_SIZE * 2))
+        self.map_surf = pygame.Surface((self.style.size[0] - self.border_size * 2, self.style.size[1] - self.border_size * 2))
         self.map_surf.fill(self.background_colour)
 
         player_pos = (0, 0)
@@ -190,7 +188,7 @@ class MapUI(ui.Element):
         self.update_map()
         # draw borders
         pygame.draw.rect(self.image, self.border_colour, [0, 0, *self.style.size], border_radius = 4)
-        self.image.blit(self.map_surf, (self.BORDER_SIZE, self.BORDER_SIZE))
+        self.image.blit(self.map_surf, (self.border_size, self.border_size))
         self.style.image = self.image
 
         # explored text
@@ -317,7 +315,7 @@ class HudUI(ui.Element):
         self.coin_text = self.add_child(IconText(
             parent = self,
             text = "0",
-            icon = self.manager.get_image("map/coin"),
+            icon = self.manager.get_image("map/coin", 0.5),
             icon_alignment = "right",
             padding = 4,
             style = ui.Style(

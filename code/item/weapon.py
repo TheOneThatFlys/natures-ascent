@@ -136,7 +136,7 @@ class Projectile(Sprite):
                 return
             
         current_room = self.floor_manager.get_room_at_world_pos(self.rect.center)
-        for tile in current_room.collide_sprites:
+        for tile in current_room.collide_sprites.sprites() + current_room.temp_doors.sprites():
             if self.hitbox.colliderect(tile.rect):
                 self.kill()
                 return

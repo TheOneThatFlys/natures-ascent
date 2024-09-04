@@ -26,7 +26,7 @@ class EnemySpawnIndicator(Sprite):
     def __init__(self, parent: Enemy, position: Vec2 = None, spawn_time: int = 60,) -> None:
         super().__init__(parent, ["render", "update"], 0)
         self.animation_manager = self.add_child(AnimationManager(parent = self))
-        self.animation_manager.add_animation("default", util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("enemy/spawn_warning"), 2), frame_size=(TILE_SIZE, TILE_SIZE)))
+        self.animation_manager.add_animation("default", util.parse_spritesheet(self.manager.get_image("enemy/spawn_warning"), frame_size=(TILE_SIZE, TILE_SIZE)))
         self.image = self.animation_manager.set_animation("default")
         self.rect = self.image.get_rect(center = position)
 
@@ -200,7 +200,7 @@ class Slime(Enemy):
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position, enemy_stats["slime"])
 
-        rows = util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("enemy/slime_green"), 2), frame_count = 4, direction = "y")
+        rows = util.parse_spritesheet(self.manager.get_image("enemy/slime_green"), frame_count = 4, direction = "y")
         directions = ["down", "right", "up", "left"]
         for i, dir in enumerate(directions):
             self.animation_manager.add_animation(dir, util.parse_spritesheet(rows[i], frame_count = 2))
@@ -330,12 +330,8 @@ class TreeBoss(Enemy):
     ATTACK_INTERVAL = 300
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position, enemy_stats["tree_boss"])
-        rows = util.parse_spritesheet(pygame.transform.scale_by(self.manager.get_image("enemy/slime_green"), 8), frame_count = 4, direction = "y")
-        directions = ["down", "right", "up", "left"]
-        for i, dir in enumerate(directions):
-            self.animation_manager.add_animation(dir, util.parse_spritesheet(rows[i], frame_count = 2))
-
-        self.image = self.animation_manager.set_animation("down")
+        self.animation_manager.add_animation("still", [self.manager.get_image("enemy/tree_boss")])
+        self.image = self.animation_manager.set_animation("still")
         self.rect = self.image.get_frect(center = position)
         
         self.in_stationary_attack = False
@@ -350,8 +346,8 @@ class TreeBoss(Enemy):
 
         self.manager.stop_music(300)
 
-    def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> None:
-        return super().hit(other, damage, 0 if self.in_stationary_attack else kb_magnitude)
+    def hit(self, other: Sprite, damage: float = 0, kb_magnitude: float = 0) -> bool:
+        return super().hit(other, damage, 0)
 
     def on_land(self) -> None:
         self.manager.play_music("music/boss")
@@ -371,7 +367,7 @@ class TreeBoss(Enemy):
                 self.in_stationary_attack = False
                 self.next_attack_timer = random.randint(self.ATTACK_INTERVAL - 50, self.ATTACK_INTERVAL + 50)
 
-        # count down to next attack
+        # else count down to next attack
         else:
             self.next_attack_timer -= self.manager.dt
             if self.next_attack_timer <= 0:
@@ -384,4 +380,4 @@ class TreeBoss(Enemy):
 
     def update(self) -> None:
         super().update()
-        self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))
+        # self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))

@@ -208,9 +208,9 @@ class Manager(DebugExpandable):
 
         return os.path.join("assets", type, *key.split("/")) + os.extsep + type_ext_map[type]
 
-    def get_image(self, name: str) -> pygame.Surface:
+    def get_image(self, name: str, scale: float = 1.0) -> pygame.Surface:
         try:
-            return self.assets["image"][name]
+            return pygame.transform.scale_by(self.assets["image"][name], scale)
         except KeyError:
             Logger.warn(f"Failed to fetch image at key {name}")
             return self.assets["image"]["error"]

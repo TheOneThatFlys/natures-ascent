@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
-import sys, platform, uuid, datetime, json
+import sys, platform, uuid, datetime, json, pickle
 import pygame
 
 from typing import Type

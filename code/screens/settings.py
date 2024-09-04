@@ -65,7 +65,7 @@ class KeybindSelector(Element):
                 on_click = self._on_keybind_click,
                 click_args = (action,),
                 style = Style(
-                    image = self.manager.get_image("menu/keybind_button"),
+                    image = self.manager.get_image("menu/keybind_button", 0.5),
                     alignment = "center-right",
                     offset = (0, i * self.style.size[1]),
                 )
@@ -96,15 +96,15 @@ class KeybindSelector(Element):
 
     def select_button(self, action: str) -> None:
         if self.considering:
-            self.buttons[self.considering].style.image = self.manager.get_image("menu/keybind_button")
+            self.buttons[self.considering].style.image = self.manager.get_image("menu/keybind_button", 0.5)
             self.buttons[self.considering].redraw_image()
 
         self.considering = action
-        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button_selected")
+        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button_selected", 0.5)
         self.buttons[action].redraw_image()
 
     def deselect_button(self, action: str) -> None:
-        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button")
+        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button", 0.5)
         self.buttons[action].redraw_image()
         self.considering = None
 
@@ -160,7 +160,7 @@ class SettingsScrollable(ScrollableElement):
                 alignment = "center-right",
                 font = self.manager.get_font("alagard", 20),
                 fore_colour = TEXT_WHITE,
-                image = self.manager.get_image("menu/dropdown_head")
+                image = self.manager.get_image("menu/dropdown_head", 0.5)
             ),
             button_style = Style(
                 size = (128, 40),
@@ -195,10 +195,10 @@ class SettingsScrollable(ScrollableElement):
             parent = self.horizontal_container_2,
             style = Style(
                 alignment = "center-right",
-                image = self.manager.get_image("menu/slider_bar"),
+                image = self.manager.get_image("menu/slider_bar", 0.5),
             ),
             knob_style = Style(
-                image = self.manager.get_image("menu/slider_knob"),
+                image = self.manager.get_image("menu/slider_knob", 0.5),
             ),
             on_change = self._on_sfx_change,
             on_unfocus = self._on_sfx_unfocus
@@ -229,10 +229,10 @@ class SettingsScrollable(ScrollableElement):
             parent = self.horizontal_container_3,
             style = Style(
                 alignment = "center-right",
-                image = self.manager.get_image("menu/slider_bar"),
+                image = self.manager.get_image("menu/slider_bar", 0.5),
             ),
             knob_style = Style(
-                image = self.manager.get_image("menu/slider_knob"),
+                image = self.manager.get_image("menu/slider_knob", 0.5),
             ),
             on_change = self._on_music_change
         ))
@@ -330,7 +330,7 @@ class SettingsUI(Element):
             )
         ))
 
-        back_button_normal, back_button_hover = parse_spritesheet(self.manager.get_image("menu/back_arrow"), frame_count=2)
+        back_button_normal, back_button_hover = parse_spritesheet(self.manager.get_image("menu/back_arrow", 0.5), frame_count=2)
         self.exit_button = self.add_child(Button(
             parent = self,
             on_click = exit_binding,
