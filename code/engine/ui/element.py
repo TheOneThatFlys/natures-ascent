@@ -79,9 +79,6 @@ class Element(Node):
                 elif self.style.stretch_type == "skew":
                     # expand the image to fit the bounds
                     self.image = pygame.transform.scale(self.style.image, self.style.size)
-                elif self.style.stretch_type == "fit":
-                    # image is native resolution
-                    self.image = self.style.image
                 else:
                     raise TypeError(f"Unknown image stretch type: {self.style.stretch_type}")
         else:

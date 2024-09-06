@@ -89,9 +89,10 @@ def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: 
     # scale image to pixel scale
     img = pygame.transform.scale_by(image, 1 / pixel_scale)
 
-    # convert the image to a array of alpha values
+    # add padding around the image to be able to fit an outline
     padded_image = pygame.Surface((img.get_width() + 2, img.get_height() + 2), pygame.SRCALPHA)
     padded_image.blit(img, (1, 1))
+    # convert the image to a array of alpha values
     pa = pygame.PixelArray(padded_image)
     alphas = [[0 for _ in range(len(pa[0]))] for _ in range(len(pa))]
     for y in range(len(pa)):
@@ -99,6 +100,7 @@ def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: 
             alphas[y][x] = min(image.unmap_rgb(pa[y][x])[3], 1)
     pa.close()
 
+    # helper function to retrieve pixel alphas, defaulting to 0 if out of bounds
     get_value = lambda x, y: alphas[y][x] if 0 <= x < len(alphas[0]) and 0 <= y < len(alphas) else 0
 
     # fill pixel according to algorithm in ______________
@@ -108,10 +110,10 @@ def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: 
         for x in range(padded_image.get_width()):
             nx, ny = x, y
             if get_value(nx, ny) == 0:
-                if get_value(nx + 1, ny) - get_value(nx, ny) == 1 or \
-                    get_value(nx - 1, ny) - get_value(nx, ny) == 1 or \
-                    get_value(nx, ny + 1) - get_value(nx, ny) == 1 or \
-                    get_value(nx, ny - 1) - get_value(nx, ny) == 1:
+                if get_value(nx + 1, ny) == 1 or \
+                    get_value(nx - 1, ny) == 1 or \
+                    get_value(nx, ny + 1) == 1 or \
+                    get_value(nx, ny - 1) == 1:
 
                     newa[ny][nx] = image.map_rgb(outline_colour)
 

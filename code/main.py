@@ -231,7 +231,7 @@ class Game(DebugExpandable):
 
             self.manager.keybinds = cfg_option
         except Exception as e:
-            Logger.warn(f"Could not load config option [keybinds]. Loading default keybinds instead ({e.with_traceback()})")
+            Logger.warn(f"Could not load config option [keybinds]. Loading default keybinds instead")
             self.manager.keybinds = default_config["keybinds"]
 
     def update_save(self) -> None:
