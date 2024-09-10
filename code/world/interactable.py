@@ -78,7 +78,7 @@ class WorldItem(Interactable):
         super().__init__(parent, ["update"])
         self.item = item
 
-        self.image = self.manager.get_image(item.icon_key) 
+        self.image = self.manager.get_image(item.icon_key, 0.5)
         self.rect = self.image.get_rect(center = position)
         self.pixel_scale = 2
         self.z_index = 1
@@ -99,7 +99,7 @@ class WorldItem(Interactable):
                 self.item.transfer(player)
                 player.inventory.primary.transfer(self)
                 player.inventory.primary, self.item = self.item, player.inventory.primary
-                self.image = self.manager.get_image(self.item.icon_key)
+                self.image = self.manager.get_image(self.item.icon_key, 0.5)
                 player.interact_overlay.update_outline()
         else:
             if player.inventory.spell == None:
@@ -110,7 +110,7 @@ class WorldItem(Interactable):
                 self.item.transfer(player)
                 player.inventory.spell.transfer(self)
                 player.inventory.spell, self.item = self.item, player.inventory.spell
-                self.image = self.manager.get_image(self.item.icon_key)
+                self.image = self.manager.get_image(self.item.icon_key, 0.5)
                 player.interact_overlay.update_outline()
         self.manager.play_sound("effect/item_pickup", 0.7)
 

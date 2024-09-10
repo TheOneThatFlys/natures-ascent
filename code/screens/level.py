@@ -238,48 +238,69 @@ class InventoryUI(ui.Element):
             )
         ))
 
-        self.prev_primary_slot: str = ""
-        self.prev_spell_slot: str = ""
+        # store icon key and upgrade
+        self.prev_p_state: tuple[str, int] = ("", 0)
+        self.prev_s_state: tuple[str, int] = ("", 0)
 
         self.player: Player = self.manager.get_object("player")
 
-    def _draw_slot_image(self, size: int, icon_key: str = "") -> pygame.Surface:
+    def _draw_slot_image(self, size: int, icon_key: str = "", n_upgrades: int = 0) -> pygame.Surface:
+        slot_image = pygame.Surface((size, size))
+        # space around image
         extra_space = self.border + self.padding
-        image = pygame.Surface((size, size))
-        image.fill(UI_BROWN)
-        pygame.draw.rect(image, UI_DARKBROWN, (0, 0, size , size), self.border)
+        # background
+        slot_image.fill(UI_BROWN)
+        pygame.draw.rect(slot_image, UI_DARKBROWN, (0, 0, size , size), self.border)
 
+        # icon
         if icon_key:
             icon = self.manager.get_image(icon_key)
             icon = pygame.transform.scale(icon, (size - extra_space * 2, size - extra_space * 2))
-            image.blit(icon, (extra_space, extra_space))
+            slot_image.blit(icon, (extra_space, extra_space))
+
+        # calculate upgrade space
+        u_border = self.border // 2
+        u_width = u_border * 2 + PIXEL_SCALE * 2
+        u_height = size
+        uicon_size = u_width
+        u_image = pygame.Surface((u_width, u_height), pygame.SRCALPHA)
+        for i in range(3):
+            uicon_image = pygame.Surface((uicon_size, uicon_size), pygame.SRCALPHA)
+            pygame.draw.rect(uicon_image, PLAYER_GREEN if i < n_upgrades else UI_BROWN, (u_border, u_border, *(uicon_size - u_border * 2,)*2))
+            pygame.draw.rect(uicon_image, UI_DARKBROWN, (0, 0, uicon_size, uicon_size), u_border)
+
+            u_image.blit(uicon_image, uicon_image.get_rect(bottom = u_height - i * (uicon_size + self.padding)))
+
+        image = pygame.Surface((u_width + size + self.padding, size), pygame.SRCALPHA)
+        image.blit(slot_image, (0, 0))
+        image.blit(u_image, (size + self.padding, 0))
+
         return image
 
     def update(self) -> None:
         primary = self.player.inventory.primary
         spell = self.player.inventory.spell
-        
-        current_primary_slot = primary.icon_key if primary else ""
-        current_spell_slot = spell.icon_key if spell else ""
+        cur_p_state = (primary.icon_key, primary.upgrade_level) if primary else ("", 0)
+        cur_s_state = (spell.icon_key, spell.upgrade_level) if spell else ("", 0)
 
         should_redraw = False
-        if current_primary_slot != self.prev_primary_slot:
-            self.prev_primary_slot = current_primary_slot
+        if cur_p_state != self.prev_p_state:
+            self.prev_p_state = cur_p_state
             should_redraw = True
 
-        if current_spell_slot != self.prev_spell_slot:
-            self.prev_spell_slot = current_spell_slot
+        if cur_s_state != self.prev_s_state:
+            self.prev_s_state = cur_s_state
             should_redraw = True
 
         if should_redraw:
-            self.primary_slot.style.image = self._draw_slot_image(self.primary_size, current_primary_slot)
+            self.primary_slot.style.image = self._draw_slot_image(self.primary_size, *cur_p_state)
             self.primary_slot.redraw_image()
 
-            self.spell_slot.style.image = self._draw_slot_image(self.spell_size, current_spell_slot)
+            self.spell_slot.style.image = self._draw_slot_image(self.spell_size, *cur_s_state)
             self.spell_slot.redraw_image()
 
         # calculate cooldown progress
-        if current_spell_slot: 
+        if cur_s_state[0] != "": 
             height = self.player.spell_cd / self.player.inventory.spell.cooldown_time * (self.spell_size - 2 * self.border)
         else:
             height = 0
