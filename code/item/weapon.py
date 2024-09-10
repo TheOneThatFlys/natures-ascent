@@ -29,9 +29,29 @@ class Weapon(Node):
         self.icon_key = icon_key
         self.cooldown_time = cooldown_time
 
+        self.upgrade_level = 0
+
     def attack(self, direction: Direction) -> None:
         if self.sound_key:
             self.manager.play_sound(self.sound_key, volume=0.2)
+
+    def upgrade(self) -> None:
+        if self.upgrade_level == 3: return
+        self.upgrade_level += 1
+        match self.upgrade_level:
+            case 1: self.upgrade_1()
+            case 2: self.upgrade_2()
+            case 3: self.upgrade_3()
+            case _: None
+
+    def upgrade_1(self) -> None:
+        """Called when first upgrade is applied. Example use: ``self.damage += 10``"""
+
+    def upgrade_2(self) -> None:
+        """See ``upgrade_1``"""
+
+    def upgrade_3(self) -> None:
+        """See ``upgrade_1``"""
 
 class Spell(Weapon):
     """
@@ -166,6 +186,12 @@ class Sword(Weapon):
             hit_frames = [(ANIMATION_FRAME_TIME, ANIMATION_FRAME_TIME * 2)]
         ))
 
+    def upgrade_1(self) -> None:
+        self.damage += 5.0
+
+    def upgrade_2(self) -> None:
+        self.cooldown_time = 5 * 4
+
 class Spear(Weapon):
     def __init__(self, parent: Player) -> None:
         super().__init__(
@@ -220,7 +246,7 @@ class FireballSpell(Spell):
                 knockback = self.knockback,
                 max_life = 300,
                 rotation_degrees = angle,
-                scale = 2,
+                scale = 1,
             ))
 
 class FireballProjectile(Projectile):

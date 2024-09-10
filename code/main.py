@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import os
 os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
+working_directory = os.path.join(__file__, os.pardir, os.pardir) # set cwd as two parents from this file
+os.chdir(working_directory)
 
-import sys, platform, uuid, datetime, json, pickle
+import sys, platform, uuid, datetime, json
 import pygame
 
 from typing import Type
@@ -327,6 +329,7 @@ def log_system_specs() -> None:
     Logger.info(f"Found system specs [processor] = {uname.processor}")
 
     Logger.info(f"Detected python version = {platform.python_version()}")
+    Logger.info(f"Current working directory = {os.path.abspath(os.path.curdir)}")
 
 def clean_debug_folder(max_logs: int) -> None:
     """Make sure only the {max_logs} newest logs are in debug folder."""

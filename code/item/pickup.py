@@ -38,7 +38,7 @@ class Coin(Pickup):
     def __init__(self, parent: Node, position: Vec2, randomness: int = 16) -> None:
         super().__init__(parent, (position[0] + random.randint(-randomness, randomness), position[1] + random.randint(-randomness, randomness)))
 
-        self.animation_manager.add_animation("spin", parse_spritesheet(self.manager.get_image("items/coin"), frame_count = 4))
+        self.animation_manager.add_animation("spin", parse_spritesheet(self.manager.get_image("items/coin", 0.5), frame_count = 4))
         self.image = self.animation_manager.set_animation("spin")
         self.rect = self.image.get_rect(center = self.pos)
 
