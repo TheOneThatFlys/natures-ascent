@@ -65,6 +65,9 @@ class Enemy(Entity):
 
         self.rect = self.image.get_frect(center = position)
 
+        # determines if hurtbox is currently active
+        self.hitbox_active = True
+
         # some useful info for subclasses
         self.time_since_seen_player = math.inf
         self.has_seen_player = False
@@ -111,7 +114,7 @@ class Enemy(Entity):
         self.apply_friction()
 
     def follow_player(self) -> None:
-        if (pygame.Vector2(self.rect.center) - pygame.Vector2(self.player.rect.center)).magnitude() < 12: return
+        if (pygame.Vector2(self.hitbox.center) - pygame.Vector2(self.player.rect.center)).magnitude() < 12: return
 
         velocity = pygame.Vector2(self.player.rect.center) - pygame.Vector2(self.rect.center)
         if velocity.magnitude() != 0:
@@ -129,7 +132,7 @@ class Enemy(Entity):
         return True
 
     def check_player_collision(self) -> None:
-        if self.collides(self.player):
+        if self.hitbox_active and self.collides(self.player):
             self.player.hit(self, kb_magnitude = 10, damage = self.stats.contact_damage)
 
     def avoid_others(self) -> None:
@@ -232,63 +235,6 @@ class BossAttack(Sprite):
         if self.attack_timer >= self.max_attack_time:
             self.should_die = True
 
-class AttackFourBranches(BossAttack):
-    LIFETIME = 120
-    CHARGEUP = 40
-
-    class LineSegment(Sprite):
-        def __init__(self, parent: AttackFourBranches, direction: Direction, short: int, long: int) -> None:
-            super().__init__(parent, ["render", "update"])
-            self.parent: AttackFourBranches
-
-            self.direction = direction
-            self.size = (long, short) if direction == "left" or direction == "right" else (short, long)
-            self.short, self.long = short, long
-
-            self.grow_vector = pygame.Vector2(1, 0) if direction == "left" or direction == "right" else pygame.Vector2(0, 1)
-            self.image = pygame.Surface(self.size)
-            self.rect = self.image.get_frect()
-            self.align_to_parent()
-
-            self.image.fill((0, 0, 255))
-            self.image.set_alpha(0)
-
-            self.z_index = 10
-
-            self.player = self.manager.get_object("player")
-
-        def align_to_parent(self):
-            boss_rect = self.parent.parent.rect
-            if self.direction == "up":
-                self.rect.centerx = boss_rect.centerx
-                self.rect.bottom = boss_rect.y
-            elif self.direction == "down":
-                self.rect.centerx = boss_rect.centerx
-                self.rect.top = boss_rect.bottom
-            elif self.direction == "left":
-                self.rect.centery = boss_rect.centery
-                self.rect.right = boss_rect.x
-            elif self.direction == "right":
-                self.rect.centery = boss_rect.centery
-                self.rect.x = boss_rect.right
-
-        def update(self) -> None:
-            if self.parent.attack_timer < AttackFourBranches.CHARGEUP:
-                self.image.set_alpha((self.parent.attack_timer / AttackFourBranches.CHARGEUP) * 100)
-            else:
-                new_length = (self.parent.attack_timer - AttackFourBranches.CHARGEUP) / (self.parent.max_attack_time - AttackFourBranches.CHARGEUP) * self.long
-                self.image = pygame.Surface((self.short, self.short) + self.grow_vector * (new_length))
-                self.rect = self.image.get_frect()
-                self.align_to_parent()
-                
-                if self.rect.colliderect(self.player.rect):
-                    self.player.hit(self, 10)
-
-    def __init__(self, parent: Enemy) -> None:
-        super().__init__(parent, attack_time = AttackFourBranches.LIFETIME)
-        for d in ("left", "right", "up", "down"):
-            self.add_child(AttackFourBranches.LineSegment(self, d, 64, 1024))
-
 class Attack8Projectiles(BossAttack):
     CHARGEUP = 10
     LIFE = 120
@@ -326,23 +272,48 @@ class Attack8Projectiles(BossAttack):
                 if dx == 0 and dy == 0: continue
                 self.parent.add_child(Attack8Projectiles.Projectile(self.parent, pygame.Vector2(dx, dy)))
 
+class AttackStomp(BossAttack):
+    CHARGETIME = 45
+    def __init__(self, parent: Enemy) -> None:
+        super().__init__(parent, attack_time = 999)
+
+        player = self.manager.get_object("player")
+        self.land_indicator = self.add_child(Sprite(self, ["render"]))
+        self.land_indicator.image = self.manager.get_image("enemy/target")
+        self.land_indicator.rect = self.land_indicator.image.get_rect(centery = player.rect.bottom - 8, centerx = player.rect.centerx)
+        self.land_indicator.z_index = -0.5
+
+        self.target_y = self.land_indicator.rect.centery
+
+        self.moved = False
+
+    def update(self):
+        super().update()
+        if not self.moved and self.attack_timer >= AttackStomp.CHARGETIME:
+            self.parent.hitbox_active = False
+            self.parent.collision_active = False
+            self.parent.rect.y -= TILE_SIZE * 8
+            self.parent.rect.centerx = self.land_indicator.rect.centerx
+            self.moved = True
+            self.land_indicator.kill()
+        if self.moved:
+            self.parent.add_velocity(pygame.Vector2(0, 1.5))
+
 class TreeBoss(Enemy):
-    ATTACK_INTERVAL = 300
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, position, enemy_stats["tree_boss"])
-        self.animation_manager.add_animation("still", [self.manager.get_image("enemy/tree_boss")])
-        self.image = self.animation_manager.set_animation("still")
+        self.animation_manager.add_animation("fire", util.parse_spritesheet(self.manager.get_image("enemy/tree_boss"), frame_count=3))
+        self.image = self.animation_manager.set_animation("fire")
         self.rect = self.image.get_frect(center = position)
-        
-        self.in_stationary_attack = False
 
-        self.next_attack_timer = self.ATTACK_INTERVAL
+        self.attack_interval = 150
+        self.next_attack_timer = self.attack_interval
         self.in_attack_timer = 0
-        self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles, AttackFourBranches]
+        self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles, AttackStomp]
         self.current_attack: BossAttack | None = None
 
-        self.hitbox = pygame.Rect(0, 0, self.rect.width - 32, self.rect.height - 16)
-        self.hitbox_offset = pygame.Vector2(0, 8)
+        self.hitbox = pygame.Rect(0, 0, self.rect.width / 2, self.rect.height / 2)
+        self.hitbox_offset = pygame.Vector2(0, self.rect.height / 4)
 
         self.manager.stop_music(300)
 
@@ -354,30 +325,19 @@ class TreeBoss(Enemy):
         self.manager.get_object("camera").shake(10, 10)
 
     def update_ai(self) -> None:
-        self.follow_player()
-        if self.in_stationary_attack:
-            self.velocity = pygame.Vector2()
-
         # if in an attack
         if self.current_attack:
             if self.current_attack.should_die:
-                # remove movement lock, queue next event
                 self.current_attack.kill()
                 self.current_attack = None
-                self.in_stationary_attack = False
-                self.next_attack_timer = random.randint(self.ATTACK_INTERVAL - 50, self.ATTACK_INTERVAL + 50)
+                self.next_attack_timer = random.randint(self.attack_interval - 50, self.attack_interval + 50)
 
         # else count down to next attack
         else:
             self.next_attack_timer -= self.manager.dt
             if self.next_attack_timer <= 0:
                 self.current_attack = self.add_child(random.choice(self.possible_attacks)(self))
-                self.in_stationary_attack = True
 
     def kill(self) -> None:
         super().kill()
         self.manager.play_music("music/forest", fade_ms=5000)
-
-    def update(self) -> None:
-        super().update()
-        # self.animation_manager.set_animation(util.get_closest_direction(pygame.Vector2(self.player.rect.center) - self.rect.center))

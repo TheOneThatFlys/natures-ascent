@@ -40,6 +40,7 @@ class Entity(Sprite):
         )
 
         self.collision_box_squish = 2
+        self.collision_active = True
 
         if health_bar_mode == "always-hide" or health_bar_mode == "normal":
             self.health_bar.hide()
@@ -130,9 +131,9 @@ class Entity(Sprite):
         # ensures that an overlap of bounds is due to the
         # movement of one direction
         self.rect.x += self.velocity.x * self.manager.dt
-        self.check_collision_horizontal(self.manager.groups["collide"])
+        if self.collision_active: self.check_collision_horizontal(self.manager.groups["collide"])
         self.rect.y += self.velocity.y * self.manager.dt
-        self.check_collision_vertical(self.manager.groups["collide"])
+        if self.collision_active: self.check_collision_vertical(self.manager.groups["collide"])
 
         self.apply_friction()
 
