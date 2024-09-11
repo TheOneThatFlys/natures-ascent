@@ -45,15 +45,18 @@ class Inventory(Node):
     def add_coin(self, value: int) -> None:
         self.coins += value
 
-    def set_weapon(self, slot: int, weapon: Type[Weapon]) -> None:
+    def set_weapon(self, slot: int, weapon: Type[Weapon]|Weapon) -> None:
+        instance = self.player.add_child(weapon(self.player)) if isinstance(weapon, Type) else weapon
+        if instance.parent != self.player: instance.transfer(self.player)
         if slot == 0:
             if self.primary != None:
                 self.remove_weapon(0)
-            self.primary = self.player.add_child(weapon(self.player))
+            self.primary = instance
         elif slot == 1:
             if self.spell != None:
                 self.remove_weapon(1)
-            self.spell = self.player.add_child(weapon(self.player))
+            self.spell = instance
+            self.player.spell_cd = self.spell.cooldown_time
 
     def remove_weapon(self, slot: int) -> None:
         if slot == 0:

@@ -29,7 +29,7 @@ class Node(DebugExpandable):
 
     def transfer(self, new_parent: Node) -> Node:
         """Transfer a node to a new parent"""
-        self.parent.remove_child(self)
+        if self in self.parent.children: self.parent.remove_child(self)
         self.parent = new_parent
         new_parent.add_child(self)
 

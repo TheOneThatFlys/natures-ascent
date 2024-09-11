@@ -123,7 +123,7 @@ class Projectile(Sprite):
     """
     Represents player spawned projectiles which can damage enemies.
     """
-    def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, hitbox_size: int, image_key: str = "error", max_life: int = 999) -> None:
+    def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, hitbox_size: int = -1, image_key: str = "error", max_life: int = 999, pierce: int = 0) -> None:
         super().__init__(parent, groups = ["update", "render"])
         self.z_index = 1
         self.image = self.manager.get_image(image_key)
@@ -136,6 +136,8 @@ class Projectile(Sprite):
         self.life = max_life
         self.damage = damage
         self.knockback = knockback
+
+        self.pierce = pierce
 
         self.floor_manager: FloorManager = self.manager.get_object("floor-manager")
 
@@ -151,7 +153,8 @@ class Projectile(Sprite):
         for enemy in self.manager.groups["enemy"]:
             if enemy.hitbox.colliderect(self.hitbox):
                 success = enemy.hit(self, damage = self.damage, kb_magnitude = self.knockback)
-                if success:
+                if success: self.pierce -= 1
+                if self.pierce < 0:
                     self.kill()
                 return
             
@@ -186,11 +189,54 @@ class Sword(Weapon):
             hit_frames = [(ANIMATION_FRAME_TIME, ANIMATION_FRAME_TIME * 2)]
         ))
 
+        if self.upgrade_level == 3:
+            self.add_child(SwordProjectile(
+                parent = self,
+                origin = self.player.rect.center,
+                velocity = pygame.Vector2(util.get_direction_vector(direction)) * 5,
+                rotation = util.get_direction_angle(direction),
+                damage = 5,
+                spawn_delay = ANIMATION_FRAME_TIME
+            ))
+
     def upgrade_1(self) -> None:
-        self.damage += 5.0
+        self.damage = 15
 
     def upgrade_2(self) -> None:
-        self.cooldown_time = 5 * 4
+        self.cooldown_time = 30
+
+class SwordProjectile(Projectile):
+    def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, rotation: float, damage: float, spawn_delay: int = 0) -> None:
+        super().__init__(
+            parent = parent,
+            origin = origin,
+            velocity = velocity,
+            damage = damage,
+            knockback = 0,
+            image_key = "items/sword_proj",
+            hitbox_size = 12,
+            pierce = 999
+        )
+
+        self.image = pygame.transform.rotate(self.image, rotation)
+        if rotation % 180 == 90: self.rect.width, self.rect.height = self.rect.height, self.rect.width
+
+        self.spawn_delay = spawn_delay
+        self.spawned = False
+
+        self.remove(self.manager.groups["render"])
+
+    def update(self) -> None:
+        if not self.spawned:
+            self.spawn_delay -= self.manager.dt
+            if self.spawn_delay < 0:
+                self.spawned = True
+                self.add(self.manager.groups["render"])
+                player = self.manager.get_object("player")
+                self.rect.center = player.rect.center
+                self.velocity += player.velocity * 0.5
+        else:
+            super().update()
 
 class Spear(Weapon):
     def __init__(self, parent: Player) -> None:

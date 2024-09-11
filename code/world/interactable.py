@@ -92,24 +92,25 @@ class WorldItem(Interactable):
 
         if is_weapon:
             if player.inventory.primary == None:
-                self.item.transfer(player)
-                player.inventory.primary = self.item
+                player.inventory.set_weapon(0, self.item)
                 self.kill()
             else:
-                self.item.transfer(player)
-                player.inventory.primary.transfer(self)
-                player.inventory.primary, self.item = self.item, player.inventory.primary
+                temp = player.inventory.primary
+                player.inventory.set_weapon(0, self.item)
+                temp.transfer(self)
+                self.item = temp
                 self.image = self.manager.get_image(self.item.icon_key, 0.5)
                 player.interact_overlay.update_outline()
         else:
             if player.inventory.spell == None:
                 self.item.transfer(player)
-                player.inventory.spell = self.item
+                player.inventory.set_weapon(1, self.item)
                 self.kill()
             else:
-                self.item.transfer(player)
-                player.inventory.spell.transfer(self)
-                player.inventory.spell, self.item = self.item, player.inventory.spell
+                temp = player.inventory.spell
+                player.inventory.set_weapon(1, self.item)
+                temp.transfer(self)
+                self.item = temp
                 self.image = self.manager.get_image(self.item.icon_key, 0.5)
                 player.interact_overlay.update_outline()
         self.manager.play_sound("effect/item_pickup", 0.7)
