@@ -59,6 +59,12 @@ class DebugPalette(Node):
         level = self.manager.get_object("level")
         level.add_child(Health(level, (player.rect.centerx, player.rect.bottom + 16)))
 
+    def max_items(self) -> None:
+        player = self.manager.get_object("player")
+        inv = player.inventory
+        if inv.primary: inv.primary.upgrade(3)
+        if inv.spell: inv.spell.upgrade(3)
+
 class Game(DebugExpandable):
     # main game class that manages screens and pygame events
     def __init__(self) -> None:

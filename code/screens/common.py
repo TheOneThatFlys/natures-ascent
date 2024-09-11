@@ -147,6 +147,7 @@ class PickupChestData:
 @dataclass
 class WorldItemData:
     item_id: int
+    upgrade: int
     position: Vec2
 
 @dataclass
@@ -158,6 +159,9 @@ class PersistantGameData:
 
     weapon_id: int
     spell_id: int
+
+    weapon_upgrade: int
+    spell_upgrade: int
 
     coins: int
 

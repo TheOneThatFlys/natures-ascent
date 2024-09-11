@@ -547,11 +547,12 @@ class Level(Screen):
 
     def get_game_data(self) -> PersistantGameData:
         world_items = []
-        for item in [x for x in self.manager.groups["interact"] if isinstance(x, WorldItem)]:
-            id = self.item_pool.get_item_id(item.item)
+        for w_item in [x for x in self.manager.groups["interact"] if isinstance(x, WorldItem)]:
+            id = self.item_pool.get_item_id(w_item.item)
             world_items.append(WorldItemData(
                 item_id = id,
-                position = item.rect.center
+                upgrade = w_item.item.upgrade_level,
+                position = w_item.rect.center
             ))
 
         item_chests = []
@@ -569,12 +570,17 @@ class Level(Screen):
                     type = "coin" if isinstance(x, Coin) else "health"
                 ))
 
+        p_weapon = self.player.inventory.primary
+        s_weapon = self.player.inventory.spell
+
         return PersistantGameData(
             player_position = self.player.rect.center,
             player_health = self.player.health,
             player_iframes = self.player.iframes,
-            weapon_id = self.item_pool.get_item_id(self.player.inventory.primary),
-            spell_id = self.item_pool.get_item_id(self.player.inventory.spell),
+            weapon_id = self.item_pool.get_item_id(p_weapon),
+            spell_id = self.item_pool.get_item_id(s_weapon),
+            weapon_upgrade = p_weapon.upgrade_level if p_weapon else 0,
+            spell_upgrade = s_weapon.upgrade_level if s_weapon else 0,
             coins = self.player.inventory.coins,
             seed = self.floor_manager.seed,
             time = self.time_in_run,
@@ -605,11 +611,13 @@ class Level(Screen):
             self.player.inventory.remove_weapon(0)
         else:
             self.player.inventory.set_weapon(0, self.item_pool.get_item(data.weapon_id))
+            self.player.inventory.primary.upgrade(data.weapon_upgrade)
 
         if data.spell_id == -1:
             self.player.inventory.remove_weapon(1)
         else:
             self.player.inventory.set_weapon(1, self.item_pool.get_item(data.spell_id))
+            self.player.inventory.spell.upgrade(data.spell_upgrade)
 
         # load room states
         for room_coord in data.rooms_discovered:
@@ -647,6 +655,7 @@ class Level(Screen):
         # add items
         for item_data in data.world_items:
             item = self.add_child(self.item_pool.get_item(item_data.item_id)(self))
+            item.upgrade(item_data.upgrade)
             self.add_child(WorldItem(self, item_data.position, item))
         self.item_pool.restore_from_found(data.found_ids)
 

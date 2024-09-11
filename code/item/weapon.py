@@ -35,14 +35,15 @@ class Weapon(Node):
         if self.sound_key:
             self.manager.play_sound(self.sound_key, volume=0.2)
 
-    def upgrade(self) -> None:
-        if self.upgrade_level == 3: return
-        self.upgrade_level += 1
-        match self.upgrade_level:
-            case 1: self.upgrade_1()
-            case 2: self.upgrade_2()
-            case 3: self.upgrade_3()
-            case _: None
+    def upgrade(self, times: int = 1) -> None:
+        for _ in range(times):
+            if self.upgrade_level == 3: return
+            self.upgrade_level += 1
+            match self.upgrade_level:
+                case 1: self.upgrade_1()
+                case 2: self.upgrade_2()
+                case 3: self.upgrade_3()
+                case _: None
 
     def upgrade_1(self) -> None:
         """Called when first upgrade is applied. Example use: ``self.damage += 10``"""
