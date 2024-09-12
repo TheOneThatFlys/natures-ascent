@@ -61,7 +61,7 @@ class Entity(Sprite):
         return self.hitbox.colliderect(other.hitbox)
 
     def check_collision_vertical(self, collide_group: list[Sprite]) -> None:
-        if self.velocity.y == 0: return
+        if self.velocity.y == 0 or not self.collision_active: return
         # get future position of hitbox
         future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.collision_box_squish, self.rect.width, self.rect.height / self.collision_box_squish)
         for sprite in collide_group:
@@ -77,7 +77,7 @@ class Entity(Sprite):
                     return
 
     def check_collision_horizontal(self, collide_group: list[Sprite]) -> None:
-        if self.velocity.x == 0: return
+        if self.velocity.x == 0 or not self.collision_active: return
         # see Entity.check_collision_vertical()
         future_collision_rect = pygame.Rect(self.rect.x, self.rect.y + self.rect.height / self.collision_box_squish, self.rect.width, self.rect.height / self.collision_box_squish)
         for sprite in collide_group:
@@ -131,9 +131,9 @@ class Entity(Sprite):
         # ensures that an overlap of bounds is due to the
         # movement of one direction
         self.rect.x += self.velocity.x * self.manager.dt
-        if self.collision_active: self.check_collision_horizontal(self.manager.groups["collide"])
+        self.check_collision_horizontal(self.manager.groups["collide"])
         self.rect.y += self.velocity.y * self.manager.dt
-        if self.collision_active: self.check_collision_vertical(self.manager.groups["collide"])
+        self.check_collision_vertical(self.manager.groups["collide"])
 
         self.apply_friction()
 
