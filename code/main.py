@@ -199,7 +199,7 @@ class Game(DebugExpandable):
         try:
             cfg_option = config["sfx-vol"]
             if not isinstance(cfg_option, (int, float)): raise TypeError(f"Incorrect type: {cfg_option}")
-            if cfg_option < 0 or cfg_option > 1: raise ValueError(f"Value out of bounds: {cfg_option}")
+            if cfg_option < 0: raise ValueError(f"Value out of bounds: {cfg_option}")
             self.manager.sfx_volume = cfg_option
         except Exception as e:
             Logger.warn(f"Could not load config option [sfx-vol]. Defaulting to value {default_config['sfx-vol']} ({e})")
@@ -207,7 +207,7 @@ class Game(DebugExpandable):
         try:
             cfg_option = config["music-vol"]
             if not isinstance(cfg_option, (int, float)): raise TypeError(TypeError(f"Incorrect type: ({cfg_option})"))
-            if cfg_option < 0 or cfg_option > 1: raise ValueError(f"Value out of bounds: {cfg_option}")
+            if cfg_option < 0: raise ValueError(f"Value out of bounds: {cfg_option}")
             self.manager.music_volume = cfg_option
         except Exception as e:
             Logger.warn(f"Could not load config option [music-vol]. Defaulting to value {default_config['music-vol']} ({e})")

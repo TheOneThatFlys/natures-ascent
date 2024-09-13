@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 import pygame
 import random, pickle, os
 
-from engine import Screen, Sprite, Node, ui
+from engine import Screen, Sprite, Node, ui, Logger
 from engine.types import *
 from entity import Player, HealthBar
 from item import MeleeWeaponAttack, ItemPool, Coin, Health
@@ -504,7 +504,11 @@ class Level(Screen):
         super().__init__(parent = game)
         game_data = None
         if load_from_file and os.path.exists(RUN_SAVE_PATH):
-            game_data: PersistantGameData = pickle.loads(SaveHelper.load_file(RUN_SAVE_PATH, True))
+            try:
+                game_data: PersistantGameData = pickle.loads(SaveHelper.load_file(RUN_SAVE_PATH, True))
+            except pickle.UnpicklingError as e:
+                Logger.warn("Error unpickling run data - save data may be corrupted")
+                game_data = None
 
         self.game_surface = pygame.Surface(self.rect.size)
 

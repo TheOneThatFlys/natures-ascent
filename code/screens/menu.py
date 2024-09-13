@@ -96,29 +96,3 @@ class Menu(Screen):
     def on_resize(self, new_res: Vec2) -> None:
         self.master_container.style.image = util.draw_background(new_res)
         super().on_resize(new_res)
-
-class ScrollableText(Element):
-    def __init__(self, parent: Element, style: Style, text: str, text_padding: int = 0, scroll_strength: int = 30) -> None:
-        self.text = text
-        self.text_padding = text_padding
-        self.scroll_strength = scroll_strength
-
-        self._scroll_progress = 0
-
-        super().__init__(parent, style)
-
-    def redraw_image(self) -> None:
-        super().redraw_image()
-        font_surf = self.style.font.render(self.text, self.style.antialiasing, self.style.fore_colour, wraplength = self.style.size[0] - 2 * self.text_padding)
-        self.image.blit(font_surf, (self.text_padding, self.text_padding + self._scroll_progress))
-
-    def on_scroll(self, dx: int, dy: int) -> None:
-        super().on_scroll(dx, dy)
-
-        if self.rect.collidepoint(self.manager.get_mouse_pos()):
-            self._scroll_progress += dy * self.scroll_strength
-
-            if self._scroll_progress > 0:
-                self._scroll_progress = 0
-
-            self.redraw_image()
