@@ -37,7 +37,7 @@ enemy_stats = {
         value = 3
     ),
     "tree_boss": EnemyStats(
-        health = 300,
+        health = 750,
         contact_damage = 20,
         walk_speed = 0.3,
         iframes = 10,

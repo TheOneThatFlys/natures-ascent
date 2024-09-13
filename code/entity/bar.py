@@ -16,6 +16,8 @@ class HealthBar(Sprite):
         self.border_size = border_size
         self.health_colour = health_colour
 
+        self.padding = 16
+
         self.hidden = False
 
         self._redraw_image()
@@ -46,7 +48,7 @@ class HealthBar(Sprite):
         self._redraw_image()
 
         # render bar below parent with a little padding
-        self.rect.bottom = self.parent.rect.top - 16
+        self.rect.bottom = self.parent.rect.top - self.padding
         self.rect.centerx = self.parent.rect.centerx
 
     def show(self) -> None:

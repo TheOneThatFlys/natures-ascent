@@ -256,7 +256,7 @@ class Attack8Projectiles(BossAttack):
 
             self.image = self.animation_manager.set_animation("default")
             self.rect = self.image.get_rect(center = parent.rect.center)
-            self.hitbox = pygame.Rect(0, 0, self.rect.width / 2, self.rect.height / 2)
+            self.hitbox = pygame.Rect(0, 0, self.rect.width / 4, self.rect.height / 4)
             self.life = Attack8Projectiles.LIFE
 
             self.z_index = 1
@@ -329,7 +329,7 @@ class AttackStomp(BossAttack):
             self.moved = True
             self.land_indicator.kill()
         if self.moved:
-            self.parent.add_velocity(pygame.Vector2(0, 5))
+            self.parent.add_velocity(pygame.Vector2(0, 3))
 
             if self.parent.rect.bottom >= self.target_y:
                 self.should_die = True
@@ -338,6 +338,8 @@ class AttackStomp(BossAttack):
                 self.parent.rect.bottom = self.target_y
                 self.parent.z_index = 0
                 self.parent.velocity = pygame.Vector2()
+
+                self.manager.play_sound("effect/enemy_enter", volume = 0.1)
 
                 self.manager.get_object("camera").shake(5, 5)
 
@@ -351,8 +353,10 @@ class TreeBoss(Enemy):
         self.attack_interval = 150
         self.next_attack_timer = self.attack_interval
         self.in_attack_timer = 0
-        self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles]
+        self.possible_attacks: list[Type[BossAttack]] = [Attack8Projectiles, AttackStomp]
         self.current_attack: BossAttack | None = None
+
+        self.health_bar.padding = -32
 
         self.hitbox = pygame.Rect(0, 0, self.rect.width / 2, self.rect.height / 2)
         self.hitbox_offset = pygame.Vector2(0, self.rect.height / 4)
