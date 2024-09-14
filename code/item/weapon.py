@@ -63,12 +63,14 @@ class Spell(Weapon):
         super().attack(None)
 
 class MeleeWeaponAttack(Sprite):
-    def __init__(self, parent: Player, direction: Direction, damage: float, knockback: float, width: float, length: float, hit_frames: list[tuple[int, int]], total_life: int) -> None:
+    def __init__(self, parent: Player, direction: Direction, damage: float, knockback: float, width: float, length: float, hit_frames: list[tuple[int, int]], total_life: int, lifesteal: float = 0.0) -> None:
         super().__init__(parent, groups = ["update"])
         self.z_index = 1
         self.direction = direction
         self.damage = damage
         self.knockback = knockback
+
+        self.lifesteal = lifesteal
 
         self.life = total_life
         self.rect = pygame.Rect(0, 0, length, width)
@@ -86,10 +88,13 @@ class MeleeWeaponAttack(Sprite):
 
     def _check_enemy_collisions(self) -> None:
         # check if hitting enemy
+        player = self.manager.get_object("player")
         for enemy in self.manager.groups["enemy"].sprites():
             if self.rect.colliderect(enemy.hitbox) and not enemy in self._hit_enemies:
-                enemy.hit(self.manager.get_object("player"), damage = self.damage, kb_magnitude = self.knockback)
+                enemy.hit(player, damage = self.damage, kb_magnitude = self.knockback)
                 self._hit_enemies.append(enemy)
+
+                player.add_health(self.damage * self.lifesteal)
 
     def _stick_to_parent_position(self) -> None:
         # stick hitbox to a side based on direction of attack
@@ -201,7 +206,7 @@ class Spear(Weapon):
     def __init__(self, parent: Player) -> None:
         super().__init__(
             parent,
-            cooldown_time = ANIMATION_FRAME_TIME * 4,
+            cooldown_time = 40,
             animation_key = "spear_attack",
             icon_key = "items/spear",
             sound_key = "effect/spear_swoosh"
@@ -220,8 +225,16 @@ class Spear(Weapon):
             width = 32,
             length = 64,
             total_life = ANIMATION_FRAME_TIME * 3,
+            lifesteal = 0.05 if self.upgrade_level == 3 else 0,
             hit_frames = [(ANIMATION_FRAME_TIME, ANIMATION_FRAME_TIME * 2)]
         ))
+
+    def upgrade_1(self) -> None:
+        self.damage = 15.0
+
+    def upgrade_2(self) -> None:
+        self.knockback = 25.0
+        self.cooldown_time = 30
 
 class FireballSpell(Spell):
     def __init__(self, parent: Player) -> None:
@@ -310,15 +323,24 @@ class FireballProjectile(Projectile):
         super().update()
 
 class DashSpell(Spell):
-    # terrible hack to get a timer to update
+    # instantiate a sprite to update
     class __FrictionNormaliser(Sprite):
-        def __init__(self, parent: Node) -> None:
+        def __init__(self, parent: Node, t: float, damage: float = 0) -> None:
             super().__init__(parent, ["update"])
-            self.counter = 0
+            self.counter = t
+            self.damage = damage
+            self.hit_enemies = set()
+            self.player: Player = self.manager.get_object("player")
 
         def update(self) -> None:
-            self.counter += self.manager.dt
-            if self.counter > 10:
+            if self.damage:
+                for enemy in self.manager.groups["enemy"]:
+                    if self.player.hitbox.colliderect(enemy.hitbox) and not enemy in self.hit_enemies:
+                        enemy.hit(self.player, damage = self.damage, kb_magnitude = 0)
+                        self.hit_enemies.add(enemy)
+
+            self.counter -= self.manager.dt
+            if self.counter <= 0:
                 player: Player = self.manager.get_object("player")
                 player.local_friction_coef = SURFACE_FRICTION_COEFFICIENT
                 player.disable_movement_input = False
@@ -336,8 +358,9 @@ class DashSpell(Spell):
             Logger.warn(f"Dash spell cooldown set to {self.cooldown_time}, which is below the recommended minimum of {16}.")
 
         self.magnitude = 10
-
-        self.dash_timer = 0
+        self.lock_time = 10
+        self.iframes = 16
+        self.damage = 0
 
     def attack(self) -> None:
         super().attack()
@@ -352,14 +375,30 @@ class DashSpell(Spell):
         if direction.magnitude() == 0:
             last_direction = self.player.last_facing.overall
             direction = pygame.Vector2(util.get_direction_vector(last_direction))
+    
         self.player.velocity = direction.normalize() * self.magnitude
-        self.player.iframes = 16
+        # set invincibility frames
+        self.player.iframes = self.iframes
+        # disable friction and lock movement
         self.player.local_friction_coef = 0
         self.player.disable_movement_input = True
-        self.add_child(DashSpell.__FrictionNormaliser(self))
+        # set timer to revert back to normal
+        self.add_child(DashSpell.__FrictionNormaliser(self, self.lock_time, self.damage))
+        # queue dash animation
         self.player.animation_manager.set_animation("dash-" + self.player.last_facing.overall)
-        cam = self.manager.get_object("camera")
-        cam.shake(2, 5)
+        # screen shake gives some feedback
+        self.manager.get_object("camera").shake(2, 5)
+
+    def upgrade_1(self) -> None:
+        self.magnitude = 12
+        self.iframes = 20
+        self.lock_time = 14
+
+    def upgrade_2(self) -> None:
+        self.cooldown_time = 35
+
+    def upgrade_3(self) -> None:
+        self.damage = 2
 
 Item = Weapon|Spell
 class ItemPool(Node):

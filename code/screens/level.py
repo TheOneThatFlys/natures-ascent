@@ -74,7 +74,7 @@ class HealthBarUI(ui.Element):
         pygame.draw.rect(self.image, self.shadow_colour, shadow_rect, border_bottom_left_radius = 4, border_bottom_right_radius = right_radius)
         self.style.image = self.image
 
-        self.text.set_text(f"{self.player.health}/{self.player.stats.health}")
+        self.text.set_text(f"{int(self.player.health)}/{self.player.stats.health}")
 
 class MapUI(ui.Element):
     def __init__(self, parent: Node, style: ui.Style, scale = 32) -> None:
