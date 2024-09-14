@@ -3,7 +3,7 @@ from typing import Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from entity import Player
 
-import pygame
+import pygame, math
 
 from engine import Sprite, Node, Logger
 from engine.types import *
@@ -134,6 +134,8 @@ class Sword(Weapon):
         self.damage = 10.0
         self.knockback = 10.0
 
+        self.projectile_speed = 8
+
     def attack(self, direction: Direction) -> None:
         super().attack(direction)
         self.player.add_child(MeleeWeaponAttack(
@@ -150,7 +152,7 @@ class Sword(Weapon):
             self.add_child(SwordProjectile(
                 parent = self,
                 origin = self.player.rect.center,
-                velocity = pygame.Vector2(util.get_direction_vector(direction)) * 5,
+                velocity = pygame.Vector2(util.get_direction_vector(direction)) * self.projectile_speed,
                 rotation = util.get_direction_angle(direction),
                 damage = 5,
                 spawn_delay = ANIMATION_FRAME_TIME
@@ -176,7 +178,6 @@ class SwordProjectile(Projectile):
             pierce = 999
         )
 
-        self.image = pygame.transform.rotate(self.image, rotation)
         if rotation % 180 == 90: self.rect.width, self.rect.height = self.rect.height, self.rect.width
 
         self.spawn_delay = spawn_delay
@@ -192,7 +193,7 @@ class SwordProjectile(Projectile):
                 self.add(self.manager.groups["render"])
                 player = self.manager.get_object("player")
                 self.rect.center = player.rect.center
-                self.velocity += player.velocity * 0.5
+                self.velocity += player.velocity * 0.3
         else:
             super().update()
 
@@ -236,6 +237,8 @@ class FireballSpell(Spell):
         self.spawn_speed = 7
         self.momentum_coef = 0.5
 
+        self.pierce = 1
+
     def attack(self) -> None:
         super().attack()
 
@@ -248,26 +251,63 @@ class FireballSpell(Spell):
                 velocity = util.polar_to_cart(angle, self.spawn_speed) + self.player.velocity * self.momentum_coef,
                 damage = self.damage,
                 knockback = self.knockback,
-                max_life = 300,
-                rotation_degrees = angle,
-                scale = 1,
+                pierce = self.pierce,
+                homing = self.upgrade_level == 3 # homing if level 3
             ))
 
+    def upgrade_1(self) -> None:
+        self.spawn_number = 12
+
+    def upgrade_2(self) -> None:
+        self.pierce = 999
+
 class FireballProjectile(Projectile):
-    def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, max_life: int = 999, rotation_degrees: float = 0, scale: int = 1):
+    def __init__(self, parent: Node, origin: Vec2, velocity: pygame.Vector2, damage: float, knockback: float, pierce: int, homing: bool):
         super().__init__(
             parent = parent,
             origin = origin,
             velocity = velocity,
             damage = damage,
             enemy_group = parent.manager.groups["enemy"],
+            image_key = "items/fireball",
             knockback = knockback,
-            hitbox_size = 16 * scale,
-            max_life = max_life
+            hitbox_size = 16,
+            max_life = 300,
+            pierce = pierce,
         )
 
-        self.image = pygame.transform.scale_by(pygame.transform.rotate(self.manager.get_image("items/fireball"), rotation_degrees + 90), scale)
-        self.rect = self.image.get_rect(center = origin)
+        self.homing = homing
+        self.direction = math.degrees(math.atan2(velocity.y, velocity.x))
+        self.speed = velocity.magnitude()
+
+        self.turn_speed = 3
+
+        self.original_image = self.manager.get_image("items/fireball")
+        self.awareness_r = (TILE_SIZE * 2)
+
+    def update(self) -> None:
+        if self.homing:
+            closest_enemy = min(
+                self.manager.groups["enemy"],
+                key = lambda enemy: (pygame.Vector2(self.rect.center) - enemy.rect.center).magnitude_squared(),
+                default = None
+            )
+            # if closest enemy is within range
+            if closest_enemy and (pygame.Vector2(self.rect.center) - closest_enemy.rect.center).magnitude() < self.awareness_r:
+                # find vector & angle towards enemy
+                dv = pygame.Vector2(closest_enemy.rect.center) - self.rect.center
+                target_direction = -math.degrees(math.atan2(dv.y, dv.x))
+                # dont need to change direction
+                if target_direction != self.direction:
+                    p = util.sign(target_direction - self.direction)
+                    self.direction += p * self.turn_speed * self.manager.dt
+
+        animation_frames = self.animation_manager.get_animation("still")
+        animation_frames[0] = pygame.transform.rotate(self.original_image, self.direction)
+        self.image = animation_frames[0]
+        self.rect = self.image.get_rect(center = self.rect.center)
+        self.velocity = util.polar_to_cart(self.direction, self.speed)
+        super().update()
 
 class DashSpell(Spell):
     # terrible hack to get a timer to update

@@ -778,6 +778,10 @@ class Level(Screen):
             # draw hitboxes
             if hasattr(item, "hitbox"):
                 pygame.draw.rect(self.game_surface, RED, self.camera.convert_rect(item.hitbox), width = 1)
+            # draw facing directions
+            if hasattr(item, "direction") and isinstance(item.direction, float):
+                end = item.rect.center + pygame.Vector2(32, 0).rotate(-item.direction)
+                pygame.draw.line(self.game_surface, RED, self.camera.convert_coords(item.rect.center), self.camera.convert_coords(end), 1)
 
         # and also draw room rects
         if self.debug_mode == 2:
