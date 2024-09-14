@@ -1,2 +1,2 @@
-from .weapon import MeleeWeaponAttack, Projectile, Weapon, Spell, Sword, ItemPool
+from .weapon import MeleeWeaponAttack, Weapon, Spell, Sword, ItemPool, Projectile
 from .pickup import Coin, Health, Pickup

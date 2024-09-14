@@ -1,8 +1,7 @@
 from __future__ import annotations
-from typing import Type, TYPE_CHECKING, TypeVar
+from typing import Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from entity import Player
-    from world import FloorManager
 
 import pygame
 
@@ -11,6 +10,8 @@ from engine.types import *
 
 import util
 from util.constants import *
+
+from .projectile import Projectile
 
 class Weapon(Node):
     """
@@ -119,51 +120,6 @@ class MeleeWeaponAttack(Sprite):
         self.frames_alive += self.manager.dt
         if self.life < 0:
             self.kill()
-
-class Projectile(Sprite):
-    """
-    Represents player spawned projectiles which can damage enemies.
-    """
-    def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, hitbox_size: int = -1, image_key: str = "error", max_life: int = 999, pierce: int = 0) -> None:
-        super().__init__(parent, groups = ["update", "render"])
-        self.z_index = 1
-        self.image = self.manager.get_image(image_key)
-        self.rect = self.image.get_rect(center = origin)
-        self.hitbox = pygame.Rect(0, 0, hitbox_size, hitbox_size) if hitbox_size > 0 else self.rect
-
-        self.hitbox.center = self.rect.center
-
-        self.velocity = velocity
-        self.life = max_life
-        self.damage = damage
-        self.knockback = knockback
-
-        self.pierce = pierce
-
-        self.floor_manager: FloorManager = self.manager.get_object("floor-manager")
-
-    def update(self):
-        self.life -= self.manager.dt
-        if self.life <= 0:
-            # kill with no dying animation
-            super().kill()
-            return
-
-        self.rect.topleft += self.velocity * self.manager.dt
-        self.hitbox.center = self.rect.center
-        for enemy in self.manager.groups["enemy"]:
-            if enemy.hitbox.colliderect(self.hitbox):
-                success = enemy.hit(self, damage = self.damage, kb_magnitude = self.knockback)
-                if success: self.pierce -= 1
-                if self.pierce < 0:
-                    self.kill()
-                return
-            
-        current_room = self.floor_manager.get_room_at_world_pos(self.rect.center)
-        for tile in current_room.collide_sprites.sprites() + current_room.temp_doors.sprites():
-            if self.hitbox.colliderect(tile.rect):
-                self.kill()
-                return
             
 class Sword(Weapon):
     def __init__(self, parent: Player) -> None:
@@ -213,6 +169,7 @@ class SwordProjectile(Projectile):
             origin = origin,
             velocity = velocity,
             damage = damage,
+            enemy_group = parent.manager.groups["enemy"],
             knockback = 0,
             image_key = "items/sword_proj",
             hitbox_size = 12,
@@ -299,13 +256,14 @@ class FireballSpell(Spell):
 class FireballProjectile(Projectile):
     def __init__(self, parent: Node, origin: Vec2, velocity: Vec2, damage: float, knockback: float, max_life: int = 999, rotation_degrees: float = 0, scale: int = 1):
         super().__init__(
-            parent=parent,
-            origin=origin,
-            velocity=velocity,
-            damage=damage,
-            knockback=knockback,
-            hitbox_size=16 * scale,
-            max_life=max_life
+            parent = parent,
+            origin = origin,
+            velocity = velocity,
+            damage = damage,
+            enemy_group = parent.manager.groups["enemy"],
+            knockback = knockback,
+            hitbox_size = 16 * scale,
+            max_life = max_life
         )
 
         self.image = pygame.transform.scale_by(pygame.transform.rotate(self.manager.get_image("items/fireball"), rotation_degrees + 90), scale)

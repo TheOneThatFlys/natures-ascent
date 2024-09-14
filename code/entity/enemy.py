@@ -13,7 +13,7 @@ from .stats import EnemyStats, enemy_stats
 
 from engine import Node, Sprite, AnimationManager
 from engine.types import *
-from item import Coin
+from item import Coin, Projectile
 import util
 from util.constants import *
 
@@ -237,63 +237,29 @@ class BossAttack(Sprite):
             self.should_die = True
 
 class Attack8Projectiles(BossAttack):
-    CHARGEUP = 10
-    LIFE = 120
-    
-    class Projectile(Sprite):
+    class Fireball(Projectile):
         def __init__(self, parent: Attack8Projectiles, direction: pygame.Vector2) -> None:
-            super().__init__(parent, ["render", "update"])
-            self.velocity = direction.normalize() * 7
-
-            death_anim = util.parse_spritesheet(self.manager.get_image("enemy/tree_boss_proj"), assume_square=True)
-
-            for i in range(len(death_anim)):
-                death_anim[i] = pygame.transform.rotate(death_anim[i], -math.degrees(math.atan2(direction.y, direction.x)))
-
-            self.animation_manager = self.add_child(AnimationManager(parent = self, frame_time=2))
-            self.animation_manager.add_animation("default", [death_anim[0]])
-            self.animation_manager.add_animation("death", death_anim)
-
-            self.image = self.animation_manager.set_animation("default")
-            self.rect = self.image.get_rect(center = parent.rect.center)
-            self.hitbox = pygame.Rect(0, 0, self.rect.width / 4, self.rect.height / 4)
-            self.life = Attack8Projectiles.LIFE
-
-            self.z_index = 1
-
-            self.player = self.manager.get_object("player")
-
-        def update(self):
-            self.animation_manager.update()
-            self.rect.topleft += self.velocity * self.manager.dt
-            self.hitbox.center = self.rect.center
-            self.life -= self.manager.dt
-
-
-            if self.animation_manager.current == "death":
-                if self.animation_manager.finished:
-                    super().kill()
-            else:
-                if self.hitbox.colliderect(self.player.hitbox):
-                    self.player.hit(self, kb_magnitude = 3, damage = 20)
-                    self.kill()
-                if self.life <= 0:
-                    super().kill()
-
-        def kill(self):
-            self.animation_manager.set_animation("death")
-            self.velocity = pygame.Vector2()
+            super().__init__(
+                parent = parent,
+                origin = parent.rect.center,
+                velocity = direction.normalize() * 7,
+                damage = 5,
+                enemy_group = [parent.manager.get_object("player")],
+                hitbox_size = 8,
+                image_key="enemy/tree_boss_proj",
+                max_life = 120,
+            )
 
     def __init__(self, parent: Enemy) -> None:
         super().__init__(parent, attack_time = 20)
-        self.chargeup_timer = 0
+        self.chargeup_timer = 20
         self.attacked = False
 
     def update(self):
         super().update()
         if self.attacked: return
-        self.chargeup_timer += self.manager.dt
-        if self.chargeup_timer >= Attack8Projectiles.CHARGEUP:
+        self.chargeup_timer -= self.manager.dt
+        if self.chargeup_timer <= 0:
             self.attack()
             self.attacked = True
 
@@ -301,7 +267,7 @@ class Attack8Projectiles(BossAttack):
         for dx in (-1, 0, 1):
             for dy in (-1, 0, 1):
                 if dx == 0 and dy == 0: continue
-                self.parent.add_child(Attack8Projectiles.Projectile(self.parent, pygame.Vector2(dx, dy)))
+                self.parent.add_child(Attack8Projectiles.Fireball(self.parent, pygame.Vector2(dx, dy)))
 
 class AttackStomp(BossAttack):
     CHARGETIME = 45

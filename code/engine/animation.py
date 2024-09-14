@@ -51,6 +51,13 @@ class AnimationManager(Node):
 
         return self._animations[key][0]
 
+    def get_animation(self, key: str) -> list[pygame.Surface]:
+        return self._animations[key]
+    
+    def rotate_animation(self, key: str, angle: float) -> None:
+        """Rotate an animation by a given angle in degrees, anti-clockwise."""
+        self._animations[key] = [pygame.transform.rotate(frame, angle) for frame in self._animations[key]]
+
     def get_current_frame(self) -> pygame.Surface:
         return self._animations[self._current][self._current_index]
 
@@ -63,7 +70,6 @@ class AnimationManager(Node):
         if self._counter >= self._frame_time:
             self.parent.image = self._animations[self._current][self._current_index]
             self._recenter_parent()
-
 
             self._current_index += 1
 
