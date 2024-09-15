@@ -91,7 +91,7 @@ class MapUI(ui.Element):
         self.room_colour = UI_LIGHTBROWN
         self.unactivated_colour = UI_DARKBROWN
 
-        self.spawn_icon, self.boss_icon, self.done_icon, self.player_icon = parse_spritesheet(self.manager.get_image("map/icons", 0.5), assume_square=True)
+        self.spawn_icon, self.boss_icon, self.done_icon, self.player_icon, self.upgrade_icon = parse_spritesheet(self.manager.get_image("map/icons", 0.5), assume_square=True)
 
         self.update_map()
 
@@ -126,6 +126,8 @@ class MapUI(ui.Element):
             return self.spawn_icon
         elif "boss" in room.tags and room.activated:
             return self.boss_icon
+        elif "upgrade" in room.tags and room.activated:
+            return self.upgrade_icon
         elif room.activated and len(room.enemies) == 0:
             return self.done_icon
         return pygame.Surface((0, 0))
