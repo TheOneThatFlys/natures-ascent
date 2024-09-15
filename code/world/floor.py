@@ -12,7 +12,7 @@ import util
 from util.constants import *
 
 from .tile import Tile, TileSet, TileCollection
-from .interactable import Sign, ItemChest, PickupChest
+from .interactable import ItemChest, PickupChest, PrayerStatue
 
 room_directions: list[Direction] = ["left", "right", "up", "down"]
 opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
@@ -348,12 +348,6 @@ class SpawnRoom(Room):
     def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:
         super().__init__(parent, origin, room_size, [], [], ["spawn"])
 
-        self.add_child(Sign(
-            self,
-            (self.bounding_rect.centerx - TILE_SIZE / 2, self.bounding_rect.y + TILE_SIZE),
-            f"Press {pygame.key.name(self.manager.keybinds["interact"])} to interact with this sign, but you already knew that, otherwise you wouldn't be reading this."
-        ))
-
         portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
         portal_sprite.image = self.manager.get_image("world/spawn_portal")
         portal_sprite.rect = portal_sprite.image.get_rect(center = self.bounding_rect.center)
@@ -405,12 +399,22 @@ class BossRoom(SpecialRoom):
                 self.enemies.add(e)
 
 class UpgradeRoom(SpecialRoom):
-    def __init__(self, room: Room, item_seed: float) -> None:
+    def __init__(self, room: Room) -> None:
         super().__init__(room)
-
         self.tags.append("upgrade")
+        self.statue = self.add_child(PrayerStatue(self, (self.bounding_rect.centerx, self.bounding_rect.centery - TILE_SIZE * 1)))
+        # add collider for statue base
+        s = self.add_child(Sprite(self, groups = ["collide"]))
+        s.rect = pygame.Rect(0, 0, TILE_SIZE * 2, TILE_SIZE * 2 + 4)
+        s.rect.bottom = self.statue.rect.bottom
+        s.rect.centerx = self.statue.rect.centerx
+        
+    def activate(self) -> None:
+        self._activated = True
+        self.dark_overlay.queue_death()
 
-        self.item_seed = item_seed
+    def on_completion(self) -> None:
+        pass # remove chest spawn
 
 class FloorManager(Node):
     def __init__(self, parent: Node, room_size: int = 8, target_num: int = 8) -> None:
@@ -459,7 +463,7 @@ class FloorManager(Node):
         # create upgrade room
         # find a random room that is not special
         room = random.choice([room for room in self.rooms.values() if not isinstance(room, (SpecialRoom, SpawnRoom))])
-        self.rooms[room.origin] = self.add_child(UpgradeRoom(room, random.random()))
+        self.rooms[room.origin] = self.add_child(UpgradeRoom(room))
 
         self.player = self.add_child(Player(self, self.spawn_room.bounding_rect.center - pygame.Vector2(TILE_SIZE / 2, TILE_SIZE)))
 

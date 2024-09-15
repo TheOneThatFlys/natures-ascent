@@ -1,20 +1,25 @@
+from __future__ import annotations
 from typing import Type, TYPE_CHECKING
 if TYPE_CHECKING:
     from entity import Player
 
-import pygame, math
+import pygame, math, random
 
 from engine import Node, Sprite, Logger
 from engine.types import *
 from item import Weapon, Spell, Pickup
 from util.constants import *
-from util import render_multiline, parse_spritesheet
+from util import render_multiline, parse_spritesheet, create_outline
 
 class Interactable(Sprite):
     def __init__(self, parent: Node, groups: list[str] = []) -> None:
         super().__init__(parent, groups = ["interact", "render"] + groups)
         self.pixel_scale = 4
         self.is_focused = False
+    
+    @property
+    def focus_point(self) -> Vec2:
+        return self.rect.center
 
     def interact(self) -> None:
         """Called when the player interacts with the object"""
@@ -28,50 +33,53 @@ class Interactable(Sprite):
         """Called when current interact focus is removed from object."""
         self.is_focused = False
 
-class Sign(Interactable):
-    def __init__(self, parent: Node, position: Vec2, text: str) -> None:
-        super().__init__(parent)
-        self.image = self.manager.get_image("world/sign")
-        self.rect = self.image.get_rect(topleft = position)
+# class Sign(Interactable):
+#     def __init__(self, parent: Node, position: Vec2, text: str) -> None:
+#         super().__init__(parent)
+#         self.image = self.manager.get_image("world/sign")
+#         self.rect = self.image.get_rect(topleft = position)
 
-        rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, TEXT_LIGHTBROWN, TILE_SIZE * 3, alignment = "center")
-        shadow_text = render_multiline(self.manager.get_font("alagard", 16), text, UI_DARKBROWN, TILE_SIZE * 3, alignment = "center")
+#         rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, PLAYER_GREEN, TILE_SIZE * 3, alignment = "center")
+#         # shadow_text = render_multiline(self.manager.get_font("alagard", 16), text, TEXT_DARKWHITE, TILE_SIZE * 5, alignment = "center")
 
-        self.text_box = self.add_child(Sprite(self))
-        self.text_box.image = pygame.Surface((rendered_text.get_width() + 16, rendered_text.get_height() + 16))
-        self.text_box.rect = self.text_box.image.get_rect(centerx = self.rect.centerx, bottom = self.rect.top - 8)
-        self.text_box.z_index = 1
+#         self.h_padding = 32
+#         self.v_padding = 16
+
+#         self.text_box = self.add_child(Sprite(self))
+#         self.text_box.image = pygame.Surface((rendered_text.get_width() + self.h_padding, rendered_text.get_height() + self.v_padding))
+#         self.text_box.rect = self.text_box.image.get_rect(centerx = self.rect.centerx, bottom = self.rect.top - 8)
+#         self.text_box.z_index = 1
         
-        self.text_box.image.fill(UI_ALTBROWN)
-        pygame.draw.rect(self.text_box.image, UI_BROWN, self.text_box.image.get_rect(), 4)
-        midx = self.text_box.image.get_width() / 2
-        midy = self.text_box.image.get_height() / 2
-        self.text_box.image.blit(shadow_text, shadow_text.get_rect(center = (midx, midy + 1)))
-        self.text_box.image.blit(rendered_text, rendered_text.get_rect(center = (midx, midy)))
+#         self.text_box.image.fill(BG_NAVY)
+#         pygame.draw.rect(self.text_box.image, BG_DARKNAVY, self.text_box.image.get_rect(), 4)
+#         midx = self.text_box.image.get_width() / 2
+#         midy = self.text_box.image.get_height() / 2
+#         # self.text_box.image.blit(shadow_text, shadow_text.get_rect(center = (midx, midy)))
+#         self.text_box.image.blit(rendered_text, rendered_text.get_rect(center = (midx, midy)))
 
-        self.add_child(self.text_box)
+#         self.add_child(self.text_box)
 
-        self.text_active = False
+#         self.text_active = False
 
-    def activate_text(self) -> None:
-        if not self.text_active:
-            self.text_active = True
-            self.text_box.add(self.manager.groups["render"])
+#     def activate_text(self) -> None:
+#         if not self.text_active:
+#             self.text_active = True
+#             self.text_box.add(self.manager.groups["render"])
 
-    def deactivate_text(self) -> None:
-        if self.text_active:
-            self.text_active = False
-            self.text_box.remove(self.manager.groups["render"])
+#     def deactivate_text(self) -> None:
+#         if self.text_active:
+#             self.text_active = False
+#             self.text_box.remove(self.manager.groups["render"])
 
-    def interact(self) -> None:
-        if self.text_active:
-            self.deactivate_text()
-        else:
-            self.activate_text()
+#     def interact(self) -> None:
+#         if self.text_active:
+#             self.deactivate_text()
+#         else:
+#             self.activate_text()
 
-    def on_unfocus(self) -> None:
-        super().on_unfocus()
-        self.deactivate_text()
+#     def on_unfocus(self) -> None:
+#         super().on_unfocus()
+#         self.deactivate_text()
 
 class WorldItem(Interactable):
     def __init__(self, parent: Node, position: Vec2, item: Weapon|Spell) -> None:
@@ -168,3 +176,76 @@ class PickupChest(Chest):
         level = self.manager.get_object("level")
         for _ in range(self.number):
             level.add_child(self.pickup_type(level, (self.rect.centerx, self.rect.centery - TILE_SIZE)))
+
+class PrayerStatue(Interactable):
+    class PrayerStatueText(Sprite):
+        def __init__(self, parent: PrayerStatue, cost: int) -> None:
+            super().__init__(parent, [])
+            self.cost = cost
+            self.update_text(0)
+
+        def update_text(self, coins: int) -> None:
+            title_image = self.manager.get_font("alagard", 32).render("Pray", True, PLAYER_GREEN)
+            title_shadow = self.manager.get_font("alagard", 32).render("Pray", True, PLAYER_DARKGREEN)
+            cost_image = self.manager.get_font("alagard", 16).render(f"{min(coins, self.cost)}/{self.cost}", True, WHITE)
+            coin_icon = self.manager.get_image("map/coin", 0.5)
+
+            icontext_size = (
+                cost_image.get_width() + coin_icon.get_width() + 4,
+                max(cost_image.get_height(), coin_icon.get_height())
+            )
+            cost_icontext = pygame.Surface(icontext_size, pygame.SRCALPHA)
+            cost_icontext.blit(cost_image, (0, 1))
+            cost_icontext.blit(coin_icon, (cost_image.get_width() + 4, 0))
+
+            img_size = (
+                max(title_image.get_width(), cost_icontext.get_width()),
+                title_image.get_height() + cost_icontext.get_height()
+            )
+
+            self.image = pygame.Surface(img_size, pygame.SRCALPHA)
+            self.image.blit(title_shadow, title_image.get_rect(centerx = img_size[0] / 2, y = 2))
+            self.image.blit(title_image, title_image.get_rect(centerx = img_size[0] / 2))
+            self.image.blit(cost_icontext, cost_icontext.get_rect(centerx = img_size[0] / 2, top = title_image.get_height()))
+
+            self.rect = self.image.get_rect(centerx = self.parent.rect.centerx, bottom = self.parent.rect.top - 8)
+
+    def __init__(self, parent: Node, position: Vec2) -> None:
+        super().__init__(parent, ["render"])
+        self.image = self.manager.get_image("world/statue")
+        self.rect = self.image.get_rect(center = position)
+
+        self.pixel_scale = 4
+
+        self.upgrade_cost = 50
+
+        self.text = self.add_child(PrayerStatue.PrayerStatueText(self, self.upgrade_cost))
+
+    @property
+    def focus_point(self) -> Vec2:
+        return (self.rect.centerx, self.rect.bottom)
+
+    def interact(self) -> None:
+        player: Player = self.manager.get_object("player")
+        if player.inventory.coins >= self.upgrade_cost:
+            player.inventory.coins -= self.upgrade_cost
+            
+            valid_slots = [0, 1]
+            for s in (0, 1):
+                if player.inventory.at(s) == None:
+                    valid_slots.remove(s)
+                elif player.inventory.at(s).upgrade_level == 3:
+                    valid_slots.remove(s)
+            if valid_slots:
+                slot_to_upgrade = random.choice(valid_slots)
+                player.inventory.at(slot_to_upgrade).upgrade()
+
+    def on_focus(self) -> None:
+        player: Player = self.manager.get_object("player")
+        self.text.update_text(player.inventory.coins)
+        self.text.add(self.manager.groups["render"])
+        super().on_focus()
+
+    def on_unfocus(self) -> None:
+        self.text.remove(self.manager.groups["render"])
+        super().on_unfocus()

@@ -31,6 +31,11 @@ class DebugPalette(Node):
         fm = self.manager.get_object("floor-manager")
         player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "boss" in room.tags][0]
 
+    def go_to_upgrade(self) -> None:
+        player = self.manager.get_object("player")
+        fm = self.manager.get_object("floor-manager")
+        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "upgrade" in room.tags][0]
+
     def kill_player(self) -> None:
         self.manager.get_object("player").kill()
 

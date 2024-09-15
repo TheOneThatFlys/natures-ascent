@@ -72,7 +72,7 @@ class Inventory(Node):
         if index == 0:
             return self.primary
         if index == 1:
-            return self.secondary
+            return self.spell
         raise IndexError()
 
 class InteractionOverlay(Sprite):
@@ -98,10 +98,10 @@ class InteractionOverlay(Sprite):
     def update(self) -> None:
         closest_object: Interactable = min(
             self.manager.groups["interact"],
-            key = lambda sprite: (pygame.Vector2(sprite.rect.center) - self.parent.rect.center).magnitude()
+            key = lambda sprite: (pygame.Vector2(sprite.focus_point) - self.parent.rect.center).magnitude()
         )
 
-        if (pygame.Vector2(closest_object.rect.center) - self.parent.rect.center).magnitude() > self.max_distance: closest_object = None
+        if (pygame.Vector2(closest_object.focus_point) - self.parent.rect.center).magnitude() > self.max_distance: closest_object = None
 
         if closest_object != self.current_focus:
             if self.current_focus != None: self.current_focus.on_unfocus()

@@ -535,6 +535,8 @@ class Level(Screen):
         self.run_autosaver = AutoSaver(self, RUN_SAVE_PATH, 60 * 30) # autosave run data every 30 seconds (only noticeable through crashes)
         self.run_autosaver.data = self.get_game_data_encoded()
 
+        self.run_autosaver.force_save()
+
         self.manager.play_music("music/forest")
 
     def _add_ui_components(self) -> None:
