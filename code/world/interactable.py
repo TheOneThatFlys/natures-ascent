@@ -239,6 +239,13 @@ class PrayerStatue(Interactable):
             if valid_slots:
                 slot_to_upgrade = random.choice(valid_slots)
                 player.inventory.at(slot_to_upgrade).upgrade()
+                self.text.update_text(player.inventory.coins)
+                self.manager.play_sound("effect/upgrade", 0.4)
+                return
+            
+        # If the player doesn't have enough coins or all slots are maxed out
+        self.manager.play_sound("effect/error", 0.4)
+        self.manager.get_object("camera").shake(3, 4)
 
     def on_focus(self) -> None:
         player: Player = self.manager.get_object("player")

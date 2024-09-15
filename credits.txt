@@ -6,3 +6,4 @@ Player walk, idle (Modified)       | Bagong Games        | https://bagong-games.
 Tree bosss fire                    | bdragon1727         | https://bdragon1727.itch.io/free-effect-and-bullet-16x16
 Menu tree image                    | Graph Script Dev    | https://graphscriptdev.itch.io/plant-trees
 Font                               | Hewett Tsoi         | https://www.dafont.com/alagard.font
+Sound effects                      | Various Artists     | https://pixabay.com/sound-effects/
