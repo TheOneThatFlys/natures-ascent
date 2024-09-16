@@ -527,6 +527,7 @@ class Level(Screen):
         self.paused = False
 
         self.time_in_run = 0
+        self.player_hits = 0
 
         self._add_ui_components()
 
@@ -592,6 +593,7 @@ class Level(Screen):
             coins = self.player.inventory.coins,
             seed = self.floor_manager.seed,
             time = self.time_in_run,
+            player_hits = self.player_hits,
             rooms_discovered = [coord for (coord, room) in self.floor_manager.rooms.items() if room.activated],
             rooms_cleared = [coord for (coord, room) in self.floor_manager.rooms.items() if room.completed],
             coin_pickups = [x.rect.center for x in self.children if isinstance(x, Coin)],
@@ -637,6 +639,8 @@ class Level(Screen):
 
         # load run time
         self.time_in_run = data.time
+        # load score
+        self.player_hits = data.player_hits
 
         # set camera position
         self.camera.pos = pygame.Vector2(data.player_position)
@@ -674,7 +678,7 @@ class Level(Screen):
         )
     
     def calculate_score(self) -> int:
-        return 0
+        return int(SCORE_INITIAL + self.player_hits * SCORE_DAMAGE + self.player.inventory.coins * SCORE_COIN + self.time_in_run * SCORE_PER_SECOND)
 
     def can_autosave(self) -> bool:
         current_room = self.floor_manager.get_room_at_world_pos(self.player.rect.center)

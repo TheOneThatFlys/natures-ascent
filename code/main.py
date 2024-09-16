@@ -39,6 +39,11 @@ class DebugPalette(Node):
     def kill_player(self) -> None:
         self.manager.get_object("player").kill()
 
+    def complete_everything(self) -> None:
+        fm = self.manager.get_object("floor-manager")
+        for room in fm.rooms.values():
+            room.force_completion()
+
     def force_win(self) -> None:
         self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data(), end_type = "win")
 

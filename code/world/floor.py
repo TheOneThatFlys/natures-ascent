@@ -12,7 +12,7 @@ import util
 from util.constants import *
 
 from .tile import Tile, TileSet, TileCollection
-from .interactable import ItemChest, PickupChest, PrayerStatue
+from .interactable import ItemChest, PickupChest, PrayerStatue, SpawnPortal
 
 room_directions: list[Direction] = ["left", "right", "up", "down"]
 opposite_directions: dict[Direction, Direction] = {"left": "right", "right": "left", "up": "down", "down": "up"}
@@ -347,13 +347,7 @@ class Room(Node):
 class SpawnRoom(Room):
     def __init__(self, parent: FloorManager, origin: Vec2, room_size: Vec2) -> None:
         super().__init__(parent, origin, room_size, [], [], ["spawn"])
-
-        portal_sprite = self.add_child(Sprite(self, groups = ["render"]))
-        portal_sprite.image = self.manager.get_image("world/spawn_portal")
-        portal_sprite.rect = portal_sprite.image.get_rect(center = self.bounding_rect.center)
-        # render above floor and below player
-        portal_sprite.z_index = -0.5
-
+        self.spawn_portal = self.add_child(SpawnPortal(self, self.bounding_rect.center))
         # force completion without activating room clear
         self._activated = True
         self._completed = True

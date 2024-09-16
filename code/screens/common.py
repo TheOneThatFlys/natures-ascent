@@ -168,6 +168,7 @@ class PersistantGameData:
     seed: float
 
     time: float
+    player_hits: int
 
     rooms_discovered: list[Vec2]
     rooms_cleared: list[Vec2]

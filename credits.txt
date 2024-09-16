@@ -1,6 +1,6 @@
 Asset Used                         | Artist              | Link
 -----------------------------------|---------------------|---------------------------------------------------------------------
-Spawn portal                       | Cainos              | https://cainos.itch.io/pixel-art-top-down-basic
+Spawn portal, prayer statue        | Cainos              | https://cainos.itch.io/pixel-art-top-down-basic
 Tileset Inspiration                | Anokolisa           | https://anokolisa.itch.io/dungeon-crawler-pixel-art-asset-pack
 Player walk, idle (Modified)       | Bagong Games        | https://bagong-games.itch.io/hana-caraka-base-character
 Tree bosss fire                    | bdragon1727         | https://bdragon1727.itch.io/free-effect-and-bullet-16x16

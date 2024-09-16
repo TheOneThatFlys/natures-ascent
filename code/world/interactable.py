@@ -9,7 +9,7 @@ from engine import Node, Sprite, Logger
 from engine.types import *
 from item import Weapon, Spell, Pickup
 from util.constants import *
-from util import render_multiline, parse_spritesheet, create_outline
+from util import parse_spritesheet
 
 class Interactable(Sprite):
     def __init__(self, parent: Node, groups: list[str] = []) -> None:
@@ -32,54 +32,6 @@ class Interactable(Sprite):
     def on_unfocus(self) -> None:
         """Called when current interact focus is removed from object."""
         self.is_focused = False
-
-# class Sign(Interactable):
-#     def __init__(self, parent: Node, position: Vec2, text: str) -> None:
-#         super().__init__(parent)
-#         self.image = self.manager.get_image("world/sign")
-#         self.rect = self.image.get_rect(topleft = position)
-
-#         rendered_text = render_multiline(self.manager.get_font("alagard", 16), text, PLAYER_GREEN, TILE_SIZE * 3, alignment = "center")
-#         # shadow_text = render_multiline(self.manager.get_font("alagard", 16), text, TEXT_DARKWHITE, TILE_SIZE * 5, alignment = "center")
-
-#         self.h_padding = 32
-#         self.v_padding = 16
-
-#         self.text_box = self.add_child(Sprite(self))
-#         self.text_box.image = pygame.Surface((rendered_text.get_width() + self.h_padding, rendered_text.get_height() + self.v_padding))
-#         self.text_box.rect = self.text_box.image.get_rect(centerx = self.rect.centerx, bottom = self.rect.top - 8)
-#         self.text_box.z_index = 1
-        
-#         self.text_box.image.fill(BG_NAVY)
-#         pygame.draw.rect(self.text_box.image, BG_DARKNAVY, self.text_box.image.get_rect(), 4)
-#         midx = self.text_box.image.get_width() / 2
-#         midy = self.text_box.image.get_height() / 2
-#         # self.text_box.image.blit(shadow_text, shadow_text.get_rect(center = (midx, midy)))
-#         self.text_box.image.blit(rendered_text, rendered_text.get_rect(center = (midx, midy)))
-
-#         self.add_child(self.text_box)
-
-#         self.text_active = False
-
-#     def activate_text(self) -> None:
-#         if not self.text_active:
-#             self.text_active = True
-#             self.text_box.add(self.manager.groups["render"])
-
-#     def deactivate_text(self) -> None:
-#         if self.text_active:
-#             self.text_active = False
-#             self.text_box.remove(self.manager.groups["render"])
-
-#     def interact(self) -> None:
-#         if self.text_active:
-#             self.deactivate_text()
-#         else:
-#             self.activate_text()
-
-#     def on_unfocus(self) -> None:
-#         super().on_unfocus()
-#         self.deactivate_text()
 
 class WorldItem(Interactable):
     def __init__(self, parent: Node, position: Vec2, item: Weapon|Spell) -> None:
@@ -177,49 +129,67 @@ class PickupChest(Chest):
         for _ in range(self.number):
             level.add_child(self.pickup_type(level, (self.rect.centerx, self.rect.centery - TILE_SIZE)))
 
+class InteractableCostText(Sprite):
+    def __init__(self, parent: Node, title: str, text: str, icon: pygame.Surface, offset: int = 8, text_colour = WHITE) -> None:
+        super().__init__(parent, ["update"])
+        self._title = title
+        self._text = text
+        self._icon = icon
+        self._offset = offset
+        self._text_colour = text_colour
+        self._cur_colour = text_colour
+        self._t = 0
+        self.update_text(self._text)
+
+    def update_text(self, text: str) -> None:
+        """Update sub text"""
+        self._text = text
+        title_image = self.manager.get_font("alagard", 32).render(self._title, True, PLAYER_GREEN)
+        title_shadow = self.manager.get_font("alagard", 32).render(self._title, True, PLAYER_DARKGREEN)
+        text_image = self.manager.get_font("alagard", 16).render(self._text, True, self._cur_colour)
+        icon = self._icon
+
+        icontext_size = (
+            text_image.get_width() + icon.get_width() + 4,
+            max(text_image.get_height(), icon.get_height())
+        )
+        icontext = pygame.Surface(icontext_size, pygame.SRCALPHA)
+        icontext.blit(text_image, (0, 1))
+        icontext.blit(icon, (text_image.get_width() + 4, 0))
+
+        img_size = (
+            max(title_image.get_width(), icontext.get_width()),
+            title_image.get_height() + icontext.get_height()
+        )
+
+        self.image = pygame.Surface(img_size, pygame.SRCALPHA)
+        self.image.blit(title_shadow, title_image.get_rect(centerx = img_size[0] / 2, y = 2))
+        self.image.blit(title_image, title_image.get_rect(centerx = img_size[0] / 2))
+        self.image.blit(icontext, icontext.get_rect(centerx = img_size[0] / 2, top = title_image.get_height()))
+
+        self.rect = self.image.get_rect(centerx = self.parent.rect.centerx, bottom = self.parent.rect.top - self._offset)
+
+    def flash(self, colour: Colour, time: int = 30) -> None:
+        self._cur_colour = colour
+        self._t = time
+        self.update_text(self._text)
+
+    def update(self) -> None:
+        if self._t > 0:
+            self._t -= self.manager.dt
+            if self._t <= 0:
+                self._cur_colour = self._text_colour
+                self.update_text(self._text)
+
 class PrayerStatue(Interactable):
-    class PrayerStatueText(Sprite):
-        def __init__(self, parent: PrayerStatue, cost: int) -> None:
-            super().__init__(parent, [])
-            self.cost = cost
-            self.update_text(0)
-
-        def update_text(self, coins: int) -> None:
-            title_image = self.manager.get_font("alagard", 32).render("Pray", True, PLAYER_GREEN)
-            title_shadow = self.manager.get_font("alagard", 32).render("Pray", True, PLAYER_DARKGREEN)
-            cost_image = self.manager.get_font("alagard", 16).render(f"{min(coins, self.cost)}/{self.cost}", True, WHITE)
-            coin_icon = self.manager.get_image("map/coin", 0.5)
-
-            icontext_size = (
-                cost_image.get_width() + coin_icon.get_width() + 4,
-                max(cost_image.get_height(), coin_icon.get_height())
-            )
-            cost_icontext = pygame.Surface(icontext_size, pygame.SRCALPHA)
-            cost_icontext.blit(cost_image, (0, 1))
-            cost_icontext.blit(coin_icon, (cost_image.get_width() + 4, 0))
-
-            img_size = (
-                max(title_image.get_width(), cost_icontext.get_width()),
-                title_image.get_height() + cost_icontext.get_height()
-            )
-
-            self.image = pygame.Surface(img_size, pygame.SRCALPHA)
-            self.image.blit(title_shadow, title_image.get_rect(centerx = img_size[0] / 2, y = 2))
-            self.image.blit(title_image, title_image.get_rect(centerx = img_size[0] / 2))
-            self.image.blit(cost_icontext, cost_icontext.get_rect(centerx = img_size[0] / 2, top = title_image.get_height()))
-
-            self.rect = self.image.get_rect(centerx = self.parent.rect.centerx, bottom = self.parent.rect.top - 8)
-
     def __init__(self, parent: Node, position: Vec2) -> None:
         super().__init__(parent, ["render"])
         self.image = self.manager.get_image("world/statue")
         self.rect = self.image.get_rect(center = position)
 
-        self.pixel_scale = 4
-
         self.upgrade_cost = 50
 
-        self.text = self.add_child(PrayerStatue.PrayerStatueText(self, self.upgrade_cost))
+        self.text = self.add_child(InteractableCostText(self, "Pray", "???", self.manager.get_image("map/coin", 0.5)))
 
     @property
     def focus_point(self) -> Vec2:
@@ -239,7 +209,7 @@ class PrayerStatue(Interactable):
             if valid_slots:
                 slot_to_upgrade = random.choice(valid_slots)
                 player.inventory.at(slot_to_upgrade).upgrade()
-                self.text.update_text(player.inventory.coins)
+                self.update_hover_text()
                 self.manager.play_sound("effect/upgrade", 0.4)
                 return
             
@@ -247,9 +217,55 @@ class PrayerStatue(Interactable):
         self.manager.play_sound("effect/error", 0.4)
         self.manager.get_object("camera").shake(3, 4)
 
-    def on_focus(self) -> None:
+    def update_hover_text(self):
         player: Player = self.manager.get_object("player")
-        self.text.update_text(player.inventory.coins)
+        self.text.update_text(f"{min(player.inventory.coins, self.upgrade_cost)}/{self.upgrade_cost}")
+
+    def on_focus(self) -> None:
+        self.update_hover_text()
+        self.text.add(self.manager.groups["render"])
+        super().on_focus()
+
+    def on_unfocus(self) -> None:
+        self.text.remove(self.manager.groups["render"])
+        super().on_unfocus()
+
+class SpawnPortal(Interactable):
+    def __init__(self, parent: Node, position: Vec2) -> None:
+        super().__init__(parent, ["render"])
+        self.image = self.manager.get_image("world/spawn_portal")
+        self.rect = self.image.get_rect(center = position)
+        # render above floor and below player
+        self.z_index = -0.5
+
+        self.text = self.add_child(InteractableCostText(self, "Ascend", "???", self.manager.get_image("map/explored", 0.5), offset = -8))
+
+    def _successfull_interact(self) -> None:
+        level = self.manager.get_object("level")
+        game = self.manager.game
+        game.set_screen("overview", game_data = level.get_overview_data(), end_type = "win")
+
+    def interact(self) -> None:
+        fm = self.manager.get_object("floor-manager")
+        for room in fm.rooms.values():
+            if not room.completed:
+                self.text.flash(RED)
+                self.manager.play_sound("effect/error", 0.4)
+                self.manager.get_object("camera").shake(3, 4)
+                return
+        # self.manager.play_sound("effect/portal", 0.4)
+        self._successfull_interact()
+
+    def update_hover_text(self):
+        fm = self.manager.get_object("floor-manager")
+        n = 0
+        for room in fm.rooms.values():
+            if room.completed:
+                n += 1
+        self.text.update_text(f"{n}/{len(fm.rooms)}")
+
+    def on_focus(self) -> None:
+        self.update_hover_text()
         self.text.add(self.manager.groups["render"])
         super().on_focus()
 
