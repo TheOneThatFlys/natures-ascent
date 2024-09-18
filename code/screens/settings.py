@@ -7,7 +7,7 @@ import pygame
 from engine import Screen, Node
 from engine.types import *
 from engine.ui import Element, Style, Text, Button, Dropdown, Slider, ScrollableElement
-from util import parse_spritesheet
+from util import parse_spritesheet, create_gui_image
 from util.constants import *
 
 from .common import DividerX
@@ -41,6 +41,8 @@ class KeybindSelector(Element):
             "DELETE": "DEL",
         }
 
+        self._button_image = create_gui_image((80, 32))
+        self._button_image_selected = create_gui_image((80, 32), border_colour = TEXT_GREEN)
         self.create_rows()
 
     def create_rows(self) -> None:
@@ -65,7 +67,7 @@ class KeybindSelector(Element):
                 on_click = self._on_keybind_click,
                 click_args = (action,),
                 style = Style(
-                    image = self.manager.get_image("menu/keybind_button", 0.5),
+                    image = self._button_image,
                     alignment = "center-right",
                     offset = (0, i * self.style.size[1]),
                 )
@@ -77,7 +79,8 @@ class KeybindSelector(Element):
                 style = Style(
                     font = self.manager.get_font("alagard", 20),
                     fore_colour = TEXT_WHITE,
-                    alignment = "center-center"
+                    alignment = "center-center",
+                    offset = (0, 2)
                 )
             ))
 
@@ -96,15 +99,15 @@ class KeybindSelector(Element):
 
     def select_button(self, action: str) -> None:
         if self.considering:
-            self.buttons[self.considering].style.image = self.manager.get_image("menu/keybind_button", 0.5)
+            self.buttons[self.considering].style.image = self._button_image
             self.buttons[self.considering].redraw_image()
 
         self.considering = action
-        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button_selected", 0.5)
+        self.buttons[action].style.image = self._button_image_selected
         self.buttons[action].redraw_image()
 
     def deselect_button(self, action: str) -> None:
-        self.buttons[action].style.image = self.manager.get_image("menu/keybind_button", 0.5)
+        self.buttons[action].style.image = self._button_image
         self.buttons[action].redraw_image()
         self.considering = None
 
@@ -116,7 +119,7 @@ class KeybindSelector(Element):
             self.deselect_button(self.considering)
 
     def on_mouse_down(self, button: int) -> None:
-        if self.considering:
+        if (button == 1 or button == 3) and self.considering:
             self.deselect_button(self.considering)
         super().on_mouse_down(button)
 
@@ -160,7 +163,7 @@ class SettingsScrollable(ScrollableElement):
                 alignment = "center-right",
                 font = self.manager.get_font("alagard", 20),
                 fore_colour = TEXT_WHITE,
-                image = self.manager.get_image("menu/dropdown_head", 0.5)
+                image = create_gui_image((128, 40)),
             ),
             button_style = Style(
                 size = (128, 40),
@@ -195,7 +198,7 @@ class SettingsScrollable(ScrollableElement):
             parent = self.horizontal_container_2,
             style = Style(
                 alignment = "center-right",
-                image = self.manager.get_image("menu/slider_bar", 0.5),
+                image = create_gui_image((192, 8)),
             ),
             knob_style = Style(
                 image = self.manager.get_image("menu/slider_knob", 0.5),
@@ -229,7 +232,7 @@ class SettingsScrollable(ScrollableElement):
             parent = self.horizontal_container_3,
             style = Style(
                 alignment = "center-right",
-                image = self.manager.get_image("menu/slider_bar", 0.5),
+                image = create_gui_image((192, 8)),
             ),
             knob_style = Style(
                 image = self.manager.get_image("menu/slider_knob", 0.5),

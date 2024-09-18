@@ -26,6 +26,16 @@ def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thi
 
     return pygame.transform.scale(bg, screen_size)
 
+def create_gui_image(size: Vec2, pixel_scale: int = 2, rounded: bool = True, border_colour: Colour = UI_BROWN, bg_colour: Colour = UI_ALTBROWN, highlight_colour: Colour = UI_ALTLIGHTBROWN, shadow_colour: Colour = UI_ALTDARKBROWN) -> pygame.Surface:
+    r = 2 if rounded else 0
+    d = r / 2
+    image = pygame.Surface(pygame.Vector2(size) / pixel_scale, pygame.SRCALPHA)
+    pygame.draw.rect(image, border_colour, (0, 0, *image.get_size()), width = 1, border_radius = r)
+    pygame.draw.rect(image, bg_colour, (1, 1, image.get_width() - 2, image.get_height() - 2))
+    pygame.draw.line(image, highlight_colour, (1, 1), (image.get_width() - 2, 1))
+    pygame.draw.line(image, shadow_colour, (d, image.get_height() - 1), (image.get_width() - 1 - d, image.get_height() - 1))
+    return pygame.transform.scale_by(image, pixel_scale)
+
 def get_closest_direction(vector: pygame.Vector2) -> Direction:
     """Returns the closest cardinal direction of a vector"""
 
