@@ -160,6 +160,7 @@ class Game(DebugExpandable):
             self.window.size = pygame.display.get_desktop_sizes()[0]
             Logger.info(f"Set video mode to BORDERLESS_WINDOW {self.window.size}")
         else:
+            self.window.borderless = False
             self.window.set_fullscreen(True)
             Logger.info("Set video mode to FULLSCREEN")
 
