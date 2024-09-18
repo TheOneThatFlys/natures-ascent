@@ -9,7 +9,7 @@ from engine import Node, Sprite, Logger
 from engine.types import *
 from item import Weapon, Spell, Pickup
 from util.constants import *
-from util import parse_spritesheet
+from util import parse_spritesheet, lerp_colour
 
 class Interactable(Sprite):
     def __init__(self, parent: Node, groups: list[str] = []) -> None:
@@ -130,15 +130,18 @@ class PickupChest(Chest):
             level.add_child(self.pickup_type(level, (self.rect.centerx, self.rect.centery - TILE_SIZE)))
 
 class InteractableCostText(Sprite):
-    def __init__(self, parent: Node, title: str, text: str, icon: pygame.Surface, offset: int = 8, text_colour = WHITE) -> None:
+    def __init__(self, parent: Interactable, title: str, text: str, icon: pygame.Surface, offset: int = 8, text_colour = WHITE) -> None:
         super().__init__(parent, ["update"])
+        self.parent: Interactable
         self._title = title
         self._text = text
         self._icon = icon
         self._offset = offset
         self._text_colour = text_colour
-        self._cur_colour = text_colour
+
         self._t = 0
+        self._flash_time = 30
+        self._flash_colour = text_colour
         self.update_text(self._text)
 
     def update_text(self, text: str) -> None:
@@ -146,7 +149,7 @@ class InteractableCostText(Sprite):
         self._text = text
         title_image = self.manager.get_font("alagard", 32).render(self._title, True, PLAYER_GREEN)
         title_shadow = self.manager.get_font("alagard", 32).render(self._title, True, PLAYER_DARKGREEN)
-        text_image = self.manager.get_font("alagard", 16).render(self._text, True, self._cur_colour)
+        text_image = self.manager.get_font("alagard", 16).render(self._text, True, lerp_colour(self._text_colour, self._flash_colour, max(self._t / self._flash_time, 0)))
         icon = self._icon
 
         icontext_size = (
@@ -170,16 +173,28 @@ class InteractableCostText(Sprite):
         self.rect = self.image.get_rect(centerx = self.parent.rect.centerx, bottom = self.parent.rect.top - self._offset)
 
     def flash(self, colour: Colour, time: int = 30) -> None:
-        self._cur_colour = colour
+        self._flash_colour = colour
         self._t = time
+        self._flash_time
         self.update_text(self._text)
 
     def update(self) -> None:
+        r_group = self.manager.groups["render"]
+        # if displayed
+        if r_group in self.groups():
+            # remove if not focused
+            if not self.parent.is_focused:
+                self.remove(r_group)
+        else: # if not displayed
+            # add if focused
+            if self.parent.is_focused:
+                self.add(r_group)
+
         if self._t > 0:
             self._t -= self.manager.dt
-            if self._t <= 0:
-                self._cur_colour = self._text_colour
-                self.update_text(self._text)
+            self.update_text(self._text)
+        else:
+            self._t = 0
 
 class PrayerStatue(Interactable):
     def __init__(self, parent: Node, position: Vec2) -> None:
@@ -214,6 +229,7 @@ class PrayerStatue(Interactable):
                 return
             
         # If the player doesn't have enough coins or all slots are maxed out
+        self.text.flash(TEXT_RED)
         self.manager.play_sound("effect/error", 0.4)
         self.manager.get_object("camera").shake(3, 4)
 
@@ -222,13 +238,8 @@ class PrayerStatue(Interactable):
         self.text.update_text(f"{min(player.inventory.coins, self.upgrade_cost)}/{self.upgrade_cost}")
 
     def on_focus(self) -> None:
-        self.update_hover_text()
-        self.text.add(self.manager.groups["render"])
         super().on_focus()
-
-    def on_unfocus(self) -> None:
-        self.text.remove(self.manager.groups["render"])
-        super().on_unfocus()
+        self.update_hover_text()
 
 class SpawnPortal(Interactable):
     def __init__(self, parent: Node, position: Vec2) -> None:
@@ -249,7 +260,7 @@ class SpawnPortal(Interactable):
         fm = self.manager.get_object("floor-manager")
         for room in fm.rooms.values():
             if not room.completed:
-                self.text.flash(RED)
+                self.text.flash(TEXT_RED)
                 self.manager.play_sound("effect/error", 0.4)
                 self.manager.get_object("camera").shake(3, 4)
                 return
@@ -265,10 +276,5 @@ class SpawnPortal(Interactable):
         self.text.update_text(f"{n}/{len(fm.rooms)}")
 
     def on_focus(self) -> None:
-        self.update_hover_text()
-        self.text.add(self.manager.groups["render"])
         super().on_focus()
-
-    def on_unfocus(self) -> None:
-        self.text.remove(self.manager.groups["render"])
-        super().on_unfocus()
+        self.update_hover_text()

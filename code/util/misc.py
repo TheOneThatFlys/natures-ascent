@@ -84,7 +84,7 @@ def sign(n: float) -> Literal[1, -1, 0]:
     if n < 0: return -1
     return 0
 
-def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour = (255, 255, 255)) -> pygame.Surface:
+def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: Colour = (255, 255, 255)) -> pygame.Surface:
     """Creates an outline around the image using the image's alpha values. The resulting image is the image size + 2 * `pixel_scale` to account for extra space."""
     # scale image to pixel scale
     img = pygame.transform.scale_by(image, 1 / pixel_scale)
@@ -165,3 +165,10 @@ def choose_weighted(weighted_dict: dict[T, int]) -> T:
             n -= v
             if n < 0:
                 return k
+            
+def lerp_colour(c1: Colour, c2: Colour, t: float) -> Colour:
+    return (
+        c1[0] + (c2[0] - c1[0]) * t,
+        c1[1] + (c2[1] - c1[1]) * t,
+        c1[2] + (c2[2] - c1[2]) * t,
+    )
