@@ -11,7 +11,7 @@ import pygame
 from typing import Type
 from engine import Screen, Manager, Logger, Node
 from screens import Level, Menu, SettingsScreen, GameOverviewScreen
-from util import DebugWindow, SaveHelper, AutoSaver
+from util import DebugWindow, SaveHelper, AutoSaver, is_valid_username
 
 from engine.types import *
 from util.constants import *
@@ -112,12 +112,15 @@ class Game(DebugExpandable):
         self._next_screen: str = ""
         self._next_screen_kwargs: dict = {}
 
+        # current account
+        self.username = ""
+
         self.add_screen("level", Level)
         self.add_screen("menu", Menu)
         self.add_screen("settings", SettingsScreen)
         self.add_screen("overview", GameOverviewScreen)
         self.set_screen("menu")
-
+        
         self.load_config()
         self.settings_saver = AutoSaver(self, CONFIG_SAVE_PATH, 60 * 120)
 
@@ -175,6 +178,7 @@ class Game(DebugExpandable):
             "window-mode": self.get_window_mode(),
             "sfx-vol": self.manager.sfx_volume,
             "music-vol": self.manager.music_volume,
+            "username": self.username,
             "keybinds": self.manager.keybinds
         }
         return json.dumps(config, indent=4)
@@ -184,6 +188,7 @@ class Game(DebugExpandable):
             "window-mode": "windowed",
             "sfx-vol": 0.1,
             "music-vol": 0.1,
+            "username": "",
             "keybinds": {
                 "move-up": pygame.K_w,
                 "move-left": pygame.K_a,
@@ -205,11 +210,14 @@ class Game(DebugExpandable):
             # load default values
             config = default_config
         else:
-            config = json.loads(SaveHelper.load_file(CONFIG_SAVE_PATH))
-           
+            try:
+                config = json.loads(SaveHelper.load_file(CONFIG_SAVE_PATH))
+            except Exception as e:
+                Logger.warn(f"Error parsing '{CONFIG_SAVE_PATH}': {e}")
+                config = default_config
         try:
             cfg_option = config["sfx-vol"]
-            if not isinstance(cfg_option, (int, float)): raise TypeError(f"Incorrect type: {cfg_option}")
+            if not isinstance(cfg_option, (int, float)): raise TypeError(f"Config option 'sfx-vol' must be of type 'float'")
             if cfg_option < 0: raise ValueError(f"Value out of bounds: {cfg_option}")
             self.manager.sfx_volume = cfg_option
         except Exception as e:
@@ -217,7 +225,7 @@ class Game(DebugExpandable):
 
         try:
             cfg_option = config["music-vol"]
-            if not isinstance(cfg_option, (int, float)): raise TypeError(TypeError(f"Incorrect type: ({cfg_option})"))
+            if not isinstance(cfg_option, (int, float)): raise TypeError(f"Config option 'music-vol' must be of type 'float'")
             if cfg_option < 0: raise ValueError(f"Value out of bounds: {cfg_option}")
             self.manager.music_volume = cfg_option
         except Exception as e:
@@ -237,6 +245,14 @@ class Game(DebugExpandable):
                         raise ValueError(f"Unknown window mode: {window_mode}")
         except Exception as e:
             Logger.warn(f"Could not load config option [window-mode]. Defaulting to value {default_config['window-mode']} ({e})")
+
+        try:
+            cfg_option = config["username"]
+            if not isinstance(cfg_option, str): raise TypeError("Config option 'username' must be of type 'str'")
+            if not is_valid_username(cfg_option): raise ValueError("Invalid username")
+            self.username = cfg_option
+        except Exception as e:
+            Logger.warn(f"Could not load config option [username]. Defaulting to value {default_config['username']} ({e})")
 
         try:
             cfg_option = config["keybinds"]

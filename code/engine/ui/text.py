@@ -107,22 +107,35 @@ class Text(Element):
         self.rect = self.image.get_rect()
         self.calculate_position()
 
-class RichText(Element):
-    """
-    UI element that displays rich text (only supports colour).
-    """
-    def redraw_image(self) -> None:
-        self.image = render_rich_text(self.style.font, self.text)
-        self.rect = self.image.get_rect()
-        self.calculate_position()
+# class RichText(Element):
+#     """
+#     UI element that displays rich text (only supports colour).
+#     """
+#     def redraw_image(self) -> None:
+#         self.image = render_rich_text(self.style.font, self.text)
+#         self.rect = self.image.get_rect()
+#         self.calculate_position()
 
 class TextBox(Element):
     """
     UI element that enables use to type into a text field.
     """
-    def __init__(self, parent: Element, style: Style, focused_style: Optional[Style] = None, initial_text: str = "", text_padding: Vec2 = (0, 2), show_blinker: bool = True, enabled: bool = True, on_unfocus: tuple[Callable[..., None], list] = (None, [])) -> None:
+    def __init__(self,
+                 parent: Element,
+                 style: Style,
+                 focused_style: Optional[Style] = None,
+                 initial_text: str = "",
+                 text_padding: Vec2 = (0, 2),
+                 show_blinker: bool = True,
+                 enabled: bool = True,
+                 on_unfocus: tuple[Callable[..., None], list] = (None, []),
+                 max_length: int = 999,
+                 character_set: Optional[str] = None) -> None:
+        
         self.text = initial_text
         self.text_padding = text_padding
+        # length in pixels of text
+        self.text_length_pixels = 0
 
         super().__init__(parent, style)
 
@@ -141,8 +154,10 @@ class TextBox(Element):
         self.on_unfocus = on_unfocus[0]
         self.on_unfocus_args = on_unfocus[1]
 
-        # length in pixels of text
-        self.text_length_pixels = 0
+        # max allowed num of characters
+        self.max_length = max_length
+        # allowed characters
+        self.character_set = character_set
 
     def on_mouse_down(self, mouse_button: int) -> None:
         super().on_mouse_down(mouse_button)
@@ -179,16 +194,20 @@ class TextBox(Element):
                     self.text = ""
                 else:
                     self.text = self.text[:-1]
-            else:
-                self.text += unicode
+            elif len(self.text) < self.max_length:
+                if (self.character_set and unicode in self.character_set) or self.character_set == None:
+                    self.text += unicode
             self.redraw_image()
 
     def redraw_image(self) -> None:
-        self.image = pygame.Surface(self.style.size)
-        self.image.fill(self.style.colour)
+        if self.style.image:
+            self.image = self.style.image.copy()
+        else:
+            self.image = pygame.Surface(self.style.size)
+            self.image.fill(self.style.colour)
 
         font_s = self.style.font.render(self.text, self.style.antialiasing, self.style.fore_colour)
-        font_r = font_s.get_rect(left = self.text_padding[0], top = self.text_padding[1])
+        font_r = font_s.get_rect(left = self.text_padding[0], bottom = self.image.get_height() - self.text_padding[1])
 
         self.text_length_pixels = font_r.width
 
@@ -219,6 +238,6 @@ class TextBox(Element):
         super().render(window)
 
         if self._blink_activated:
-            blink_rect = pygame.Rect(self.rect.x + self.text_length_pixels, self.rect.y + 2, 2, self.rect.height - 4)
+            blink_rect = pygame.Rect(self.rect.x + self.text_length_pixels + self.text_padding[0], self.rect.y + 2, 2, self.rect.height - 4)
             if self.rect.contains(blink_rect):
                 pygame.draw.rect(window, self.style.fore_colour, blink_rect)

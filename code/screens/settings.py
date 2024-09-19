@@ -42,7 +42,7 @@ class KeybindSelector(Element):
         }
 
         self._button_image = create_gui_image((80, 32))
-        self._button_image_selected = create_gui_image((80, 32), border_colour = TEXT_GREEN)
+        self._button_image_selected = create_gui_image((80, 32), border_colour = TEXT_GREEN, shadow_colour = TEXT_GREEN)
         self.create_rows()
 
     def create_rows(self) -> None:

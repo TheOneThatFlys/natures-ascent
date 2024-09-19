@@ -182,3 +182,15 @@ def lerp_colour(c1: Colour, c2: Colour, t: float) -> Colour:
         c1[1] + (c2[1] - c1[1]) * t,
         c1[2] + (c2[2] - c1[2]) * t,
     )
+
+def is_valid_username(name: str) -> bool:
+    """
+    Check if the input string is a valid username. Valid usernames have a max of 16 chars and only contain alphanumeric characters and underscore.
+    """
+    if len(name) > 16: return False
+    if name == "": return False
+
+    for letter in name:
+        if letter not in ALLOWED_CHARACTERS: return False
+
+    return True
