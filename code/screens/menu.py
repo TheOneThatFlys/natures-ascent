@@ -70,8 +70,9 @@ class Menu(Screen):
             parent = self.master_container,
             yoffset = self.play_button.rect.bottom,
             text = "Leaderboard",
-            enabled = False,
-            colours = button_colours
+            colours = button_colours,
+            on_click = self.parent.set_screen,
+            click_args = ["leaderboard"]
         ))
 
         self.settings_button = self.master_container.add_child(TextButton(

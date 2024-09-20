@@ -4,7 +4,7 @@ from engine.types import *
 
 from .constants import *
 
-def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thickness: int = 7, offset: int = 0, border_radius: int = 0) -> pygame.Surface:
+def draw_background(screen_size: Vec2, pixel_scale: int = 8, line_thickness: int = 7, offset: int = 0, border_radius: int = 0) -> pygame.Surface:
     """Draw a striped background of given sized and scale onto surface"""
     bg = pygame.Surface((screen_size[0] / pixel_scale, screen_size[1] / pixel_scale), pygame.SRCALPHA)
     bg.fill(BG_NAVY)
@@ -25,6 +25,13 @@ def draw_background(screen_size: tuple[int, int], pixel_scale: int = 8, line_thi
         bg = mask.to_surface(setsurface = bg, unsetcolor = None)
 
     return pygame.transform.scale(bg, screen_size)
+
+def draw_background_empty(size: Vec2):
+    """Draw unstriped background."""
+    image = pygame.Surface(size)
+    image.fill(BG_NAVY)
+    pygame.draw.rect(image, BG_DARKNAVY, (0, 0, *size), 24)
+    return image
 
 def create_gui_image(size: Vec2, pixel_scale: int = 2, rounded: bool = True, border_colour: Colour = UI_BROWN, bg_colour: Colour = UI_ALTBROWN, highlight_colour: Colour = UI_ALTLIGHTBROWN, shadow_colour: Colour = UI_ALTDARKBROWN) -> pygame.Surface:
     r = 2 if rounded else 0

@@ -10,7 +10,7 @@ import pygame
 
 from typing import Type
 from engine import Screen, Manager, Logger, Node
-from screens import Level, Menu, SettingsScreen, GameOverviewScreen
+from screens import Level, Menu, SettingsScreen, GameOverviewScreen, Leaderboard
 from util import DebugWindow, SaveHelper, AutoSaver, is_valid_username
 
 from engine.types import *
@@ -119,6 +119,7 @@ class Game(DebugExpandable):
         self.add_screen("menu", Menu)
         self.add_screen("settings", SettingsScreen)
         self.add_screen("overview", GameOverviewScreen)
+        self.add_screen("leaderboard", Leaderboard)
         self.set_screen("menu")
         
         self.load_config()

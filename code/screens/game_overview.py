@@ -6,7 +6,7 @@ from engine import Screen, Node
 from engine.ui import Text, Style, Element, TextBox, Button
 from engine.types import *
 from util.constants import *
-from util import create_gui_image, is_valid_username
+from util import create_gui_image, is_valid_username, draw_background_empty
 
 from .common import TextButton, TextButtonColours, OverviewData, DividerX
 
@@ -18,7 +18,7 @@ class GameOverviewScreen(Screen):
         self.end_type = end_type
 
         self.master_container.style.alpha = 255
-        self.master_container.style.image = self._draw_background(self.rect.size)
+        self.master_container.style.image = draw_background_empty(self.rect.size)
         self.master_container.redraw_image()
 
         self.title_text = self.master_container.add_child(Text(
@@ -203,12 +203,6 @@ class GameOverviewScreen(Screen):
                 alignment = "center-center"
             )
         ))
-
-    def _draw_background(self, size: Vec2) -> pygame.Surface:
-        image = pygame.Surface(size)
-        image.fill(BG_NAVY)
-        pygame.draw.rect(image, BG_DARKNAVY, (0, 0, *size), 24)
-        return image
     
     def _on_name_unfocus(self) -> None:
         username = self.name_field.text
@@ -226,7 +220,7 @@ class GameOverviewScreen(Screen):
         self.manager.game.set_screen("menu")
 
     def on_resize(self, new_res: Vec2) -> None:
-        self.master_container.style.image = self._draw_background(new_res)
+        self.master_container.style.image = draw_background_empty(new_res)
         super().on_resize(new_res)
 
 
