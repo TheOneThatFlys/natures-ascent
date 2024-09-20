@@ -15,6 +15,8 @@ class GameOverviewScreen(Screen):
         super().__init__(parent)
         if os.path.exists(RUN_SAVE_PATH): os.remove(RUN_SAVE_PATH)
 
+        self.end_type = end_type
+
         self.master_container.style.alpha = 255
         self.master_container.style.image = self._draw_background(self.rect.size)
         self.master_container.redraw_image()
@@ -150,6 +152,7 @@ class GameOverviewScreen(Screen):
                 fore_colour = TEXT_GREEN,
                 colour = TEXT_DARKGREEN,
                 text_shadow = 2,
+                antialiasing = True,
                 font = self.manager.get_font("alagard", 32),
                 alignment = "center-left",
             )
@@ -184,18 +187,18 @@ class GameOverviewScreen(Screen):
         self.submit_button = self.master_container.add_child(Button(
             parent = self.master_container,
             style = Style(
-                image = create_gui_image((256, 48)),
+                image = create_gui_image((128, 32)),
                 alignment = "top-center",
                 offset = (0, self.name_container.rect.bottom + 8)
             ),
-            hover_style = Style(image = create_gui_image((256, 48), bg_colour = UI_ALTLIGHTBROWN))
+            hover_style = Style(image = create_gui_image((128, 32), border_colour = TEXT_GREEN, shadow_colour = TEXT_GREEN))
         ))
 
         self.submit_text = self.submit_button.add_child(Text(
             parent = self.submit_button,
-            text = "Submit Run",
+            text = "Submit",
             style = Style(
-                font = self.manager.get_font("alagard", 32),
+                font = self.manager.get_font("alagard", 16),
                 fore_colour = TEXT_WHITE,
                 alignment = "center-center"
             )
