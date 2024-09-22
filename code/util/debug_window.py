@@ -170,6 +170,7 @@ class Inspector(Element):
             initial_text = "",
             enabled = False,
             on_unfocus = (self._on_value_unfocus, []),
+            text_padding = (0, -2),
             style = Style(
                 size = (self.rect.right - self.value_text_const.rect.right - 8, self.value_text_const.rect.height),
                 offset = (self.value_text_const.rect.width + self.value_text_const.style.offset[0], self.value_text_const.style.offset[1] - 2),

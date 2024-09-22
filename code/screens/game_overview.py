@@ -61,9 +61,11 @@ class GameOverviewScreen(Screen):
             )
         ))
 
+        time_text = time.strftime("%Mm%Ss", time.gmtime(game_data.time))
+        time_text = time_text.removeprefix("00m")
         self.time_value = self.v_container.add_child(Text(
             parent = self.v_container,
-            text = f"{time.strftime("%H:%M:%S", time.gmtime(game_data.time))}.{str(round(game_data.time % 1, 3)).removeprefix("0.")}",
+            text = time_text,
             style = Style(
                 fore_colour = TEXT_WHITE,
                 font = self.manager.get_font("alagard", 32),
