@@ -269,11 +269,8 @@ class SpawnPortal(Interactable):
 
     def update_hover_text(self):
         fm = self.manager.get_object("floor-manager")
-        n = 0
-        for room in fm.rooms.values():
-            if room.completed:
-                n += 1
-        self.text.update_text(f"{n}/{len(fm.rooms)}")
+        rooms_completed, total_rooms = fm.get_completion_status()
+        self.text.update_text(f"{rooms_completed}/{total_rooms}")
 
     def on_focus(self) -> None:
         super().on_focus()

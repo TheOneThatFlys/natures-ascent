@@ -588,6 +588,10 @@ class FloorManager(Node):
         for room in self.rooms.values():
             room.optimise_tiles()
 
+    def get_completion_status(self) -> tuple[int, int]:
+        """Returns `(n. rooms completed, total rooms)`"""
+        return len(list(filter(lambda coord_room: coord_room[1].activated and coord_room[1].completed, self.rooms.items()))), len(self.rooms)
+
     def update(self) -> None:
         for _, room in self.rooms.items():
             room.update()

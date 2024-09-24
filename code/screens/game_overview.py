@@ -95,29 +95,6 @@ class GameOverviewScreen(Screen):
             )
         ))
 
-        if end_type == "win":
-            self._add_submit_ui()
-
-        self.continue_container = self.master_container.add_child(Element(
-            parent = self.master_container,
-            style = Style(
-                offset = (0, 96),
-                alignment = "bottom-center",
-                size = (1, 1)
-            )
-        ))
-
-        self.continue_button = self.continue_container.add_child(TextButton(
-            parent = self.continue_container,
-            text = "Continue",
-            yoffset = 0,
-            colours = TextButtonColours(),
-            on_click = self._on_continue,
-        ))
-
-        self.manager.stop_music(1000)
-
-    def _add_submit_ui(self) -> None:
         self.divider_1 = self.master_container.add_child(DividerX(
             parent = self.master_container,
             y = self.score_value.rect.bottom + 16,
@@ -186,12 +163,23 @@ class GameOverviewScreen(Screen):
             )
         ))
 
+        self.upload_notice = self.master_container.add_child(Text(
+            parent = self.master_container,
+            text = "Click the button below to submit your run onto the leaderboard!",
+            style = Style(
+                alignment = "top-center",
+                offset = (0, self.name_container.rect.bottom),
+                font = self.manager.get_font("alagard", 16),
+                fore_colour = TEXT_WHITE,
+            )
+        ))
+
         self.submit_button = self.master_container.add_child(Button(
             parent = self.master_container,
             style = Style(
                 image = create_gui_image((128, 32)),
                 alignment = "top-center",
-                offset = (0, self.name_container.rect.bottom + 8)
+                offset = (0, self.upload_notice.rect.bottom + 8)
             ),
             hover_style = Style(image = create_gui_image((128, 32), border_colour = TEXT_GREEN, shadow_colour = TEXT_GREEN))
         ))
@@ -205,6 +193,25 @@ class GameOverviewScreen(Screen):
                 alignment = "center-center"
             )
         ))
+
+        self.continue_container = self.master_container.add_child(Element(
+            parent = self.master_container,
+            style = Style(
+                offset = (0, 96),
+                alignment = "bottom-center",
+                size = (1, 1)
+            )
+        ))
+
+        self.continue_button = self.continue_container.add_child(TextButton(
+            parent = self.continue_container,
+            text = "Continue",
+            yoffset = 0,
+            colours = TextButtonColours(),
+            on_click = self._on_continue,
+        ))
+
+        self.manager.stop_music(1000)
     
     def _on_name_unfocus(self) -> None:
         username = self.name_field.text

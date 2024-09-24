@@ -194,8 +194,7 @@ class MapUI(ui.Element):
         self.style.image = self.image
 
         # explored text
-        total_rooms = len(self.floor_manager.rooms)
-        rooms_completed = len(list(filter(lambda coord_room: coord_room[1].activated and coord_room[1].completed, self.floor_manager.rooms.items())))
+        rooms_completed, total_rooms = self.floor_manager.get_completion_status()
         self.explored_text.set_text(f"{rooms_completed}/{total_rooms}")
 
 class InventoryUI(ui.Element):
@@ -678,7 +677,9 @@ class Level(Screen):
         )
     
     def calculate_score(self) -> int:
-        return int(SCORE_INITIAL + self.player_hits * SCORE_DAMAGE + self.player.inventory.coins * SCORE_COIN + self.time_in_run * SCORE_PER_SECOND)
+        rooms_completed, total_rooms = self.floor_manager.get_completion_status()
+        completed_everything = rooms_completed == total_rooms
+        return int(SCORE_INITIAL + self.player_hits * SCORE_DAMAGE + self.player.inventory.coins * SCORE_COIN + self.time_in_run * SCORE_PER_SECOND) + SCORE_COMPLETION if completed_everything else 0
 
     def can_autosave(self) -> bool:
         current_room = self.floor_manager.get_room_at_world_pos(self.player.rect.center)
