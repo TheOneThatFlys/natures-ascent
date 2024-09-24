@@ -1,3 +1,4 @@
+from ctypes import alignment
 import pygame, os, time
 
 from typing import Literal
@@ -28,7 +29,7 @@ class GameOverviewScreen(Screen):
                 fore_colour = TEXT_GREEN,
                 colour = TEXT_DARKGREEN,
                 text_shadow = 2,
-                font = self.manager.get_font("alagard", 72),
+                font = self.manager.get_font("alagard", 64),
                 alignment = "top-center",
                 offset = (0, 48)
             )
@@ -54,8 +55,6 @@ class GameOverviewScreen(Screen):
             text = "Time",
             style = Style(
                 fore_colour = TEXT_GREEN,
-                colour = TEXT_DARKGREEN,
-                text_shadow = 2,
                 font = self.manager.get_font("alagard", 32),
                 alignment = "top-left",
             )
@@ -78,10 +77,9 @@ class GameOverviewScreen(Screen):
             text = "Score",
             style = Style(
                 fore_colour = TEXT_GREEN,
-                colour = TEXT_DARKGREEN,
-                text_shadow = 2,
                 font = self.manager.get_font("alagard", 32),
-                alignment = "bottom-left",
+                alignment = "top-left",
+                offset = (0, self.time_text.rect.height)
             )
         ))
 
@@ -91,7 +89,8 @@ class GameOverviewScreen(Screen):
             style = Style(
                 fore_colour = TEXT_WHITE,
                 font = self.manager.get_font("alagard", 32),
-                alignment = "bottom-right",
+                alignment = "top-right",
+                offset = self.score_text.style.offset,
             )
         ))
 
@@ -129,9 +128,6 @@ class GameOverviewScreen(Screen):
             text = "Username",
             style = Style(
                 fore_colour = TEXT_GREEN,
-                colour = TEXT_DARKGREEN,
-                text_shadow = 2,
-                antialiasing = True,
                 font = self.manager.get_font("alagard", 32),
                 alignment = "center-left",
             )

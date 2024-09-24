@@ -383,11 +383,11 @@ class PauseUI(ui.Element):
             text = "Paused",
             style = ui.Style(
                 alignment = "top-center",
-                font = self.manager.get_font("alagard", 54),
+                font = self.manager.get_font("alagard", 48),
                 offset = (0, TILE_SIZE / 3),
                 fore_colour = TEXT_GREEN,
                 colour = TEXT_DARKGREEN,
-                text_shadow = 2
+                text_shadow = 3
             )
         ))
 

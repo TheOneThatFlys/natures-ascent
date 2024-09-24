@@ -38,8 +38,8 @@ class Menu(Screen):
                     offset = (0, 64),
                     fore_colour = TEXT_GREEN,
                     colour = TEXT_DARKGREEN,
-                    text_shadow = 2,
-                    font = self.manager.get_font("alagard", 72),
+                    text_shadow = 4,
+                    font = self.manager.get_font("alagard", 64),
                 )
             )
         )

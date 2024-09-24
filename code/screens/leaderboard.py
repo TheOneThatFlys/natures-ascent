@@ -48,7 +48,7 @@ class LeaderboardList(Element):
                         fore_colour = TEXT_GREEN,
                         colour = TEXT_DARKGREEN,
                         font = self.style.font,
-                        text_shadow = 2,
+                        text_shadow = 1,
                     )
             ))
         
@@ -107,8 +107,8 @@ class Leaderboard(Screen):
                 offset = (0, 32),
                 fore_colour = TEXT_GREEN,
                 colour = TEXT_DARKGREEN,
-                font = self.manager.get_font("alagard", 72),
-                text_shadow = 2
+                font = self.manager.get_font("alagard", 64),
+                text_shadow = 4
             )
         ))
 

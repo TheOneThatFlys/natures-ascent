@@ -54,7 +54,7 @@ class KeybindSelector(Element):
                 text = action.replace("-", " ").title(),
                 style = Style(
                     alignment = "center-left",
-                    font = self.manager.get_font("alagard", 20),
+                    font = self.manager.get_font("alagard", 16),
                     offset = (0, i * self.style.size[1]),
                     colour = self.style.colour,
                     fore_colour = self.style.fore_colour
@@ -77,7 +77,7 @@ class KeybindSelector(Element):
                 parent = b,
                 text = self.translate_key(key),
                 style = Style(
-                    font = self.manager.get_font("alagard", 20),
+                    font = self.manager.get_font("alagard", 16),
                     fore_colour = TEXT_WHITE,
                     alignment = "center-center",
                     offset = (0, 2)
@@ -161,14 +161,14 @@ class SettingsScrollable(ScrollableElement):
             on_change = self._on_window_mode_change,
             style = Style(
                 alignment = "center-right",
-                font = self.manager.get_font("alagard", 20),
+                font = self.manager.get_font("alagard", 16),
                 fore_colour = TEXT_WHITE,
                 image = create_gui_image((128, 40)),
             ),
             button_style = Style(
                 size = (128, 40),
                 colour = UI_ALTBROWN,
-                font = self.manager.get_font("alagard", 20),
+                font = self.manager.get_font("alagard", 16),
                 fore_colour = TEXT_WHITE
             ),
             hover_style = Style(image = None, size = (128, 40), colour = UI_ALTLIGHTBROWN)
@@ -179,7 +179,7 @@ class SettingsScrollable(ScrollableElement):
             text = "Window Mode",
             style = Style(
                 fore_colour = TEXT_GREEN,
-                font = self.manager.get_font("alagard", 20),
+                font = self.manager.get_font("alagard", 16),
                 alignment = "center-left",
             ),
         ))
@@ -189,7 +189,7 @@ class SettingsScrollable(ScrollableElement):
             text = "SFX Volume",
             style = Style(
                 fore_colour = TEXT_GREEN,
-                font = self.manager.get_font("alagard", 20),
+                font = self.manager.get_font("alagard", 16),
                 alignment = "center-left",
             ),
         ))
@@ -214,7 +214,7 @@ class SettingsScrollable(ScrollableElement):
                 alignment = "center-left",
                 offset = (self.horizontal_container_2.rect.width + 12, 0),
                 fore_colour = TEXT_GREEN,
-                font = self.manager.get_font("alagard", 20)
+                font = self.manager.get_font("alagard", 16)
             )
         ))
 
@@ -223,7 +223,7 @@ class SettingsScrollable(ScrollableElement):
             text = "Music Volume",
             style = Style(
                 fore_colour = TEXT_GREEN,
-                font = self.manager.get_font("alagard", 20),
+                font = self.manager.get_font("alagard", 16),
                 alignment = "center-left",
             ),
         ))
@@ -247,7 +247,7 @@ class SettingsScrollable(ScrollableElement):
                 alignment = "center-left",
                 offset = (self.horizontal_container_2.rect.width + 12, 0),
                 fore_colour = TEXT_GREEN,
-                font = self.manager.get_font("alagard", 20)
+                font = self.manager.get_font("alagard", 16)
             )
         ))
 
@@ -328,8 +328,8 @@ class SettingsUI(Element):
                 offset = (0, 32),
                 fore_colour = TEXT_GREEN,
                 colour = TEXT_DARKGREEN,
-                font = self.manager.get_font("alagard", 72),
-                text_shadow = 2
+                font = self.manager.get_font("alagard", 64),
+                text_shadow = 4
             )
         ))
 
