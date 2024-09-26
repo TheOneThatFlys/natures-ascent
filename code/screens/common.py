@@ -22,19 +22,20 @@ class TextButton(Button):
         parent: Element,
         yoffset: int,
         text: str,
-        colours: TextButtonColours,
+        colours: TextButtonColours = TextButtonColours(),
         font_size: int = 32,
+        xoffset: int = 0,
+        alignment: Alignment = "top-center",
         on_click: Optional[Callable] = None,
         click_args: Iterable = [],
-        text_hover: Optional[str] = None,
         enabled: bool = True
         ) -> None:
 
         super().__init__(
             parent = parent,
             style = Style(
-                alignment = "top-center",
-                offset = (0, yoffset),
+                alignment = alignment,
+                offset = (xoffset, yoffset),
                 size = (1, 1),
                 alpha = 0
             ),
@@ -54,7 +55,7 @@ class TextButton(Button):
         fore_colour = self.colours.colour if self.enabled else self.colours.disabled_colour
         shadow_colour = self.colours.colour_shadow if self.enabled else self.colours.disabled_colour_shadow
 
-        self.text = self.add_child(Text(
+        self._text_element = self.add_child(Text(
             self,
             Style(
                 font = self.manager.get_font("alagard", self.font_size),
@@ -67,22 +68,23 @@ class TextButton(Button):
             text
         ))
 
-        self.text_normal = text
-        self.text_hover = text_hover if text_hover else text
+        self.text = text
+
+    def set_text(self, text) -> None:
+        self._text_element.set_text(text)
+        self.text = text
 
     def update(self) -> None:
         if not self.enabled: return
         super().update()
         if self.hovering and not self.last_hovering:
-            self.text.style.fore_colour = self.colours.hover_colour
-            self.text.style.colour = self.colours.hover_colour_shadow
-            self.text.set_text(self.text_hover)
-            self.text.redraw_image()
+            self._text_element.style.fore_colour = self.colours.hover_colour
+            self._text_element.style.colour = self.colours.hover_colour_shadow
+            self._text_element.redraw_image()
         elif not self.hovering and self.last_hovering:
-            self.text.style.fore_colour = self.colours.colour
-            self.text.style.colour = self.colours.colour_shadow
-            self.text.set_text(self.text_normal)
-            self.text.redraw_image()
+            self._text_element.style.fore_colour = self.colours.colour
+            self._text_element.style.colour = self.colours.colour_shadow
+            self._text_element.redraw_image()
 
 class IconText(Element):
     def __init__(self, parent: Element, style: Style, text: str, icon: pygame.Surface, icon_alignment: Literal["left", "right"] = "left", padding: int = 0) -> None:

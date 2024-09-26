@@ -1,3 +1,4 @@
+from ctypes import alignment
 import pygame, time
 
 from engine import Screen, Node
@@ -7,7 +8,7 @@ from util import draw_background_empty, parse_spritesheet
 from engine.types import *
 from util.constants import *
 
-from .common import TextButton, DividerX
+from .common import TextButton, DividerX, TextButtonColours
 
 class LeaderboardList(Element):
     def __init__(self, parent: Element, style: Style):
@@ -130,7 +131,7 @@ class Leaderboard(Screen):
             hover_style = Style(image = back_button_hover)
         ))
 
-        self.test_leaderboard = self.master_container.add_child(LeaderboardList(
+        self.leaderboard_list = self.master_container.add_child(LeaderboardList(
             parent = self.master_container,
             style = Style(
                 alignment = "top-center",
@@ -140,10 +141,56 @@ class Leaderboard(Screen):
             )
         ))
 
-        self.test_leaderboard.set_items([
+        self.leaderboard_list.set_items([
             ("TestPlayer1", "3240", "45m45s"),
             ("TestPlayer2", "2495", "34m23s"),
         ])
+
+        self.scope_button = self.master_container.add_child(
+            TextButton(
+                parent = self.master_container,
+                yoffset = self.leaderboard_list.rect.bottom + 8,
+                text = "global",
+                on_click = self._on_scope_click,
+            )    
+        )
+        section_font = self.manager.get_font("alagard", 32)
+
+        self.scope_button.add_child(
+            Text(
+                parent = self.scope_button,
+                text = "Viewing           by",
+                style = Style(
+                    fore_colour = TEXT_WHITE,
+                    font = section_font,
+                    alignment = "center-left",
+                    offset = (-section_font.size("Viewing ")[0], 0)
+                )
+            )    
+        )
+
+        self.type_button = self.scope_button.add_child(
+            TextButton(
+                parent = self.scope_button,
+                text = "score",
+                alignment = "center-right",
+                xoffset = -section_font.size(" by score")[0],
+                yoffset = 0,
+                on_click = self._on_type_click,
+            )    
+        )
+
+    def _on_scope_click(self) -> None:
+        if self.scope_button.text == "global":
+            self.scope_button.set_text("player")
+        else:
+            self.scope_button.set_text("global")
+
+    def _on_type_click(self) -> None:
+        if self.type_button.text == "score":
+            self.type_button.set_text("time")
+        else:
+            self.type_button.set_text("score")
 
     def on_resize(self, new_res: Vec2) -> None:
         self.master_container.style.image = draw_background_empty(new_res)
