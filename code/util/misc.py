@@ -201,3 +201,19 @@ def is_valid_username(name: str) -> bool:
         if letter not in ALLOWED_CHARACTERS: return False
 
     return True
+
+def seconds_to_stime(total_seconds: float) -> str:
+    """Convert seconds to a string formatted time"""
+    total_minutes = total_seconds // 60
+    total_hours = total_minutes // 60
+    int_hours = int(total_hours)
+    int_minutes = int(total_minutes) % 60
+    int_seconds = int(total_seconds) % 60
+    int_ms = int(total_seconds % 1 * 100)
+    if int_hours > 0:
+        st = f"{int_hours}h {int_minutes}m {int_seconds}s"
+    elif int_minutes > 0:
+        st = f"{int_minutes}m {int_seconds}s {int_ms}ms"
+    else:
+        st = f"{int_seconds}s {int_ms}ms"
+    return st

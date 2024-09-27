@@ -7,7 +7,7 @@ from engine import Screen, Node
 from engine.ui import Text, Style, Element, TextBox, Button
 from engine.types import *
 from util.constants import *
-from util import create_gui_image, is_valid_username, draw_background_empty
+from util import create_gui_image, is_valid_username, draw_background_empty, seconds_to_stime
 
 from .common import TextButton, TextButtonColours, OverviewData, DividerX
 
@@ -60,11 +60,9 @@ class GameOverviewScreen(Screen):
             )
         ))
 
-        time_text = time.strftime("%Mm%Ss", time.gmtime(game_data.time))
-        time_text = time_text.removeprefix("00m")
         self.time_value = self.v_container.add_child(Text(
             parent = self.v_container,
-            text = time_text,
+            text = seconds_to_stime(game_data.time),
             style = Style(
                 fore_colour = TEXT_WHITE,
                 font = self.manager.get_font("alagard", 32),
