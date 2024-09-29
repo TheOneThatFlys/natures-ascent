@@ -5,7 +5,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 working_directory = os.path.join(__file__, os.pardir, os.pardir) # set cwd as two parents from this file
 os.chdir(working_directory)
 
-import sys, platform, uuid, datetime, json, asyncio
+import sys, platform, uuid, datetime, json
 import pygame
 
 from typing import Type
@@ -274,7 +274,7 @@ class Game(DebugExpandable):
         self.settings_saver.data = self.get_config_as_string()
         self.settings_saver.update()
 
-    async def run(self) -> None:
+    def run(self) -> None:
         # main loop
         while self.running:
             # maintain constant fps
@@ -411,7 +411,7 @@ def main() -> None:
 
     # main entry point
     game = Game()
-    asyncio.run(game.run())
+    game.run()
 
     Logger.info("Game closed successfully.")
 
