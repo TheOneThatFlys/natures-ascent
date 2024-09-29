@@ -673,13 +673,17 @@ class Level(Screen):
     def get_overview_data(self) -> OverviewData:
         return OverviewData(
             score = self.calculate_score(),
-            time = self.time_in_run
+            time = self.time_in_run,
+            game_data = self.get_game_data(),
+            completed = self.is_completed()
         )
     
     def calculate_score(self) -> int:
+        return int(SCORE_INITIAL + self.player_hits * SCORE_DAMAGE + self.player.inventory.coins * SCORE_COIN + self.time_in_run * SCORE_PER_SECOND) + (SCORE_COMPLETION if self.is_completed() else 0)
+
+    def is_completed(self) -> bool:
         rooms_completed, total_rooms = self.floor_manager.get_completion_status()
-        completed_everything = rooms_completed == total_rooms
-        return int(SCORE_INITIAL + self.player_hits * SCORE_DAMAGE + self.player.inventory.coins * SCORE_COIN + self.time_in_run * SCORE_PER_SECOND) + SCORE_COMPLETION if completed_everything else 0
+        return rooms_completed == total_rooms
 
     def can_autosave(self) -> bool:
         current_room = self.floor_manager.get_room_at_world_pos(self.player.rect.center)

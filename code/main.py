@@ -45,7 +45,7 @@ class DebugPalette(Node):
             room.force_completion()
 
     def force_win(self) -> None:
-        self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data(), end_type = "win")
+        self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data())
 
     def spawn_chest(self) -> None:
         player = self.manager.get_object("player")

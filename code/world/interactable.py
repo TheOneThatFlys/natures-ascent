@@ -254,7 +254,7 @@ class SpawnPortal(Interactable):
     def _successfull_interact(self) -> None:
         level = self.manager.get_object("level")
         game = self.manager.game
-        game.set_screen("overview", game_data = level.get_overview_data(), end_type = "win")
+        game.set_screen("overview", game_data = level.get_overview_data())
 
     def interact(self) -> None:
         fm = self.manager.get_object("floor-manager")

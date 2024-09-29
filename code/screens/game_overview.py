@@ -12,11 +12,11 @@ from util import create_gui_image, is_valid_username, draw_background_empty, sec
 from .common import TextButton, TextButtonColours, OverviewData, DividerX
 
 class GameOverviewScreen(Screen):
-    def __init__(self, parent: Node, game_data: OverviewData, end_type: Literal["win", "die"]) -> None:
+    def __init__(self, parent: Node, game_data: OverviewData) -> None:
         super().__init__(parent)
         if os.path.exists(RUN_SAVE_PATH): os.remove(RUN_SAVE_PATH)
 
-        self.end_type = end_type
+        self.end_type = "win" if game_data.completed else "die"
 
         self.master_container.style.alpha = 255
         self.master_container.style.image = draw_background_empty(self.rect.size)
@@ -24,7 +24,7 @@ class GameOverviewScreen(Screen):
 
         self.title_text = self.master_container.add_child(Text(
             parent = self.master_container,
-            text = "Run Complete" if end_type == "win" else "You Died",
+            text = "Run Complete" if self.end_type == "win" else "You Died",
             style = Style(
                 fore_colour = TEXT_GREEN,
                 colour = TEXT_DARKGREEN,

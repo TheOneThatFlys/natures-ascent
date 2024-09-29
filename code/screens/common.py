@@ -188,5 +188,7 @@ class PersistantGameData:
 @dataclass
 class OverviewData:
     """Data that is displayed on the game end screen."""
-    score: int
+    game_data: PersistantGameData
     time: float
+    score: int
+    completed: bool
