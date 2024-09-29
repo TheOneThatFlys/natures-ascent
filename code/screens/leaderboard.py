@@ -1,14 +1,13 @@
-from ctypes import alignment
-import pygame, time
+import pygame, requests
 
-from engine import Screen, Node
+from engine import Screen, Node, Logger
 from engine.ui import Text, Style, Element, Button
-from util import draw_background_empty, parse_spritesheet
+from util import draw_background_empty, parse_spritesheet, seconds_to_stime
 
 from engine.types import *
 from util.constants import *
 
-from .common import TextButton, DividerX, TextButtonColours
+from .common import TextButton, DividerX
 
 class LeaderboardList(Element):
     def __init__(self, parent: Element, style: Style):
@@ -16,6 +15,7 @@ class LeaderboardList(Element):
         self.n_cols = len(self.titles)
         self.row_height = 24
         self.col_width = style.size[0] // self.n_cols
+        self.n_rows = style.size[1] // self.row_height
 
         self._cols: list[Element] = []
         self._items: list[tuple[str]] = []
@@ -90,7 +90,8 @@ class LeaderboardList(Element):
                 v.set_text("")
 
         for y, item in enumerate(items):
-            for x, field in enumerate((f"#{(y + 1)}",) + item):
+            if y == self.n_rows - 1: return
+            for x, field in enumerate(item):
                 self._text_grid[y][x].set_text(field)
 
 class Leaderboard(Screen):
@@ -136,61 +137,154 @@ class Leaderboard(Screen):
             style = Style(
                 alignment = "top-center",
                 offset = (0, self.title_divider.rect.bottom + 16),
-                size = (480, 480),
+                size = (480, 16 * 24),
                 font = self.manager.get_font("alagard", 16),
             )
         ))
 
-        self.leaderboard_list.set_items([
-            ("TestPlayer1", "3240", "45m45s"),
-            ("TestPlayer2", "2495", "34m23s"),
-        ])
-
-        self.scope_button = self.master_container.add_child(
-            TextButton(
+        self.config_container = self.master_container.add_child(
+            Element(
                 parent = self.master_container,
-                yoffset = self.leaderboard_list.rect.bottom + 8,
+                style = Style(
+                    size = (1, 1),
+                    alignment = "top-center",
+                    offset = (0, self.leaderboard_list.rect.bottom + 8),
+                    alpha = 0,
+                )
+            )
+        )
+
+        section_font = self.manager.get_font("alagard", 32)
+        button_xoffset = section_font.size(" ")[0]
+        self.scope_text = self.config_container.add_child(
+            Text(
+                parent = self.config_container,
+                text = "Viewing ",
+                style = Style(
+                    font = section_font,
+                    fore_colour = TEXT_WHITE,
+                    alignment = "top-right",
+                )
+            )
+        )
+
+        self.scope_button = self.config_container.add_child(
+            TextButton(
+                parent = self.config_container,
+                yoffset = 0,
                 text = "global",
                 on_click = self._on_scope_click,
+                alignment = "top-left"
             )    
         )
-        section_font = self.manager.get_font("alagard", 32)
 
-        self.scope_button.add_child(
+        self.sort_text = self.scope_text = self.config_container.add_child(
             Text(
-                parent = self.scope_button,
-                text = "Viewing           by",
+                parent = self.config_container,
+                text = "Sort ",
                 style = Style(
-                    fore_colour = TEXT_WHITE,
                     font = section_font,
-                    alignment = "center-left",
-                    offset = (-section_font.size("Viewing ")[0], 0)
+                    fore_colour = TEXT_WHITE,
+                    alignment = "top-right",
+                    offset = (0, self.scope_text.rect.height)
                 )
+            )
+        )
+
+        self.sort_button = self.scope_button.add_child(
+            TextButton(
+                parent = self.scope_button,
+                text = "score",
+                alignment = "top-left",
+                yoffset = self.scope_text.rect.height,
+                on_click = self._on_sort_click,
             )    
+        )
+
+        self.type_text = self.scope_text = self.config_container.add_child(
+            Text(
+                parent = self.config_container,
+                text = "Type ",
+                style = Style(
+                    font = section_font,
+                    fore_colour = TEXT_WHITE,
+                    alignment = "top-right",
+                    offset = (0, self.sort_text.rect.height + self.sort_text.style.offset[1])
+                )
+            )
         )
 
         self.type_button = self.scope_button.add_child(
             TextButton(
                 parent = self.scope_button,
-                text = "score",
-                alignment = "center-right",
-                xoffset = -section_font.size(" by score")[0],
-                yoffset = 0,
+                text = "only completed",
+                alignment = "top-left",
+                yoffset = self.sort_text.rect.height + self.sort_text.style.offset[1],
                 on_click = self._on_type_click,
             )    
         )
+
+        self._update_leaderboard()
 
     def _on_scope_click(self) -> None:
         if self.scope_button.text == "global":
             self.scope_button.set_text("player")
         else:
             self.scope_button.set_text("global")
+        self._update_leaderboard()
+
+    def _on_sort_click(self) -> None:
+        if self.sort_button.text == "score":
+            self.sort_button.set_text("time")
+        else:
+            self.sort_button.set_text("score")
+        self._update_leaderboard()
 
     def _on_type_click(self) -> None:
-        if self.type_button.text == "score":
-            self.type_button.set_text("time")
+        if self.type_button.text == "only completed":
+            self.type_button.set_text("all")
         else:
-            self.type_button.set_text("score")
+            self.type_button.set_text("only completed")
+        self._update_leaderboard()
+
+    def _parse_response(self, response: dict) -> list[tuple]:
+        l = []
+        for v in response:
+            l.append((
+                "#" + str(v["position"]),
+                v["username"],
+                str(v["score"]),
+                seconds_to_stime(v["time"])
+            ))
+        return l
+
+    def _fetch_leaderboard(self, sort: str, only_completed: bool, only_player: bool) -> dict:
+        headers = {
+            "sort": sort,
+            "only-completed": "1" if only_completed else "0"
+        }
+        if only_player == True:
+            sub_route = "player"
+            headers["username"] = self.manager.game.username
+        else:
+            sub_route = "global"
+
+        res = requests.get(
+            SERVER_ADDRESS + "/leaderboard/" + sub_route,
+            headers = headers
+        )
+        if res.status_code == 200:
+            return res.json()
+        else:
+            Logger.warn(f"Could not fetch leaderboard ({headers}) [code {res.status_code}]")
+            return []
+
+    def _update_leaderboard(self) -> None:
+        self.leaderboard_list.set_items(self._parse_response(self._fetch_leaderboard(
+            self.sort_button.text,
+            False if self.type_text.text == "all" else True,
+            True if self.scope_button.text == "player" else False
+        )))
 
     def on_resize(self, new_res: Vec2) -> None:
         self.master_container.style.image = draw_background_empty(new_res)

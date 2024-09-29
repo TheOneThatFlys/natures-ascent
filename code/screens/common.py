@@ -61,7 +61,7 @@ class TextButton(Button):
                 font = self.manager.get_font("alagard", self.font_size),
                 colour = shadow_colour,
                 fore_colour = fore_colour,
-                alignment = "center-center",
+                alignment = alignment,
                 position = "relative",
                 text_shadow = 2,
             ),

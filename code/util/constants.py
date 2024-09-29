@@ -23,6 +23,8 @@ ITEM_SPAWN_CHANCE = 0.2
 
 ALLOWED_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_"
 
+SERVER_ADDRESS = "http://naturesascent.pythonanywhere.com"
+
 # Scores
 SCORE_INITIAL = 600
 SCORE_COIN = 5
