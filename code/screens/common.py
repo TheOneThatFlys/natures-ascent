@@ -1,10 +1,11 @@
 import pygame
 from dataclasses import dataclass
 
-from engine.ui import Element, Text, Style, Button
+from engine.ui import Element, Text, Style, Button, TextBox
 from engine.types import *
 from typing import Callable, Iterable, Optional
 
+from util import create_gui_image, is_valid_username
 from util.constants import *
 
 @dataclass
@@ -134,6 +135,47 @@ class DividerX(Element):
     def redraw_image(self) -> None:
         self.style.size = (self.parent.style.size[0] if self.length == -1 else self.length, self.thickness)
         super().redraw_image()
+
+class NameInput(TextBox):
+    def __init__(self, parent: Element, alignment: Alignment, offset: Vec2 = (0, 0), subtext_offset: Vec2 = (0, 24)) -> None:
+        super().__init__(
+            parent = parent,
+            initial_text = parent.manager.game.username,
+            text_padding = (4, 2),
+            max_length = 16,
+            on_unfocus = (self._on_unfocus, ()),
+            character_set = ALLOWED_CHARACTERS,
+            style = Style(
+                fore_colour = TEXT_WHITE,
+                image = create_gui_image((200, 24)),
+                font = parent.manager.get_font("alagard", 16),
+                alignment = alignment,
+                offset = offset,
+            )
+        )
+
+        self._subtext = self.add_child(Text(
+            parent = self,
+            text = "",
+            style = Style(
+                fore_colour = TEXT_RED,
+                alignment = "bottom-right",
+                font = self.manager.get_font("alagard", 16),
+                offset = subtext_offset,
+            )
+        ))
+
+    def _on_unfocus(self) -> None:
+        username = self.text
+        if is_valid_username(username):
+            self.manager.game.username = username
+            self._subtext.set_text("")
+            self.style.image = create_gui_image((200, 24))
+        else:
+            self._subtext.set_text("Invalid Username")
+            self.style.image = create_gui_image((200, 24), border_colour = TEXT_RED, shadow_colour = TEXT_RED)
+            self.manager.play_sound("effect/error", 0.2)
+        self.redraw_image()
 
 @dataclass
 class ItemChestData:

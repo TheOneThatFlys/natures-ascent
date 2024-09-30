@@ -9,7 +9,7 @@ from engine.types import *
 from util.constants import *
 from util import create_gui_image, is_valid_username, draw_background_empty, seconds_to_stime
 
-from .common import TextButton, TextButtonColours, OverviewData, DividerX
+from .common import TextButton, TextButtonColours, OverviewData, DividerX, NameInput
 
 class GameOverviewScreen(Screen):
     def __init__(self, parent: Node, game_data: OverviewData) -> None:
@@ -131,30 +131,9 @@ class GameOverviewScreen(Screen):
             )
         ))
 
-        self.name_field = self.name_container.add_child(TextBox(
+        self.name_field = self.name_container.add_child(NameInput(
             parent = self.name_container,
-            initial_text = self.manager.game.username,
-            text_padding = (4, 2),
-            max_length = 16,
-            on_unfocus = (self._on_name_unfocus, ()),
-            character_set = ALLOWED_CHARACTERS,
-            style = Style(
-                fore_colour = TEXT_WHITE,
-                image = create_gui_image((200, 24)),
-                font = self.manager.get_font("alagard", 16),
-                alignment = "center-right",
-            ),
-        ))
-
-        self.name_subtext = self.name_container.add_child(Text(
-            parent = self.name_container,
-            text = "",
-            style = Style(
-                fore_colour = TEXT_RED,
-                alignment = "center-right",
-                font = self.manager.get_font("alagard", 16),
-                offset = (0, 24),
-            )
+            alignment = "center-right",
         ))
 
         self.upload_notice = self.master_container.add_child(Text(
@@ -206,18 +185,6 @@ class GameOverviewScreen(Screen):
         ))
 
         self.manager.stop_music(1000)
-    
-    def _on_name_unfocus(self) -> None:
-        username = self.name_field.text
-        if is_valid_username(username):
-            self.manager.game.username = username
-            self.name_subtext.set_text("")
-            self.name_field.style.image = create_gui_image((200, 24))
-        else:
-            self.name_subtext.set_text("Invalid Username")
-            self.name_field.style.image = create_gui_image((200, 24), border_colour = TEXT_RED, shadow_colour = TEXT_RED)
-            self.manager.play_sound("effect/error", 0.2)
-        self.name_field.redraw_image()
 
     def _on_continue(self) -> None:
         self.manager.game.set_screen("menu")

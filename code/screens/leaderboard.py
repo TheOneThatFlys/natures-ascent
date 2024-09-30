@@ -2,12 +2,12 @@ import pygame, requests, threading
 
 from engine import Screen, Node, Logger
 from engine.ui import Text, Style, Element, Button
-from util import draw_background_empty, parse_spritesheet, seconds_to_stime
+from util import draw_background_empty, parse_spritesheet, seconds_to_stime, is_valid_username
 
 from engine.types import *
 from util.constants import *
 
-from .common import TextButton, DividerX
+from .common import TextButton, DividerX, NameInput
 
 class LeaderboardList(Element):
     def __init__(self, parent: Element, style: Style):
@@ -211,7 +211,7 @@ class Leaderboard(Screen):
             )    
         )
 
-        self.type_text = self.scope_text = self.config_container.add_child(
+        self.type_text = self.config_container.add_child(
             Text(
                 parent = self.config_container,
                 text = "Type ",
@@ -232,6 +232,42 @@ class Leaderboard(Screen):
                 yoffset = self.sort_text.rect.height + self.sort_text.style.offset[1],
                 on_click = self._on_type_click,
             )    
+        )
+
+        self.username_text = self.config_container.add_child(
+            Text(
+                parent = self.config_container,
+                text = "Username ",
+                style = Style(
+                    font = section_font,
+                    fore_colour = TEXT_WHITE,
+                    alignment = "top-right",
+                    offset = (0, self.type_text.rect.height + self.type_text.style.offset[1])
+                )
+            )
+        )
+
+        self.username_input = self.config_container.add_child(
+            NameInput(
+                parent = self.config_container,
+                alignment = "top-left",
+                offset = (0, self.username_text.style.offset[1] + 2),
+                subtext_offset = (0, -24)
+            )
+        )
+
+        reload_norm, reload_hover = parse_spritesheet(self.manager.get_image("menu/reload", 0.5), assume_square=True)
+        self.reload_button = self.config_container.add_child(
+            Button(
+                parent = self.config_container,
+                style = Style(
+                    image = reload_norm,
+                    alignment = "top-center",
+                    offset = (0, self.username_input.style.offset[1] + self.username_input.rect.height + 8)
+                ),
+                hover_style = Style(image = reload_hover),
+                on_click = self._update_leaderboard_nonblocking,
+            )
         )
 
         self._currently_fetching = False
@@ -279,6 +315,9 @@ class Leaderboard(Screen):
         }
         if only_player == True:
             sub_route = "player"
+            if not is_valid_username(self.manager.game.username):
+                self.username_input._on_unfocus()
+                return []
             headers["username"] = self.manager.game.username
         else:
             sub_route = "global"
