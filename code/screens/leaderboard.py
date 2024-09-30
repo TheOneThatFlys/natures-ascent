@@ -1,4 +1,4 @@
-import pygame, requests
+import pygame, requests, threading
 
 from engine import Screen, Node, Logger
 from engine.ui import Text, Style, Element, Button
@@ -142,6 +142,17 @@ class Leaderboard(Screen):
             )
         ))
 
+        self.status_indicator = self.leaderboard_list.add_child(
+            Element(
+                parent = self.leaderboard_list,
+                style = Style(
+                    visible = False,
+                    size = (128, 128),
+                    alignment = "center-center"
+                )
+            )
+        )
+
         self.config_container = self.master_container.add_child(
             Element(
                 parent = self.master_container,
@@ -155,7 +166,6 @@ class Leaderboard(Screen):
         )
 
         section_font = self.manager.get_font("alagard", 32)
-        button_xoffset = section_font.size(" ")[0]
         self.scope_text = self.config_container.add_child(
             Text(
                 parent = self.config_container,
@@ -224,28 +234,31 @@ class Leaderboard(Screen):
             )    
         )
 
-        self._update_leaderboard()
+        self._currently_fetching = False
+        self.status_icon_noconnection, self.status_icon_error = parse_spritesheet(self.manager.get_image("menu/lb_icons"), assume_square=True)
+
+        self._update_leaderboard_nonblocking()
 
     def _on_scope_click(self) -> None:
         if self.scope_button.text == "global":
             self.scope_button.set_text("player")
         else:
             self.scope_button.set_text("global")
-        self._update_leaderboard()
+        self._update_leaderboard_nonblocking()
 
     def _on_sort_click(self) -> None:
         if self.sort_button.text == "score":
             self.sort_button.set_text("time")
         else:
             self.sort_button.set_text("score")
-        self._update_leaderboard()
+        self._update_leaderboard_nonblocking()
 
     def _on_type_click(self) -> None:
         if self.type_button.text == "only completed":
             self.type_button.set_text("all")
         else:
             self.type_button.set_text("only completed")
-        self._update_leaderboard()
+        self._update_leaderboard_nonblocking()
 
     def _parse_response(self, response: dict) -> list[tuple]:
         l = []
@@ -259,6 +272,7 @@ class Leaderboard(Screen):
         return l
 
     def _fetch_leaderboard(self, sort: str, only_completed: bool, only_player: bool) -> dict:
+        self.set_status(None)
         headers = {
             "sort": sort,
             "only-completed": "1" if only_completed else "0"
@@ -269,22 +283,50 @@ class Leaderboard(Screen):
         else:
             sub_route = "global"
 
-        res = requests.get(
-            SERVER_ADDRESS + "/leaderboard/" + sub_route,
-            headers = headers
-        )
+        try:
+            res = requests.get(
+                SERVER_ADDRESS + "/leaderboard/" + sub_route,
+                headers = headers,
+                timeout = 5,
+            )
+        except requests.Timeout:
+            Logger.warn(f"Could not fetch leaderboard ({headers}) [timeout]")
+            self.set_status(self.status_icon_error)
+            return []
+        except requests.ConnectionError:
+            self.set_status(self.status_icon_noconnection)
+            return []
+
         if res.status_code == 200:
             return res.json()
         else:
             Logger.warn(f"Could not fetch leaderboard ({headers}) [code {res.status_code}]")
+            self.set_status(self.status_icon_error)
             return []
 
     def _update_leaderboard(self) -> None:
         self.leaderboard_list.set_items(self._parse_response(self._fetch_leaderboard(
             self.sort_button.text,
-            False if self.type_text.text == "all" else True,
+            False if self.type_button.text == "all" else True,
             True if self.scope_button.text == "player" else False
         )))
+        self._currently_fetching = False
+
+    def _update_leaderboard_nonblocking(self) -> None:
+        """Update leaderboard by calling requests with a seperate thread"""
+        if self._currently_fetching: return
+        self._currently_fetching = True
+        a = threading.Thread(target = self._update_leaderboard)
+        a.start()
+
+    def set_status(self, status_image: None|pygame.Surface) -> None:
+        if status_image is None:
+            self.status_indicator.style.visible = False
+        else:
+            self.status_indicator.style.visible = True
+            self.status_indicator.style.image = status_image
+
+        self.status_indicator.redraw_image()
 
     def on_resize(self, new_res: Vec2) -> None:
         self.master_container.style.image = draw_background_empty(new_res)
