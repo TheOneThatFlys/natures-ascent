@@ -1,4 +1,4 @@
-import pygame, requests, threading
+import pygame, threading
 
 from engine import Screen, Node, Logger
 from engine.ui import Text, Style, Element, Button
@@ -8,6 +8,14 @@ from engine.types import *
 from util.constants import *
 
 from .common import TextButton, DividerX, NameInput
+
+try:
+    import requests
+except ImportError:
+    # weird hack to import a local version of requests
+    import sys, os
+    sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "external"))
+    import requests
 
 class LeaderboardList(Element):
     def __init__(self, parent: Element, style: Style):
