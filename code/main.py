@@ -5,7 +5,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 working_directory = os.path.join(__file__, os.pardir, os.pardir) # set cwd as two parents from this file
 os.chdir(working_directory)
 
-import sys, platform, uuid, datetime, json
+import sys, platform, uuid, datetime, json, threading
 import pygame
 
 from typing import Type
@@ -351,6 +351,11 @@ class Game(DebugExpandable):
             self.window.flip()
 
         self.settings_saver.force_save()
+        # wait for threads to terminate
+        main_thread = threading.main_thread()
+        for thread in threading.enumerate():
+            if thread is not main_thread and thread.daemon == False:
+                thread.join()
         pygame.quit()
 
 def log_system_specs() -> None:
