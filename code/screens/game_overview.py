@@ -1,15 +1,21 @@
-from ctypes import alignment
-import pygame, os, time
 
-from typing import Literal
+import pygame, os, json, threading
 
 from engine import Screen, Node
 from engine.ui import Text, Style, Element, TextBox, Button
 from engine.types import *
 from util.constants import *
-from util import create_gui_image, is_valid_username, draw_background_empty, seconds_to_stime
+from util import create_gui_image, is_valid_username, draw_background_empty, seconds_to_stime, SaveHelper
 
 from .common import TextButton, TextButtonColours, OverviewData, DividerX, NameInput
+
+try:
+    import requests
+except ImportError:
+    # weird hack to import a local version of requests
+    import sys, os
+    sys.path.append(os.path.join(os.path.dirname(os.path.dirname(__file__)), "external"))
+    import requests
 
 class GameOverviewScreen(Screen):
     def __init__(self, parent: Node, game_data: OverviewData) -> None:
@@ -141,7 +147,7 @@ class GameOverviewScreen(Screen):
             text = "Click the button below to submit your run onto the leaderboard!",
             style = Style(
                 alignment = "top-center",
-                offset = (0, self.name_container.rect.bottom),
+                offset = (0, self.name_container.rect.bottom + 16),
                 font = self.manager.get_font("alagard", 16),
                 fore_colour = TEXT_WHITE,
             )
@@ -154,7 +160,8 @@ class GameOverviewScreen(Screen):
                 alignment = "top-center",
                 offset = (0, self.upload_notice.rect.bottom + 8)
             ),
-            hover_style = Style(image = create_gui_image((128, 32), border_colour = TEXT_GREEN, shadow_colour = TEXT_GREEN))
+            hover_style = Style(image = create_gui_image((128, 32), border_colour = TEXT_GREEN, shadow_colour = TEXT_GREEN)),
+            on_click = self._submit_run_nonblocking,
         ))
 
         self.submit_text = self.submit_button.add_child(Text(
@@ -164,6 +171,17 @@ class GameOverviewScreen(Screen):
                 font = self.manager.get_font("alagard", 16),
                 fore_colour = TEXT_WHITE,
                 alignment = "center-center"
+            )
+        ))
+
+        self.status_text = self.master_container.add_child(Text(
+            parent = self.master_container,
+            text = "",
+            style = Style(
+                font = self.manager.get_font("alagard", 16),
+                fore_colour = TEXT_WHITE,
+                alignment = "top-center",
+                offset = (0, self.submit_button.rect.bottom + 8)
             )
         ))
 
@@ -184,10 +202,59 @@ class GameOverviewScreen(Screen):
             on_click = self._on_continue,
         ))
 
+        self.game_data = game_data
+        self._submitted_data = False
+        self._currently_submitting = False
+
         self.manager.stop_music(1000)
 
     def _on_continue(self) -> None:
         self.manager.game.set_screen("menu")
+        
+    def _submit_run(self):
+        if self._currently_submitting:
+            return
+        self._currently_submitting = True
+        if self._submitted_data:
+            self.set_status_text("You have already submitted this run!")
+            return
+
+        if not is_valid_username(self.name_field.text):
+            self.name_field._on_unfocus()
+            return
+        
+        self.set_status_text("Submitting run...")
+        message = {
+            "username": self.name_field.text,
+            "data": SaveHelper.encode_data(bytes(json.dumps({
+                "score": self.game_data.score,
+                "time": self.game_data.time,
+                "completed": self.game_data.completed,
+            }), "utf-8"))
+        }
+        failed = False
+        try:
+            res = requests.post(SERVER_ADDRESS + "/leaderboard/submit", json = message, timeout = 5)
+        except (ConnectionError, TimeoutError) as e:
+            failed = True
+        if not failed and res.status_code != 200:
+            failed = True
+
+        if failed:
+            self.set_status_text("Error submitting run. Try again later.")
+            return
+
+        self.set_status_text("Run successfully submitted!")
+        self._submitted_data = True
+        self._currently_submitting = False
+
+    def _submit_run_nonblocking(self):
+        # TODO: actually make this nonblocking
+        submit_thread = threading.Thread(target = self._submit_run)
+        submit_thread.start()
+
+    def set_status_text(self, text: str) -> None:
+        self.status_text.set_text(text)
 
     def on_resize(self, new_res: Vec2) -> None:
         self.master_container.style.image = draw_background_empty(new_res)
