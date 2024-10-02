@@ -143,9 +143,18 @@ class TextBox(Element):
         self.focused_style = Style.merge(style, focused_style)
 
         self.show_blinker = show_blinker
+        self._blinker = self.add_child(Element(
+            parent = self,
+            style = Style(
+                visible = False,
+                size = (2, self.rect.height - 4),
+                alignment = "center-left",
+                offset = (self.text_padding[0], 0),
+                colour = self.style.fore_colour,
+            )
+        ))
         self._blink_timer = 0
         self._blink_interval = 30
-        self._blink_activated = False
 
         self.focused = False
 
@@ -225,19 +234,23 @@ class TextBox(Element):
             self.manager.set_cursor(pygame.SYSTEM_CURSOR_IBEAM)
 
         if self.focused:
+            # cycle blinker
             self._blink_timer += self.manager.dt
+            
+            # move blinker
+            new_offset = self.text_padding[0] + self.text_length_pixels
+            if self._blinker.style.offset[0] != new_offset:
+                self._blinker.style.offset = (new_offset, 0)
+                self._blinker.calculate_position()
+
             if self._blink_timer >= self._blink_interval:
                 self._blink_timer = 0
-                self._blink_activated = not self._blink_activated
+                self._blinker.style.visible = not self._blinker.style.visible
 
+            # check if blinker is offbounds
+            if not self.rect.contains(self._blinker.rect):
+                self._blinker.style.visible = False
+            
     def set_text(self, text: str) -> None:
         self.text = text
         self.redraw_image()
-
-    def render(self, window: pygame.Surface) -> None:
-        super().render(window)
-
-        if self._blink_activated:
-            blink_rect = pygame.Rect(self.rect.x + self.text_length_pixels + self.text_padding[0], self.rect.y + 2, 2, self.rect.height - 4)
-            if self.rect.contains(blink_rect):
-                pygame.draw.rect(window, self.style.fore_colour, blink_rect)
