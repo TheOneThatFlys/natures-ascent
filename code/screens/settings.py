@@ -10,7 +10,7 @@ from engine.ui import Element, Style, Text, Button, Dropdown, Slider, Scrollable
 from util import parse_spritesheet, create_gui_image
 from util.constants import *
 
-from .common import DividerX
+from .common import DividerX, NameInput
 
 _do_nothing = lambda: None
 
@@ -155,6 +155,13 @@ class SettingsScrollable(ScrollableElement):
             offset = (0, self.horizontal_container_2.style.offset[1] + ROW_HEIGHT)
         )))
 
+        self.horizontal_container_4 = self.add_child(Element(self, style = Style(
+            alpha = 0,
+            size = (ROW_WIDTH, ROW_HEIGHT),
+            alignment = "top-center",
+            offset = (0, self.horizontal_container_3.style.offset[1] + ROW_HEIGHT)
+        )))
+
         self.window_mode_dropdown = self.horizontal_container_1.add_child(Dropdown(
             parent = self.horizontal_container_1,
             options = ["Windowed", "Fullscreen", "Borderless"],
@@ -251,12 +258,27 @@ class SettingsScrollable(ScrollableElement):
             )
         ))
 
+        self.name_input_text = self.horizontal_container_4.add_child(Text(
+            parent = self.horizontal_container_4,
+            text = "Username",
+            style = Style(
+                alignment = "center-left",
+                fore_colour = TEXT_GREEN,
+                font = self.manager.get_font("alagard", 16)
+            )
+        ))
+
+        self.name_input_field = self.horizontal_container_4.add_child(NameInput(
+            parent = self.horizontal_container_4,
+            alignment = "center-right"
+        ))
+
         self.sfx_slider.set_value(self.manager.sfx_volume)
         self.music_slider.set_value(self.manager.music_volume)
         window_mode = self.manager.game.get_window_mode()
         self.window_mode_dropdown.set_selected(window_mode[0].upper()+window_mode[1:])
 
-        self.section_divider = self.add_child(DividerX(self, self.horizontal_container_3.style.offset[1] + ROW_HEIGHT, length = ROW_WIDTH))
+        self.section_divider = self.add_child(DividerX(self, self.horizontal_container_4.style.offset[1] + ROW_HEIGHT, length = ROW_WIDTH))
 
         self.controls_header = self.add_child(Text(
             parent = self,
@@ -360,8 +382,11 @@ class SettingsUI(Element):
         return image
     
     def redraw_image(self) -> None:
-        self.style.image = self._draw_background(self.style.size)
         super().redraw_image()
+
+    def on_resize(self, new_res: Vec2) -> None:
+        self.style.image = self._draw_background(new_res)
+        super().on_resize(new_res)
 
 class SettingsScreen(Screen):
     def __init__(self, game: Game) -> None:
@@ -378,7 +403,3 @@ class SettingsScreen(Screen):
     def update(self) -> None:
         for child in self.children:
             child.update()
-
-    def render(self, window: pygame.Surface) -> None:
-        for child in self.children:
-            child.render(window)
