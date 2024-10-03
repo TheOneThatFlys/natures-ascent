@@ -20,9 +20,8 @@ class Weapon(Node):
     """
     def __init__(self, parent: Player, animation_key: str = "", sound_key: str = "", icon_key: str = "error", cooldown_time: int = 40) -> None:
         super().__init__(parent)
-        try:
-            self.player: Player = self.manager.get_object("player")
-        except KeyError:
+        self.player: Player = self.manager.get_object("player")
+        if self.player == None:
             self.player = parent
 
         self.animation_key = animation_key
@@ -89,6 +88,7 @@ class MeleeWeaponAttack(Sprite):
     def _check_enemy_collisions(self) -> None:
         # check if hitting enemy
         player = self.manager.get_object("player")
+        if player == None: return
         for enemy in self.manager.groups["enemy"].sprites():
             if self.rect.colliderect(enemy.hitbox) and not enemy in self._hit_enemies:
                 enemy.hit(player, damage = self.damage, kb_magnitude = self.knockback)

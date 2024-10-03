@@ -177,7 +177,7 @@ class TextBox(Element):
                 self.set_style(self.focused_style)
 
                 self.focused = True
-                self._blink_activated = True
+                self._blinker.style.visible = True
                 self._blink_timer = 0
 
             # right click deletes text box
@@ -188,7 +188,7 @@ class TextBox(Element):
             if self.focused:
                 self.set_style(self.norm_style)
                 self.focused = False
-                self._blink_activated = False
+                self._blinker.style.visible = False
 
                 if self.on_unfocus:
                     self.on_unfocus(*self.on_unfocus_args)
