@@ -106,7 +106,7 @@ class Game(DebugExpandable):
         self._screens: dict[str, Type[Screen]] = {}
 
         self.current_screen: str = ""
-        self.current_screen_instance: Screen
+        self.current_screen_instance: Screen = None
 
         # store screen changes to defer to next frame, to prevent key errors
         self._next_screen: str = ""
@@ -123,6 +123,7 @@ class Game(DebugExpandable):
         self.set_screen("menu")
         
         self.load_config()
+        print(self._window_mode)
         self.settings_saver = AutoSaver(self, CONFIG_SAVE_PATH, 60 * 120)
 
     @Logger.time(msg = "Loaded assets in %t seconds.")
@@ -152,7 +153,8 @@ class Game(DebugExpandable):
         desktop_size = pygame.display.get_desktop_sizes()[0]
         self.window.position = (desktop_size[0] / 2 - self.window.size[0] / 2, desktop_size[1] / 2 - self.window.size[1] / 2)
 
-        self.current_screen_instance.on_resize(new_size)
+        if self.current_screen_instance:
+            self.current_screen_instance.on_resize(new_size)
         Logger.info(f"Set video mode to WINDOWED ({new_size[0]}, {new_size[1]})")
         self._window_mode = "windowed"
 
@@ -168,7 +170,8 @@ class Game(DebugExpandable):
             self.window.set_fullscreen(True)
             Logger.info("Set video mode to FULLSCREEN")
 
-        self.current_screen_instance.on_resize(self.window.size)
+        if self.current_screen_instance:
+            self.current_screen_instance.on_resize(self.window.size)
         self._window_mode = "borderless" if borderless else "fullscreen"
  
     def get_window_mode(self) -> WindowMode:
@@ -245,6 +248,7 @@ class Game(DebugExpandable):
                     case _:
                         raise ValueError(f"Unknown window mode: {window_mode}")
         except Exception as e:
+            raise e
             Logger.warn(f"Could not load config option [window-mode]. Defaulting to value {default_config['window-mode']} ({e})")
 
         try:
