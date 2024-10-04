@@ -44,40 +44,46 @@ class DarkOverlay(Sprite):
         self.update_alpha()
 
     def draw_image(self) -> None:
+        # clear image
         self.image.fill((0, 0, 0, 0))
-        pygame.draw.rect(self.image, BLACK, (TILE_SIZE, TILE_SIZE, self.parent.room_size * TILE_SIZE, self.parent.room_size * TILE_SIZE))
+        # draw inside black box
+        pygame.draw.rect(self.image, BLACK, (TILE_SIZE, TILE_SIZE, *self.parent.inside_rect.size))
         floor_manager: FloorManager = self.manager.get_object("floor-manager")
 
-        # draw door fades
+        # draw doors
         for direction in self.parent.connections:
             room_offset = direction_vector[direction]
             neighbour_room = floor_manager.rooms[(self.parent.origin[0] + room_offset[0], self.parent.origin[1] + room_offset[1])]
-            # dont draw fades into non existant rooms
-            if not neighbour_room.activated: continue
-
             doors = self.parent.get_door_position(direction)
-            for door in doors:
-                fade_size = (
-                    TILE_SIZE if direction_vector[direction][0] == 0 else TILE_SIZE / self.fade_steps,
-                    TILE_SIZE if direction_vector[direction][1] == 0 else TILE_SIZE / self.fade_steps,
-                )
-                for i in range(self.fade_steps):
-                    step_alpha = (1 - i / self.fade_steps) * 255
-                    offset = pygame.Vector2(direction_vector[direction]) * TILE_SIZE * (i / self.fade_steps)
+            if not neighbour_room.activated:
+                # draw solid boxes for doors into non activated rooms
+                for door_position in doors:
+                    pygame.draw.rect(self.image, BLACK, (door_position[0] * TILE_SIZE, door_position[1] * TILE_SIZE, TILE_SIZE, TILE_SIZE))
+            else:
+                for door in doors:
+                    # calculate the size of the fade - flips depending on which way the door is facing
+                    fade_size = (
+                        TILE_SIZE if direction_vector[direction][0] == 0 else TILE_SIZE / self.fade_steps,
+                        TILE_SIZE if direction_vector[direction][1] == 0 else TILE_SIZE / self.fade_steps,
+                    )
+                    # draw a line of decreasing opacity lengthways along the door
+                    for i in range(self.fade_steps):
+                        step_alpha = (1 - i / self.fade_steps) * 255
+                        offset = pygame.Vector2(direction_vector[direction]) * TILE_SIZE * (i / self.fade_steps)
 
-                    x = door[0] * (TILE_SIZE) + offset[0]
-                    y = door[1] * (TILE_SIZE) + offset[1]
+                        x = door[0] * (TILE_SIZE) + offset[0]
+                        y = door[1] * (TILE_SIZE) + offset[1]
 
-                    # error correction for left and up faces
-                    if direction == "left":
-                        x = (door[0] + 1) * TILE_SIZE + offset[0] - TILE_SIZE / self.fade_steps
-                        y = door[1] * TILE_SIZE + offset[1]
-                    elif direction == "up":
-                        y = (door[1] + 1) * TILE_SIZE + offset[1] - TILE_SIZE / self.fade_steps
+                        # flip depending on left and up faces
+                        if direction == "left":
+                            x = (door[0] + 1) * TILE_SIZE + offset[0] - TILE_SIZE / self.fade_steps
+                            y = door[1] * TILE_SIZE + offset[1]
+                        elif direction == "up":
+                            y = (door[1] + 1) * TILE_SIZE + offset[1] - TILE_SIZE / self.fade_steps
 
-                    self.image.fill((0, 0, 0, max(step_alpha, 0)), [x, y, *fade_size])
+                        self.image.fill((0, 0, 0, max(step_alpha, 0)), [x, y, *fade_size])
 
-        # remove tile spaces
+        # fill in transparent tile spaces
         for position, tile in self.parent.wall_tiles.items():
             mask = pygame.mask.from_surface(tile.image)
             mask_image = mask.to_surface(setcolor = (255, 0, 0, 0), unsetcolor = (0, 0, 0, 255))
