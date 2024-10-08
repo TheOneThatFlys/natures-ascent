@@ -353,4 +353,4 @@ class TreeBoss(Enemy):
 
     def kill(self) -> None:
         super().kill()
-        self.manager.play_music("music/forest", fade_ms=5000)
+        self.manager.play_music("music/after_boss", fade_ms=5000)
