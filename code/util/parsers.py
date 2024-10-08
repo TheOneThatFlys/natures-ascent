@@ -11,17 +11,10 @@ def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, f
     Modifications to the base spritesheet will not affect the resulting frames.
 
     Modes in order of priority:
-    1. frame_count: Splits the spritesheet into n frames.
-    2. frame_size: Splits the spritesheet into frames of size (width, height).
-    3. assume_square: Splits the spritesheet into square frames.
+    1. assume_square: Splits the spritesheet into square frames.
+    2. frame_count: Splits the spritesheet into n frames.
+    3. frame_size: Splits the spritesheet into frames of size (width, height).
     """
-
-    if direction != "x" and direction != "y":
-        raise TypeError(f"Function parse_spritesheet passed unknown direction parameter: {direction}")
-
-    if frame_size == None and frame_count == None and not assume_square:
-        raise TypeError("Function parse_spritesheet must include a frame_count or frame_size parameter.")
-    
     if assume_square:
         width = height = spritesheet.get_height() if direction == "x" else spritesheet.get_width()
         n = spritesheet.get_width() // height if direction == "x" else spritesheet.get_height() // width
@@ -51,6 +44,45 @@ def parse_spritesheet(spritesheet: pygame.Surface, *, frame_count: int = None, f
         frames.append(frame)
 
     return frames
+
+def count_lines(root_path: str, comment: str = "#", ext: str = "py", exclude_dir: tuple[str] = ("external", "pygame")) -> dict:
+    """Counts number of lines in directory in files ending with ext. Passing in no extensions results in reading every file."""
+    total_lines = 0
+    total_comments = 0
+    total_empty = 0
+    total_imports = 0
+    for root, dirs, files in os.walk(root_path):
+        for file in files:
+            if ext != "":
+                read = file.endswith(ext)
+            else:
+                read = True
+            path = os.path.join(root, file)
+            read = read and not any(ex in path for ex in exclude_dir)
+            if not read:
+                continue
+
+            print(f"Reading {path.removeprefix(root_path)}")
+            with open(path, "r") as f:
+                text = f.readlines()
+
+            total_lines += len(text)
+            for line in text:
+                without_wspace = line.strip()
+                if without_wspace == "":
+                    total_empty += 1
+                elif without_wspace.startswith(comment):
+                    total_comments += 1
+                elif without_wspace.startswith(("import", "from")):
+                    total_imports += 1
+
+    return {
+        "without empty": total_lines - total_empty,
+        "without comments": total_lines - total_comments,
+        "without imports": total_lines - total_imports,
+        "without comments + empty + imports": total_lines - (total_empty + total_comments + total_imports),
+        "total": total_lines
+    }
 
 class SaveHelper:
     @staticmethod

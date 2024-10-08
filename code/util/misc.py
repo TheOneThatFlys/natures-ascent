@@ -49,15 +49,14 @@ def get_closest_direction(vector: pygame.Vector2) -> Direction:
     # return right if its a 0 vector
     if vector.magnitude() == 0: return "right"
 
-    # get most influential component:
-    # x is more important
+    # get most influential component, priority of x:
     if abs(vector.x) > abs(vector.y):
         if vector.x > 0:
             return "right"
         else:
             return "left"
     
-    # y is more important (or equal)
+    # y priority (or equal)
     else:
         if vector.y > 0:
             return "down"
@@ -135,42 +134,6 @@ def create_outline(image: pygame.Surface, pixel_scale: int = 1, outline_colour: 
                     newa[x, y] = image.map_rgb(outline_colour)
 
     return pygame.transform.scale_by(new, pixel_scale)
-
-AlignmentType = Literal["left", "center", "right"]
-def render_multiline(font: pygame.font.Font, text: str, colour: Colour, max_width: int, antialias: bool = True, alignment: AlignmentType = "left") -> pygame.Surface:
-    """Render text with linewrap, supports rich text"""
-    lines = []
-    words = text.split(" ")
-    current_line = ""
-    for word in words:
-        line_length = font.size(current_line + " " + word)[0]
-        if line_length > max_width:
-            lines.append(current_line)
-            current_line = word
-        else:
-            current_line += " " + word
-    if current_line != "":
-        lines.append(current_line)
-
-    rendered_lines = [font.render(line, antialias, colour) for line in lines]
-
-    surf = pygame.Surface((
-        max(s.get_width() for s in rendered_lines),
-        sum(s.get_height() for s in rendered_lines)
-    ), pygame.SRCALPHA)
-
-    line_height = max(s.get_height() for s in rendered_lines)
-    for i, line in enumerate(rendered_lines):
-        rect = line.get_rect(y = line_height * i)
-        if alignment == "left":
-            rect.x = 0
-        elif alignment == "center":
-            rect.centerx = surf.get_width() / 2
-        elif alignment == "right":
-            rect.right = surf.get_width()
-        surf.blit(line, rect)
-
-    return surf
 
 T = TypeVar("T")
 def choose_weighted(weighted_dict: dict[T, int]) -> T:

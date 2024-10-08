@@ -150,64 +150,54 @@ class Leaderboard(Screen):
             )
         ))
 
-        self.status_indicator = self.leaderboard_list.add_child(
-            Element(
-                parent = self.leaderboard_list,
-                style = Style(
-                    visible = False,
-                    size = (128, 128),
-                    alignment = "center-center"
-                )
+        self.status_indicator = self.leaderboard_list.add_child(Element(
+            parent = self.leaderboard_list,
+            style = Style(
+                visible = False,
+                size = (128, 128),
+                alignment = "center-center"
             )
-        )
+        ))
 
-        self.config_container = self.master_container.add_child(
-            Element(
-                parent = self.master_container,
-                style = Style(
-                    size = (1, 1),
-                    alignment = "top-center",
-                    offset = (0, self.leaderboard_list.rect.bottom + 8),
-                    alpha = 0,
-                )
+        self.config_container = self.master_container.add_child(Element(
+            parent = self.master_container,
+            style = Style(
+                size = (1, 1),
+                alignment = "top-center",
+                offset = (0, self.leaderboard_list.rect.bottom + 8),
+                alpha = 0,
             )
-        )
+        ))
 
         section_font = self.manager.get_font("alagard", 32)
-        self.scope_text = self.config_container.add_child(
-            Text(
-                parent = self.config_container,
-                text = "Viewing ",
-                style = Style(
-                    font = section_font,
-                    fore_colour = TEXT_WHITE,
-                    alignment = "top-right",
-                )
+        self.scope_text = self.config_container.add_child(Text(
+            parent = self.config_container,
+            text = "Viewing ",
+            style = Style(
+                font = section_font,
+                fore_colour = TEXT_WHITE,
+                alignment = "top-right",
             )
-        )
+        ))
 
-        self.scope_button = self.config_container.add_child(
-            TextButton(
-                parent = self.config_container,
-                yoffset = 0,
-                text = "global",
-                on_click = self._on_scope_click,
-                alignment = "top-left"
-            )    
-        )
+        self.scope_button = self.config_container.add_child(TextButton(
+            parent = self.config_container,
+            yoffset = 0,
+            text = "global",
+            on_click = self._on_scope_click,
+            alignment = "top-left"
+        ))
 
-        self.sort_text = self.scope_text = self.config_container.add_child(
-            Text(
-                parent = self.config_container,
-                text = "Sort ",
-                style = Style(
-                    font = section_font,
-                    fore_colour = TEXT_WHITE,
-                    alignment = "top-right",
-                    offset = (0, self.scope_text.rect.height)
-                )
+        self.sort_text = self.scope_text = self.config_container.add_child(Text(
+            parent = self.config_container,
+            text = "Sort ",
+            style = Style(
+                font = section_font,
+                fore_colour = TEXT_WHITE,
+                alignment = "top-right",
+                offset = (0, self.scope_text.rect.height)
             )
-        )
+        ))
 
         self.sort_button = self.scope_button.add_child(
             TextButton(
@@ -219,64 +209,54 @@ class Leaderboard(Screen):
             )    
         )
 
-        self.type_text = self.config_container.add_child(
-            Text(
-                parent = self.config_container,
-                text = "Type ",
-                style = Style(
-                    font = section_font,
-                    fore_colour = TEXT_WHITE,
-                    alignment = "top-right",
-                    offset = (0, self.sort_text.rect.height + self.sort_text.style.offset[1])
-                )
+        self.type_text = self.config_container.add_child(Text(
+            parent = self.config_container,
+            text = "Type ",
+            style = Style(
+                font = section_font,
+                fore_colour = TEXT_WHITE,
+                alignment = "top-right",
+                offset = (0, self.sort_text.rect.height + self.sort_text.style.offset[1])
             )
-        )
+        ))
 
-        self.type_button = self.scope_button.add_child(
-            TextButton(
-                parent = self.scope_button,
-                text = "only completed",
-                alignment = "top-left",
-                yoffset = self.sort_text.rect.height + self.sort_text.style.offset[1],
-                on_click = self._on_type_click,
-            )    
-        )
+        self.type_button = self.scope_button.add_child(TextButton(
+            parent = self.scope_button,
+            text = "only completed",
+            alignment = "top-left",
+            yoffset = self.sort_text.rect.height + self.sort_text.style.offset[1],
+            on_click = self._on_type_click,
+        ))
 
-        self.username_text = self.config_container.add_child(
-            Text(
-                parent = self.config_container,
-                text = "Username ",
-                style = Style(
-                    font = section_font,
-                    fore_colour = TEXT_WHITE,
-                    alignment = "top-right",
-                    offset = (0, self.type_text.rect.height + self.type_text.style.offset[1])
-                )
+        self.username_text = self.config_container.add_child(Text(
+            parent = self.config_container,
+            text = "Username ",
+            style = Style(
+                font = section_font,
+                fore_colour = TEXT_WHITE,
+                alignment = "top-right",
+                offset = (0, self.type_text.rect.height + self.type_text.style.offset[1])
             )
-        )
+        ))
 
-        self.username_input = self.config_container.add_child(
-            NameInput(
-                parent = self.config_container,
-                alignment = "top-left",
-                offset = (0, self.username_text.style.offset[1] + 2),
-                subtext_offset = (0, -24)
-            )
-        )
+        self.username_input = self.config_container.add_child(NameInput(
+            parent = self.config_container,
+            alignment = "top-left",
+            offset = (0, self.username_text.style.offset[1] + 2),
+            subtext_offset = (0, -24)
+        ))
 
         reload_norm, reload_hover = parse_spritesheet(self.manager.get_image("menu/reload", 0.5), assume_square=True)
-        self.reload_button = self.config_container.add_child(
-            Button(
-                parent = self.config_container,
-                style = Style(
-                    image = reload_norm,
-                    alignment = "top-center",
-                    offset = (0, self.username_input.style.offset[1] + self.username_input.rect.height + 8)
-                ),
-                hover_style = Style(image = reload_hover),
-                on_click = self._update_leaderboard_nonblocking,
-            )
-        )
+        self.reload_button = self.config_container.add_child(Button(
+            parent = self.config_container,
+            on_click = self._update_leaderboard_nonblocking,
+            style = Style(
+                image = reload_norm,
+                alignment = "top-center",
+                offset = (0, self.username_input.style.offset[1] + self.username_input.rect.height + 8)
+            ),
+            hover_style = Style(image = reload_hover),
+        ))
 
         self._currently_fetching = False
         self.status_icon_noconnection, self.status_icon_error = parse_spritesheet(self.manager.get_image("menu/lb_icons"), assume_square=True)

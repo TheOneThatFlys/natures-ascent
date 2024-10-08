@@ -29,22 +29,18 @@ class Menu(Screen):
             )
         )
 
-        self.title = self.master_container.add_child(
-            Text(
-                parent = self.master_container,
-                text = "Nature's Ascent",
-                style = Style(
-                    alignment = "top-center",
-                    offset = (0, 64),
-                    fore_colour = TEXT_GREEN,
-                    colour = TEXT_DARKGREEN,
-                    text_shadow = 4,
-                    font = self.manager.get_font("alagard", 64),
-                )
+        self.title = self.master_container.add_child(Text(
+            parent = self.master_container,
+            text = "Nature's Ascent",
+            style = Style(
+                alignment = "top-center",
+                offset = (0, 64),
+                fore_colour = TEXT_GREEN,
+                colour = TEXT_DARKGREEN,
+                text_shadow = 4,
+                font = self.manager.get_font("alagard", 64),
             )
-        )
-
-        button_colours = TextButtonColours()
+        ))
 
         can_continue_run = os.path.exists(RUN_SAVE_PATH)
 
@@ -53,7 +49,6 @@ class Menu(Screen):
             yoffset = self.title.rect.bottom + 16,
             text = "Continue",
             on_click = lambda: self.parent.set_screen("level", load_from_file = True),
-            colours = button_colours,
             enabled = can_continue_run,
         ))
 
@@ -63,14 +58,12 @@ class Menu(Screen):
             text = "New Run",
             on_click = self.parent.set_screen,
             click_args = ["level"],
-            colours = button_colours
         ))
 
         self.leaderboard_button = self.master_container.add_child(TextButton(
             parent = self.master_container,
             yoffset = self.play_button.rect.bottom,
             text = "Leaderboard",
-            colours = button_colours,
             on_click = self.parent.set_screen,
             click_args = ["leaderboard"]
         ))
@@ -81,7 +74,6 @@ class Menu(Screen):
             text = "Settings",
             on_click = self.parent.set_screen,
             click_args = ["settings"],
-            colours = button_colours
         ))
         
         self.exit_button = self.master_container.add_child(TextButton(
@@ -89,7 +81,6 @@ class Menu(Screen):
             yoffset = self.settings_button.rect.bottom,
             text = "Exit",
             on_click = self.parent.queue_close,
-            colours = button_colours
         ))
 
         self.manager.play_music("music/menu")

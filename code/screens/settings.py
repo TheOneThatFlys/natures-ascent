@@ -132,38 +132,17 @@ class SettingsScrollable(ScrollableElement):
             alpha = 0,
         ))
 
-        ROW_WIDTH = size[0]
-        ROW_HEIGHT = 40
-        self.horizontal_container_1 = self.add_child(Element(self, style = Style(
-            alpha = 0,
-            size = (ROW_WIDTH, ROW_HEIGHT),
-            alignment = "top-center",
-            offset = (0, 4)
-        )))
+        row_size = (size[0], 40)
+        self.rows = [self.add_child(Element(
+            self, style = Style(
+                alpha = 0,
+                size = row_size,
+                alignment = "top-center",
+                offset = (0, 4 + row_size[1] * i)
+        ))) for i in range(4)]
 
-        self.horizontal_container_2 = self.add_child(Element(self, style = Style(
-            alpha = 0,
-            size = (ROW_WIDTH, ROW_HEIGHT),
-            alignment = "top-center",
-            offset = (0, self.horizontal_container_1.style.offset[1] + ROW_HEIGHT)
-        )))
-
-        self.horizontal_container_3 = self.add_child(Element(self, style = Style(
-            alpha = 0,
-            size = (ROW_WIDTH, ROW_HEIGHT),
-            alignment = "top-center",
-            offset = (0, self.horizontal_container_2.style.offset[1] + ROW_HEIGHT)
-        )))
-
-        self.horizontal_container_4 = self.add_child(Element(self, style = Style(
-            alpha = 0,
-            size = (ROW_WIDTH, ROW_HEIGHT),
-            alignment = "top-center",
-            offset = (0, self.horizontal_container_3.style.offset[1] + ROW_HEIGHT)
-        )))
-
-        self.window_mode_dropdown = self.horizontal_container_1.add_child(Dropdown(
-            parent = self.horizontal_container_1,
+        self.window_mode_dropdown = self.rows[0].add_child(Dropdown(
+            parent = self.rows[0],
             options = ["Windowed", "Fullscreen", "Borderless"],
             on_change = self._on_window_mode_change,
             style = Style(
@@ -181,8 +160,8 @@ class SettingsScrollable(ScrollableElement):
             hover_style = Style(image = None, size = (128, 40), colour = UI_ALTLIGHTBROWN)
         ))
 
-        self.window_mode_text = self.horizontal_container_1.add_child(Text(
-            parent = self.horizontal_container_1,
+        self.window_mode_text = self.rows[0].add_child(Text(
+            parent = self.rows[0],
             text = "Window Mode",
             style = Style(
                 fore_colour = TEXT_GREEN,
@@ -191,8 +170,8 @@ class SettingsScrollable(ScrollableElement):
             ),
         ))
 
-        self.sfx_volume_text = self.horizontal_container_2.add_child(Text(
-            parent = self.horizontal_container_2,
+        self.sfx_volume_text = self.rows[1].add_child(Text(
+            parent = self.rows[1],
             text = "SFX Volume",
             style = Style(
                 fore_colour = TEXT_GREEN,
@@ -201,8 +180,8 @@ class SettingsScrollable(ScrollableElement):
             ),
         ))
 
-        self.sfx_slider = self.horizontal_container_2.add_child(Slider(
-            parent = self.horizontal_container_2,
+        self.sfx_slider = self.rows[1].add_child(Slider(
+            parent = self.rows[1],
             style = Style(
                 alignment = "center-right",
                 image = create_gui_image((192, 8)),
@@ -214,19 +193,19 @@ class SettingsScrollable(ScrollableElement):
             on_unfocus = self._on_sfx_unfocus
         ))
 
-        self.sfx_slider_annotation = self.horizontal_container_2.add_child(Text(
-            parent = self.horizontal_container_2,
+        self.sfx_slider_annotation = self.rows[1].add_child(Text(
+            parent = self.rows[1],
             text = str(int(self.manager.sfx_volume * 100)),
             style = Style(
                 alignment = "center-left",
-                offset = (self.horizontal_container_2.rect.width + 12, 0),
+                offset = (row_size[0] + 12, 0),
                 fore_colour = TEXT_GREEN,
                 font = self.manager.get_font("alagard", 16)
             )
         ))
 
-        self.music_volume_text = self.horizontal_container_3.add_child(Text(
-            parent = self.horizontal_container_3,
+        self.music_volume_text = self.rows[2].add_child(Text(
+            parent = self.rows[2],
             text = "Music Volume",
             style = Style(
                 fore_colour = TEXT_GREEN,
@@ -235,8 +214,8 @@ class SettingsScrollable(ScrollableElement):
             ),
         ))
 
-        self.music_slider = self.horizontal_container_3.add_child(Slider(
-            parent = self.horizontal_container_3,
+        self.music_slider = self.rows[2].add_child(Slider(
+            parent = self.rows[2],
             style = Style(
                 alignment = "center-right",
                 image = create_gui_image((192, 8)),
@@ -247,19 +226,19 @@ class SettingsScrollable(ScrollableElement):
             on_change = self._on_music_change
         ))
 
-        self.music_slider_annotation = self.horizontal_container_3.add_child(Text(
-            parent = self.horizontal_container_3,
+        self.music_slider_annotation = self.rows[2].add_child(Text(
+            parent = self.rows[2],
             text = str(int(self.manager.music_volume * 100)),
             style = Style(
                 alignment = "center-left",
-                offset = (self.horizontal_container_2.rect.width + 12, 0),
+                offset = (row_size[0] + 12, 0),
                 fore_colour = TEXT_GREEN,
                 font = self.manager.get_font("alagard", 16)
             )
         ))
 
-        self.name_input_text = self.horizontal_container_4.add_child(Text(
-            parent = self.horizontal_container_4,
+        self.name_input_text = self.rows[3].add_child(Text(
+            parent = self.rows[3],
             text = "Username",
             style = Style(
                 alignment = "center-left",
@@ -268,8 +247,8 @@ class SettingsScrollable(ScrollableElement):
             )
         ))
 
-        self.name_input_field = self.horizontal_container_4.add_child(NameInput(
-            parent = self.horizontal_container_4,
+        self.name_input_field = self.rows[3].add_child(NameInput(
+            parent = self.rows[3],
             alignment = "center-right"
         ))
 
@@ -278,7 +257,7 @@ class SettingsScrollable(ScrollableElement):
         window_mode = self.manager.game.get_window_mode()
         self.window_mode_dropdown.set_selected(window_mode[0].upper()+window_mode[1:])
 
-        self.section_divider = self.add_child(DividerX(self, self.horizontal_container_4.style.offset[1] + ROW_HEIGHT, length = ROW_WIDTH))
+        self.section_divider = self.add_child(DividerX(self, self.rows[3].style.offset[1] + row_size[1], length = row_size[0]))
 
         self.controls_header = self.add_child(Text(
             parent = self,
@@ -295,15 +274,15 @@ class SettingsScrollable(ScrollableElement):
 
         self.keybinds = self.add_child(KeybindSelector(self, style = Style(
             alpha = 0,
-            size = (ROW_WIDTH, ROW_HEIGHT),
+            size = row_size,
             alignment = "top-center",
             offset = (0, self.controls_header.style.offset[1] + self.controls_header.rect.height),
             fore_colour = TEXT_GREEN
         )))
-
-        # send item 1 to back
-        self.children.remove(self.horizontal_container_1)
-        self.children.append(self.horizontal_container_1)
+        
+        # priority rendering for dropdown
+        self.remove_child(self.rows[0])
+        self.add_child(self.rows[0])
 
     def _on_window_mode_change(self, mode: str) -> None:
         match mode:
