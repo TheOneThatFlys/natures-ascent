@@ -6,81 +6,6 @@ from .element import Element
 from .style import Style
 from ..types import *
 
-def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
-    """
-    Renders a section of rich text.
-
-    Formatting:
-    - %(colour) to set colour - defaults to (0, 0, 0).
-
-    e.g. `"%(255, 0, 0)this is red. %(255, 255, 255)this is white."`
-    """
-
-    text_sections = []
-
-    current_colour = (0, 0, 0)
-    current_section = ""
-    index = 0
-    # loop through input string
-    while index < len(text):
-        letter = text[index]
-        # add character to current section if not escaping
-        if letter != "%":
-            current_section += letter
-            index += 1
-        # if valid escape is used followed by an opening bracket
-        elif text[index + 1] == "(":
-            # if the previous text section is not empty,
-            # render the previous section of text and
-            # start a new section
-            if current_section != "":
-                text_sections.append(font.render(current_section, True, current_colour))
-                current_section = ""
-
-            # grab the entire colour escape clause
-            # e.g. (255, 0, 0)
-            inside_loop_idx = index
-            inside_acc = ""
-            while inside_loop_idx < len(text):
-                inside_loop_idx += 1
-                inside_acc += text[inside_loop_idx]
-                if text[inside_loop_idx] == ")":
-                    break
-            else:
-                raise ValueError(f"Rich text render of '{text}' failed: missing closing bracket.")
-
-            # create a colour tuple from the string
-            current_colour = tuple(map(int, inside_acc.removeprefix("(").removesuffix(")").replace(" ", "").split(",")))
-            
-            # offset the main loop pointer by the length of the escape clause
-            index = inside_loop_idx + 1
-        # %% escape
-        elif text[index + 1] == "%":
-            current_section += "%"
-            index += 2
-        # invalid escape clause
-        else:
-            raise ValueError(f"Rich text render of '{text}' failed: % with no opening bracket.")
-
-    # add the last section if it was not already escaped
-    if current_section != "":
-        text_sections.append(font.render(current_section, True, current_colour))
-        current_section = ""
-
-    # create a surface of the max bounds of the text added together
-    surf = pygame.Surface((
-        sum(s.get_width() for s in text_sections),
-        max(s.get_height() for s in text_sections)
-    ), pygame.SRCALPHA)
-
-    # render each section of text side by side
-    x_offset = 0
-    for section in text_sections:
-        surf.blit(section, (x_offset, 0))
-        x_offset += section.get_width()
-
-    return surf
-
 class Text(Element):
     """
     UI element that displays text.
@@ -106,15 +31,6 @@ class Text(Element):
 
         self.rect = self.image.get_rect()
         self.calculate_position()
-
-# class RichText(Element):
-#     """
-#     UI element that displays rich text (only supports colour).
-#     """
-#     def redraw_image(self) -> None:
-#         self.image = render_rich_text(self.style.font, self.text)
-#         self.rect = self.image.get_rect()
-#         self.calculate_position()
 
 class TextBox(Element):
     """
