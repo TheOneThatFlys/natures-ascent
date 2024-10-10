@@ -84,6 +84,14 @@ class TextBox(Element):
         # allowed characters
         self.character_set = character_set
 
+    def unfocus(self):
+        self.set_style(self.norm_style)
+        self.focused = False
+        self._blinker.style.visible = False
+
+        if self.on_unfocus:
+            self.on_unfocus(*self.on_unfocus_args)
+
     def on_mouse_down(self, mouse_button: int) -> None:
         super().on_mouse_down(mouse_button)
         if not self.enabled: return
@@ -102,12 +110,7 @@ class TextBox(Element):
                 self.redraw_image()
         else:
             if self.focused:
-                self.set_style(self.norm_style)
-                self.focused = False
-                self._blinker.style.visible = False
-
-                if self.on_unfocus:
-                    self.on_unfocus(*self.on_unfocus_args)
+                self.unfocus()
 
     def on_key_down(self, key: int, unicode: str) -> None:
         super().on_key_down(key, unicode)
@@ -119,6 +122,8 @@ class TextBox(Element):
                     self.text = ""
                 else:
                     self.text = self.text[:-1]
+            if key == pygame.K_RETURN:
+                self.unfocus()
             elif len(self.text) < self.max_length:
                 if (self.character_set and unicode in self.character_set) or self.character_set == None:
                     self.text += unicode
