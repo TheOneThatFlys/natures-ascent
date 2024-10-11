@@ -453,7 +453,7 @@ class PauseUI(ui.Element):
         self.toggle_settings()
 
     def _on_exit_click(self) -> None:
-        self.parent.run_autosaver.force_save()
+        self.parent.run_saver.force_save()
         self.parent.parent.set_screen("menu")
 
     def _draw_background(self, size: Vec2, border_width: int = 8) -> pygame.Surface:
@@ -500,16 +500,110 @@ class PauseUI(ui.Element):
         self.pause_frame = surface.copy()
         super().render(surface)
 
-class Level(Screen):
-    def __init__(self, game: Game, load_from_file: bool = False) -> None:
-        super().__init__(parent = game)
-        game_data = None
-        if load_from_file and os.path.exists(RUN_SAVE_PATH):
+class LevelSaver(AutoSaver):
+    def __init__(self, parent: Level) -> None:
+        super().__init__(parent, RUN_SAVE_PATH, 60 * 30)
+        self._data_update_counter = 0
+        self._last_completed_data = None
+
+    def load_data(self) -> PersistantGameData|None:
+        """Returns dataclass of run data that was saved on disk"""
+        if os.path.exists(RUN_SAVE_PATH):
             try:
                 game_data: PersistantGameData = pickle.loads(SaveHelper.load_file(RUN_SAVE_PATH, True))
             except pickle.UnpicklingError as e:
                 Logger.warn("Error unpickling run data - save data may be corrupted")
                 game_data = None
+        else:
+            game_data = None
+        self._last_completed_data = game_data
+        return game_data
+
+    def get_data_raw(self) -> PersistantGameData:
+        """Get current run data as raw dataclass"""
+        level: Level = self.parent
+        world_items = []
+        for w_item in [x for x in self.manager.groups["interact"] if isinstance(x, WorldItem)]:
+            id = level.item_pool.get_item_id(w_item.item)
+            world_items.append(WorldItemData(
+                item_id = id,
+                upgrade = w_item.item.upgrade_level,
+                position = w_item.rect.center
+            ))
+
+        item_chests = []
+        pickup_chests = []
+        for x in self.manager.groups["interact"]:
+            if isinstance(x, ItemChest):
+                item_chests.append(ItemChestData(
+                    position = x.rect.center,
+                    item_id = self.item_pool.get_item_id(x.held_item)
+                ))
+            elif isinstance(x, PickupChest):
+                pickup_chests.append(PickupChestData(
+                    position = x.rect.center,
+                    number = x.number,
+                    type = "coin" if isinstance(x, Coin) else "health"
+                ))
+
+        p_weapon = level.player.inventory.primary
+        s_weapon = level.player.inventory.spell
+
+        return PersistantGameData(
+            player_position = level.player.rect.center,
+            player_health = level.player.health,
+            player_iframes = level.player.iframes,
+            weapon_id = level.item_pool.get_item_id(p_weapon),
+            spell_id = level.item_pool.get_item_id(s_weapon),
+            weapon_upgrade = p_weapon.upgrade_level if p_weapon else 0,
+            spell_upgrade = s_weapon.upgrade_level if s_weapon else 0,
+            coins = level.player.inventory.coins,
+            seed = level.floor_manager.seed,
+            time = level.time_in_run,
+            player_hits = level.player_hits,
+            rooms_discovered = [coord for (coord, room) in level.floor_manager.rooms.items() if room.activated],
+            rooms_cleared = [coord for (coord, room) in level.floor_manager.rooms.items() if room.completed],
+            coin_pickups = [x.rect.center for x in level.children if isinstance(x, Coin)],
+            health_pickups = [x.rect.center for x in level.children if isinstance(x, Health)],
+            opened_chests = [x.rect.center for x in level.children if isinstance(x, Chest) and x.opened],
+            found_ids = level.item_pool.found_items,
+            world_items = world_items,
+            item_chests = item_chests,
+            pickup_chests = pickup_chests
+        )
+
+    def encode_data(self, raw_data: PersistantGameData) -> None:
+        """Get current run data encoded with pickle"""
+        return SaveHelper.encode_data(pickle.dumps(raw_data))
+
+    def get_current_data(self) -> None:
+        in_uncomplete_room = not self.parent.floor_manager.get_room_at_world_pos(self.parent.player.rect.center).completed
+        if in_uncomplete_room:
+            self._last_completed_data.player_health = self.manager.get_object("player").health
+            return self.encode_data(self._last_completed_data)
+        else:
+            game_data = self.get_data_raw()
+            self._last_completed_data = game_data
+            return self.encode_data(game_data)
+
+    def force_save(self) -> None:
+        self.data = self.get_current_data()
+        super().force_save()
+
+    def update(self) -> None:
+        # update run data every 0.25 seconds
+        self._data_update_counter += self.manager.dt
+        if self._data_update_counter > 15:
+            self.data = self.get_current_data()
+            self._data_update_counter = 0
+        super().update()
+
+class Level(Screen):
+    def __init__(self, game: Game, load_from_file: bool = False) -> None:
+        super().__init__(parent = game)
+
+        self.run_saver = LevelSaver(self)
+        game_data = self.run_saver.load_data()
 
         self.game_surface = pygame.Surface(self.rect.size)
 
@@ -533,17 +627,12 @@ class Level(Screen):
         if game_data:
             self.load_from_data(game_data)
 
-        self._data_update_counter = 0
-        self.run_autosaver = AutoSaver(self, RUN_SAVE_PATH, 60 * 30) # autosave run data every 30 seconds (only noticeable through crashes)
-        self.run_autosaver.data = self.get_game_data_encoded()
-
-        self.run_autosaver.force_save()
+        self.run_saver.force_save()
 
         self.manager.play_music("music/forest")
 
     def _add_ui_components(self) -> None:
-        self.master_ui = ui.Element(
-            self,
+        self.master_ui = ui.Element(self,
             style = ui.Style(
                 size = self.rect.size,
                 alpha = 0
@@ -552,61 +641,6 @@ class Level(Screen):
 
         self.hud_ui = self.master_ui.add_child(HudUI(self.master_ui))
         self.pause_ui = PauseUI(self)
-
-    def get_game_data(self) -> PersistantGameData:
-        world_items = []
-        for w_item in [x for x in self.manager.groups["interact"] if isinstance(x, WorldItem)]:
-            id = self.item_pool.get_item_id(w_item.item)
-            world_items.append(WorldItemData(
-                item_id = id,
-                upgrade = w_item.item.upgrade_level,
-                position = w_item.rect.center
-            ))
-
-        item_chests = []
-        pickup_chests = []
-        for x in self.manager.groups["interact"]:
-            if isinstance(x, ItemChest):
-                item_chests.append(ItemChestData(
-                    position = x.rect.center,
-                    item_id = self.item_pool.get_item_id(x.held_item)
-                ))
-            elif isinstance(x, PickupChest):
-                pickup_chests.append(PickupChestData(
-                    position = x.rect.center,
-                    number = x.number,
-                    type = "coin" if isinstance(x, Coin) else "health"
-                ))
-
-        p_weapon = self.player.inventory.primary
-        s_weapon = self.player.inventory.spell
-
-        return PersistantGameData(
-            player_position = self.player.rect.center,
-            player_health = self.player.health,
-            player_iframes = self.player.iframes,
-            weapon_id = self.item_pool.get_item_id(p_weapon),
-            spell_id = self.item_pool.get_item_id(s_weapon),
-            weapon_upgrade = p_weapon.upgrade_level if p_weapon else 0,
-            spell_upgrade = s_weapon.upgrade_level if s_weapon else 0,
-            coins = self.player.inventory.coins,
-            seed = self.floor_manager.seed,
-            time = self.time_in_run,
-            player_hits = self.player_hits,
-            rooms_discovered = [coord for (coord, room) in self.floor_manager.rooms.items() if room.activated],
-            rooms_cleared = [coord for (coord, room) in self.floor_manager.rooms.items() if room.completed],
-            coin_pickups = [x.rect.center for x in self.children if isinstance(x, Coin)],
-            health_pickups = [x.rect.center for x in self.children if isinstance(x, Health)],
-            opened_chests = [x.rect.center for x in self.children if isinstance(x, Chest) and x.opened],
-            found_ids = self.item_pool.found_items,
-            world_items = world_items,
-            item_chests = item_chests,
-            pickup_chests = pickup_chests
-        )
-    
-    def get_game_data_encoded(self) -> None:
-        data = self.get_game_data()
-        return SaveHelper.encode_data(pickle.dumps(data))
 
     def load_from_data(self, data: PersistantGameData) -> None:
         # load player info
@@ -674,7 +708,7 @@ class Level(Screen):
         return OverviewData(
             score = self.calculate_score(),
             time = self.time_in_run,
-            game_data = self.get_game_data(),
+            game_data = self.run_saver.get_data_raw(),
             completed = self.is_completed()
         )
     
@@ -684,10 +718,6 @@ class Level(Screen):
     def is_completed(self) -> bool:
         rooms_completed, total_rooms = self.floor_manager.get_completion_status()
         return rooms_completed == total_rooms
-
-    def can_autosave(self) -> bool:
-        current_room = self.floor_manager.get_room_at_world_pos(self.player.rect.center)
-        return current_room.completed
 
     def cycle_debug(self) -> None:
         """
@@ -813,12 +843,7 @@ class Level(Screen):
         self.master_ui.update()
         self.floor_manager.update()
 
-        # update run data every 0.5 seconds
-        self.run_autosaver.update()
-        self._data_update_counter += self.manager.dt
-        if self._data_update_counter > 30 and self.can_autosave():
-            self.run_autosaver.data = self.get_game_data_encoded()
-            self._data_update_counter = 0
+        self.run_saver.update()
 
         # add run time
         self.time_in_run += self.manager.dt / 60
