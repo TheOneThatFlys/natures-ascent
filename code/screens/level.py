@@ -537,7 +537,7 @@ class LevelSaver(AutoSaver):
             if isinstance(x, ItemChest):
                 item_chests.append(ItemChestData(
                     position = x.rect.center,
-                    item_id = self.item_pool.get_item_id(x.held_item)
+                    item_id = level.item_pool.get_item_id(x.held_item)
                 ))
             elif isinstance(x, PickupChest):
                 pickup_chests.append(PickupChestData(
@@ -603,7 +603,10 @@ class Level(Screen):
         super().__init__(parent = game)
 
         self.run_saver = LevelSaver(self)
-        game_data = self.run_saver.load_data()
+        if load_from_file:
+            game_data = self.run_saver.load_data()
+        else:
+            game_data = None
 
         self.game_surface = pygame.Surface(self.rect.size)
 
