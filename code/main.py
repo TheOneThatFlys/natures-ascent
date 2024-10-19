@@ -5,7 +5,7 @@ os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 working_directory = os.path.join(__file__, os.pardir, os.pardir) # set cwd as two parents from this file
 os.chdir(working_directory)
 
-import sys, platform, uuid, datetime, json, threading
+import sys, platform, time, datetime, json, threading
 import pygame
 
 from typing import Type
@@ -32,15 +32,19 @@ class Game(DebugExpandable):
 
         self.manager = Manager(self, fps = FPS, num_channels = 32)
         self.manager.set_pixel_scale(PIXEL_SCALE)
-        self.load_assets()
+        a = time.perf_counter()
+        self.manager.load()
+        b = time.perf_counter()
 
         self.window.set_icon(self.manager.get_image("menu/tree"))
-
         self.manager.add_window(self.window, "main")
 
         if IN_DEBUG:
             self.debug_window = DebugWindow(self)
             self.manager.add_window(self.debug_window.window, "debug")
+
+        Logger.info(f"Initialised session on {datetime.datetime.now():%d/%m/%y %H:%M:%S}.")
+        Logger.info(f"Loaded assets in {round(b - a, 3)} seconds.")
 
         # dictionary to hold screens
         self._screens: dict[str, Type[Screen]] = {}
@@ -64,10 +68,6 @@ class Game(DebugExpandable):
         
         self.load_config()
         self.settings_saver = AutoSaver(self, CONFIG_SAVE_PATH, 60 * 120)
-
-    @Logger.time(msg = "Loaded assets in %t seconds.")
-    def load_assets(self):
-        self.manager.load()
 
     def queue_close(self) -> None:
         """Quits program after current game loop finishes"""
@@ -327,27 +327,18 @@ def clean_debug_folder(max_logs: int) -> None:
 
 def main() -> None:
     # create a debug folder
-    if not os.path.exists("debug"):
-        os.mkdir("debug")
-
-    # generate a unique session id
-    session_id = uuid.uuid4()
+    if IN_DEBUG and not os.path.exists("debug"): os.mkdir("debug")
 
     log_to_console = IN_DEBUG or "-cout" in sys.argv or "-c" in sys.argv
-    # initialise logging
+    
     Logger.start("$CONSOLE" if log_to_console else os.path.join("debug", f"{datetime.datetime.now():%H.%M.%S-%d.%m.%y}.log"))
     
     # keep newest 5 logs (5 total)
     clean_debug_folder(max_logs = 5)
-
     Logger.allow_all()
-    Logger.info(f"Initialised session {session_id} on {datetime.datetime.now():%d/%m/%y %H:%M:%S}.")
 
     # get some system debug info
-    if not log_to_console:
-        log_system_specs()
-
-    Logger.info("Starting game.")
+    if not log_to_console: log_system_specs()
 
     # main entry point
     game = Game()

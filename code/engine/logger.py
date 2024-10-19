@@ -1,7 +1,5 @@
 from __future__ import annotations
-from typing import Literal, TypeVar
-
-import uuid
+from typing import Callable, TypeVar, Optional
 
 import datetime, time
 
@@ -25,9 +23,10 @@ class Logger:
     WARNING = "WARN"
     ERROR = "ERROR"
 
-    def __init__(self, path: str = _MAGIC_VALUE) -> None:
+    def __init__(self, path: str = _MAGIC_VALUE, callback: Optional[Callable[[str, str, str], None]] = None) -> None:
         self.out_path = path
         self.allowed_values: list[str] = []
+        self.callback = callback
 
         if self.out_path != _MAGIC_VALUE:
             with open(self.out_path, "a"):
@@ -89,7 +88,9 @@ class Logger:
 
         rn = datetime.datetime.now()
         time = f"{rn:%H:%M:%S}.{str(rn.microsecond)[0:3]}"
-        if self.out_path == _MAGIC_VALUE:
+        if self.callback != None:
+            self.callback(str(time), str(level), str(msg))
+        elif self.out_path == _MAGIC_VALUE:
             logged_msg = f"{TerminalColours.TIME}{time} {getattr(TerminalColours, level)}{level} {TerminalColours.END}{msg}"
             print(logged_msg)
         else:

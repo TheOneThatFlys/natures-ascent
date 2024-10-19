@@ -1,3 +1,5 @@
+# this code is terrible - mostly hacked together in a weekend
+
 from __future__ import annotations
 
 import pygame, inspect, pickle, os
@@ -502,6 +504,10 @@ class Console(Element):
             case _:
                 return f"Unknown command: %{self.col_high}{cmd}"
 
+    def parse_log(self, time: str, level: str, msg: str) -> None:
+        if self.parent.parent.dead: return
+        self.add_line(f"[{level}] {msg}")
+
     def _on_enter(self) -> None:
         if self.text_enter.text == "": return
 
@@ -531,8 +537,8 @@ class Console(Element):
 
     def on_resize(self, new_size: Vec2) -> None:
         self.style.size = new_size[0], self.style.size[1]
-        self.text_enter.size = (self.style.size[0] - 16, 16)
-        self.text_history.size = (self.style.size[0], self.text_history.style.size[1])
+        self.text_enter.style.size = (new_size[0] - 16, 16)
+        self.text_history.style.size = (new_size[0], self.text_history.style.size[1])
         super().on_resize(new_size)
 
 class AttributeEditor(Element):
@@ -753,9 +759,7 @@ class AttributeEditor(Element):
 
     def on_resize(self, new_size: Vec2) -> None:
         self.style.size = new_size[0], new_size[1] - self.console_size
-        self.image = pygame.Surface(new_size)
-        for item in self.get_all_children():
-            item.redraw_image()
+        super().on_resize(new_size)
 
     def update_buttons(self) -> None:
         mouse_pos = self.manager.get_mouse_pos("debug")
@@ -825,7 +829,9 @@ class DebugWindow(Screen):
 
         self.attribute_editor = self.add_child(AttributeEditor(self))
 
+        # inject some stuff
         self.manager.game.__setattr__("debug_palette", DebugPalette(self.manager.game))
+        Logger.get().callback = self.attribute_editor.console.parse_log
 
     def on_scroll(self, dx: int, dy: int) -> None:
         self.attribute_editor.on_scroll(dx, dy)
