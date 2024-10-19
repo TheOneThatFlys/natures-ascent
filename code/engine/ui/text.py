@@ -37,16 +37,17 @@ class TextBox(Element):
     UI element that enables use to type into a text field.
     """
     def __init__(self,
-                 parent: Element,
-                 style: Style,
-                 focused_style: Optional[Style] = None,
-                 initial_text: str = "",
-                 text_padding: Vec2 = (0, 2),
-                 show_blinker: bool = True,
-                 enabled: bool = True,
-                 on_unfocus: tuple[Callable[..., None], list] = (None, []),
-                 max_length: int = 999,
-                 character_set: Optional[str] = None) -> None:
+            parent: Element,
+            style: Style,
+            focused_style: Optional[Style] = None,
+            initial_text: str = "",
+            text_padding: Vec2 = (0, 2),
+            show_blinker: bool = True,
+            enabled: bool = True,
+            on_unfocus: tuple[Callable[..., None], list] = (None, []),
+            max_length: int = 999,
+            character_set: Optional[str] = None
+        ) -> None:
         
         self.text = initial_text
         self.text_padding = text_padding
@@ -92,18 +93,20 @@ class TextBox(Element):
         if self.on_unfocus:
             self.on_unfocus(*self.on_unfocus_args)
 
+    def focus(self):
+        if not self.focused:
+            self.set_style(self.focused_style)
+
+            self.focused = True
+            self._blinker.style.visible = True
+            self._blink_timer = 0
+
     def on_mouse_down(self, mouse_button: int) -> None:
         super().on_mouse_down(mouse_button)
         if not self.enabled: return
         mouse_pos = self.manager.get_mouse_pos(self.style.window)
         if self.rect.collidepoint(mouse_pos):
-            if not self.focused:
-                self.set_style(self.focused_style)
-
-                self.focused = True
-                self._blinker.style.visible = True
-                self._blink_timer = 0
-
+            self.focus()
             # right click deletes text box
             if mouse_button == 3:
                 self.text = ""
@@ -122,7 +125,7 @@ class TextBox(Element):
                     self.text = ""
                 else:
                     self.text = self.text[:-1]
-            if key == pygame.K_RETURN:
+            elif key == pygame.K_RETURN:
                 self.unfocus()
             elif len(self.text) < self.max_length:
                 if (self.character_set and unicode in self.character_set) or self.character_set == None:

@@ -18,12 +18,21 @@ class ScrollableElement(Element):
         self._scroll_min = -999999
         self._scroll_max = 0
 
+        self.blacklist = []
+
         self._calculate_scroll_bounds()
 
+    def get_scrollable_children(self) -> None:
+        return filter(lambda x: x not in self.blacklist, self.get_all_children()[1:])
+
     def _calculate_scroll_bounds(self) -> None:
-        lowest_point = max([child.rect.bottom for child in self.get_all_children()])
+        for child in self.get_scrollable_children():
+            child.calculate_position()
+        lowest_point = max([child.rect.bottom for child in list(self.get_scrollable_children()) + [self]])
         self._scroll_min = -(lowest_point - self.rect.bottom)
         if self._scroll_min != 0: self._scroll_min -= 4
+        for child in self.get_scrollable_children():
+            child.rect.y += self._scroll_amount
 
     T = TypeVar("T")
     def add_child(self, child: T) -> T:
@@ -31,24 +40,27 @@ class ScrollableElement(Element):
         self._calculate_scroll_bounds()
         return a
 
+    def add_blacklist(self, element: Element) -> None:
+        self.blacklist.append(element)
+
     def on_scroll(self, dx: int, dy: int) -> None:
         super().on_scroll(dx, dy)
+        if not self.focus_only or self.rect.collidepoint(self.manager.get_mouse_pos(self.style.window)):
+            self.scroll_by(dy * self.scroll_factor)
 
-        if not self.focus_only or self.rect.collidepoint(self.manager.get_mouse_pos()):
-            change = dy * self.scroll_factor
-            if self._scroll_amount + change < self._scroll_min:
-                change = self._scroll_min - self._scroll_amount
-            if self._scroll_amount + change > self._scroll_max:
-                change = self._scroll_max - self._scroll_amount
-            self._scroll_amount += change
+    def scroll_by(self, dy) -> None:
+        change = dy
+        if self._scroll_amount + change < self._scroll_min:
+            change = self._scroll_min - self._scroll_amount
+        if self._scroll_amount + change > self._scroll_max:
+            change = self._scroll_max - self._scroll_amount
+        self._scroll_amount += change
 
-            for child in self.get_all_children()[1:]:
-                child.rect.y += change
+        for child in self.get_scrollable_children():
+            child.rect.y += change
 
     def on_resize(self, new_res: Vec2) -> None:
         super().on_resize(new_res)
-        for child in self.get_all_children()[1:]:
-            child.rect.y += self._scroll_amount
         self._calculate_scroll_bounds()
 
         if self._scroll_amount < self._scroll_min:
@@ -57,11 +69,11 @@ class ScrollableElement(Element):
             self._scroll_amount = self._scroll_max
 
     def render(self, surface: pygame.Surface) -> None:
-        blacklisted = []
+        visited = []
         for child in self.get_all_children():
             if child.rect.top < self.rect.bottom and child.rect.bottom > self.rect.top and child.style.alpha > 0:
-                if not child.style.visible or child.parent in blacklisted:
-                    blacklisted.append(child)
+                if not child.style.visible or child.parent in visited:
+                    visited.append(child)
                     continue
 
                 if child.rect.top < self.rect.top:
