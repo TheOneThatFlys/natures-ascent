@@ -80,7 +80,7 @@ def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
     # create a surface of the max bounds of the text added together
     surf = pygame.Surface((
         sum(s.get_width() for s in text_sections),
-        max(s.get_height() for s in text_sections)
+        max((s.get_height() for s in text_sections), default = 0),
     ), pygame.SRCALPHA)
 
     # render each section of text side by side
@@ -107,11 +107,11 @@ class Path:
     def get(self) -> tuple:
         return self.__v
     
-    def get_str(self, seperator: str = "/"):
+    def get_str(self, seperator: str = "."):
         return seperator.join(map(str, self.__v))
 
     def __str__(self) -> str:
-        return self.get_str("/")
+        return self.get_str(".")
     
     def __hash__(self) -> int:
         return str(self).__hash__()
@@ -310,10 +310,16 @@ class Inspector(Element):
 
         self.redraw_image()
 
-    def set_attribute_value(self, path: Path, value: Any) -> None:
-        def __rec_set(path: Path, new_value: Any):
-            pc = self.parent.get_item_from_path(path.get_parent_path())
-            key = path.get()[-1]
+    def set_attribute_value(self, path: Path|str, value: Any) -> None:
+        def __rec_set(path: Path|str, new_value: Any):
+            if isinstance(path, Path):
+                parent_path =  path.get_parent_path()
+                pc = self.parent.get_item_from_path(parent_path)
+                key = path.get()[-1]
+            elif isinstance(path, str):
+                parent_path = ".".join(path.split(".")[:-1])
+                pc = self.parent.get_item_from_string(parent_path)
+                key = path.split(".")[-1]
 
             if isinstance(pc, dict):
                 pc[key] = new_value
@@ -325,7 +331,7 @@ class Inspector(Element):
             elif isinstance(pc, tuple):
                 index = int(key.removeprefix(INDEX_SPECIAL_STRING))
                 new_tuple = pc[:index] + (new_value,) + pc[index + 1:]
-                __rec_set(path.get_parent_path(), new_tuple)
+                __rec_set(parent_path, new_tuple)
 
             elif isinstance(pc, (pygame.Rect, pygame.FRect)):
                 if key == "x": pc.x = new_value
@@ -341,7 +347,7 @@ class Inspector(Element):
                 pc.__dict__[key] = new_value
 
         __rec_set(path, value)
-        Logger.debug(f"Set {path.get_str('.')} to {value}")
+        Logger.debug(f"Set {path} to {value}")
 
     def _on_value_unfocus(self) -> None:
         self.set_attribute_value(self.attribute_path, type(self.parent.get_item_from_path(self.attribute_path))(self.value_text_box.text))
@@ -401,12 +407,143 @@ class Inspector(Element):
         self.image = pygame.Surface((self.style.size))
         self.image.fill(self.background_colour)
 
+class Console(Element):
+    def __init__(self, parent: AttributeEditor, height: int):
+        self.parent: AttributeEditor
+        super().__init__(
+            parent,
+            style = Style(
+                size = (parent.style.size[0], height),
+                alignment = "bottom-left",
+                colour = (33, 34, 44),
+                offset = (0, -height),
+                font = parent.font,
+                window = "debug",
+                fore_colour = parent.text_colour
+            )
+        )
+
+        self.text_history = self.add_child(ScrollableElement(
+            parent = self,
+            scroll_factor = 15.0,
+            style = Style(
+                size = (self.style.size[0], height - 24),
+                alpha = 0,
+                offset = (0, 4),
+                alignment = "top-center",
+                window = "debug",
+            )
+        ))
+
+        self.text_enter = self.add_child(TextBox(
+            parent = self,
+            text_padding = (4, -2),
+            on_unfocus = (self._on_enter, ()),
+            style = Style(
+                alignment = "bottom-left",
+                antialiasing = True,
+                offset = (8, 8),
+                size = (self.style.size[0] - 16, 16),
+                colour = parent.background_colour_2,
+                font = parent.font,
+                window = "debug",
+                fore_colour = parent.text_colour,
+            )
+        ))
+
+        self.n = 0
+        self.line_height = 16
+
+        self.col_norm = (255, 255, 255)
+        self.col_dark = self.parent.text_colour_faint
+        self.col_high = self.parent.str_colour
+        self.col_num = self.parent.num_colour
+        self.col_type = self.parent.type_colour
+        self.col_error = (180, 20, 20)
+
+    def parse_command(self, text: str) -> str:
+        args = text.split(" ")
+        if len(args) == 0: return "No command issued"
+        cmd = args[0].lower()
+        match cmd:
+            case "ping":
+                return f"%{self.col_highlight}Pong!"
+            
+            case "set":
+                if len(args) != 3: return f"Unexpected number of arguments (expected %{self.col_num}2%{self.col_norm}, got %{self.col_num}{len(args) - 1}%{self.col_norm})"
+                path_to_value = args[1]
+                try:
+                    current_type = type(self.parent.get_item_from_string(path_to_value))
+                except ValueError:
+                    return f"Invalid path: %{self.col_high}{path_to_value}%{self.col_norm}"
+                try:
+                    new_v = current_type(args[2])
+                except ValueError:
+                    return f"Invalid value for type %{self.col_type}{current_type.__name__}"
+                self.parent.inspector.set_attribute_value(path_to_value, new_v)
+                return ""
+            
+            case "call":
+                if len(args) != 2: return f"Unexpected number of arguments (expected %{self.col_num}1%{self.col_norm}, got %{self.col_num}{len(args) - 1}%{self.col_norm})"
+                path_to_value = args[1]
+                try:
+                    func = self.parent.get_item_from_string(path_to_value)
+                except ValueError:
+                    return f"Invalid path: %{self.col_high}{path_to_value}%{self.col_norm}"
+                if not isinstance(func, Callable): return f"Error: %{self.col_high}{path_to_value} is not callable"
+                res = func()
+                return f"%{self.col_high}{path_to_value} returned {res}"
+            
+            case "chest":
+                if self.manager.game.current_screen != "level": return f"Command only callable in %{self.col_high}'level'%{self.col_norm} screen"
+                self.parse_command("call game.debug_palette.spawn_chest")
+                return ""
+        
+            case _:
+                return f"Unknown command: %{self.col_high}{cmd}"
+
+    def _on_enter(self) -> None:
+        if self.text_enter.text == "": return
+
+        self.add_line(f"%{self.col_dark}> {self.text_enter.text}")
+        response = self.parse_command(self.text_enter.text)
+        self.add_line(response)
+
+        self.text_enter.set_text("")
+        self.text_enter.focus()
+
+    def add_line(self, text: str) -> None:
+        if text == "": return
+        img = render_rich_text(self.style.font, f"%{self.style.fore_colour}" + text)
+        self.text_history.add_child(Element(self.text_history, style = Style(
+            image = img,
+            size = (self.style.size[0], self.line_height),
+            stretch_type = "none",
+            offset = (8, self.n * self.line_height),
+        )))
+        self.n += 1
+        self.text_history.on_resize(self.style.size)
+        self.text_history.scroll_by(-self.line_height)
+
+        if self.text_history._scroll_amount != self.text_history._scroll_min:
+            self.text_history._scroll_amount = self.text_history._scroll_min
+            self.text_history.on_resize(self.style.size)
+
+    def on_resize(self, new_size: Vec2) -> None:
+        self.style.size = new_size[0], self.style.size[1]
+        self.text_enter.size = (self.style.size[0] - 16, 16)
+        self.text_history.size = (self.style.size[0], self.text_history.style.size[1])
+        super().on_resize(new_size)
+
 class AttributeEditor(Element):
     def __init__(self, parent: DebugWindow):
-        super().__init__(parent, Style(size = parent.window.size))
+        self.console_size = 200
+        super().__init__(parent, Style(size = (parent.rect.width, parent.rect.height - self.console_size)))
 
         self.font = pygame.font.SysFont("Consolas", 12, bold = True)
         self.line_height = self.font.get_linesize()
+
+        self.TEST_VALUE_WOW = 10
 
         self.tab_length = self.font.size("  ")[0]
         self.tab_line_offset = self.font.size(" |")[0] / 2
@@ -440,6 +577,7 @@ class AttributeEditor(Element):
         self.scroll_offset = 0
 
         self.inspector = self.add_child(Inspector(self))
+        self.console = self.add_child(Console(self, self.console_size))
 
     def add_folder_chain(self, path: Path) -> None:
         """Add the path to expanded folders, along with all parents."""
@@ -554,26 +692,36 @@ class AttributeEditor(Element):
         __rec_render({"game": self.manager.game}, Path(), 0, self.manager.game)
 
     def get_item_from_path(self, path: Path) -> Any:
+        return self.get_item_from_string(path.get_str())
+
+    def get_item_from_string(self, path) -> Any:
+        split_path = path.split(".")
+        if len(split_path) == "" or split_path[0] != "game":
+            print(split_path)
+            raise ValueError("Invalid path")
         current_node = self.manager.game
-        for dir in path.get()[1:]:
-            if isinstance(current_node, (list, tuple)):
-                index = int(dir.removeprefix(INDEX_SPECIAL_STRING))
-                current_node = current_node[index]
+        if len(split_path) == 1: return current_node
+        try:
+            for dir in path.split(".")[1:]:
+                if isinstance(current_node, (list, tuple)):
+                    index = int(dir.removeprefix(INDEX_SPECIAL_STRING))
+                    current_node = current_node[index]
 
-            elif isinstance(current_node, dict):
-                current_node = current_node[dir]
+                elif isinstance(current_node, dict):
+                    current_node = current_node[dir]
 
-            elif isinstance(current_node, (pygame.Rect, pygame.FRect)):
-                current_node = current_node.__getattribute__(dir)
+                elif isinstance(current_node, (pygame.Rect, pygame.FRect, pygame.Vector2)):
+                    current_node = current_node.__getattribute__(dir)
 
-            elif isinstance(current_node, pygame.Vector2):
-                current_node = current_node.__getattribute__(dir)
-
-            else:
-                if dir in current_node.__dict__:
-                    current_node = current_node.__dict__[dir]
                 else:
-                    current_node = [m[1] for m in inspect.getmembers(current_node) if m[0] == dir][0]
+                    if dir in current_node.__dict__:
+                        current_node = current_node.__dict__[dir]
+                    else:
+                        a = [m[1] for m in inspect.getmembers(current_node) if m[0] == dir]
+                        if len(a) == 0: raise ValueError("Invalid path")
+                        current_node = a[0]
+        except KeyError:
+            raise ValueError("Invalid path")
         return current_node
 
     def on_mouse_down(self, button: int) -> None:
@@ -596,12 +744,15 @@ class AttributeEditor(Element):
             self.inspector.set_attribute_info(None)
 
     def on_scroll(self, dx: int, dy: int) -> None:
-        self.scroll_offset += dy * 20
-        if self.scroll_offset > 0:
-            self.scroll_offset = 0
+        if self.rect.collidepoint(self.manager.get_mouse_pos("debug")):
+            multipliter = 60 if pygame.key.get_pressed()[pygame.K_LCTRL] else 20
+            self.scroll_offset += dy * multipliter
+            if self.scroll_offset > 0:
+                self.scroll_offset = 0
+        super().on_scroll(dx, dy)
 
     def on_resize(self, new_size: Vec2) -> None:
-        self.style.size = new_size
+        self.style.size = new_size[0], new_size[1] - self.console_size
         self.image = pygame.Surface(new_size)
         for item in self.get_all_children():
             item.redraw_image()
@@ -664,6 +815,8 @@ class DebugWindow(Screen):
             main_win_rect.right = monitor_rect.right
             self.window.size = monitor_rect.right - main_win_rect.width, self.window.size[1]
 
+        self.rect.size = self.window.size
+
         # move actual windows according to their rects
         game_window.position = main_win_rect.topleft
         self.window.position = debug_win_rect.topleft
@@ -671,6 +824,8 @@ class DebugWindow(Screen):
         game_window.focus()
 
         self.attribute_editor = self.add_child(AttributeEditor(self))
+
+        self.manager.game.__setattr__("debug_palette", DebugPalette(self.manager.game))
 
     def on_scroll(self, dx: int, dy: int) -> None:
         self.attribute_editor.on_scroll(dx, dy)
@@ -695,3 +850,60 @@ class DebugWindow(Screen):
         SaveHelper.save_file(pickle.dumps(self.attribute_editor.expanded_folders), SAVE_PATH, False)
         self.dead = True
         self.window.destroy()
+
+class DebugPalette(Node):
+    """Holds helper functions for faster debugging."""
+    def __init__(self, parent: Node) -> None:
+        super().__init__(parent)
+        self.game = self.manager.game
+
+    def go_to_boss(self) -> None:
+        player = self.manager.get_object("player")
+        fm = self.manager.get_object("floor-manager")
+        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "boss" in room.tags][0]
+
+    def go_to_upgrade(self) -> None:
+        player = self.manager.get_object("player")
+        fm = self.manager.get_object("floor-manager")
+        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "upgrade" in room.tags][0]
+
+    def kill_player(self) -> None:
+        self.manager.get_object("player").kill()
+
+    def complete_everything(self) -> None:
+        fm = self.manager.get_object("floor-manager")
+        for room in fm.rooms.values():
+            room.force_completion()
+
+    def force_win(self) -> None:
+        self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data())
+
+    def spawn_chest(self) -> None:
+        from world import ItemChest, Chest
+        player = self.manager.get_object("player")
+        level = self.manager.get_object("level")
+        itempool = self.manager.get_object("itempool")
+        if not itempool.is_empty():
+            chest = level.add_child(ItemChest(level, player.rect.center, itempool.roll()))
+            colliding = True
+            while colliding:
+                colliding = False
+                for s in self.manager.groups["interact"]:
+                    if s == chest or not isinstance(s, Chest): continue
+                    if chest.rect.colliderect(s.rect):
+                        chest.rect.y += TILE_SIZE
+                        colliding = True
+        else:
+            Logger.warn("Item pool is empty, cannot spawn chest.")
+
+    def spawn_heart(self) -> None:
+        from item import Health
+        player = self.manager.get_object("player")
+        level = self.manager.get_object("level")
+        level.add_child(Health(level, (player.rect.centerx, player.rect.bottom + 16)))
+
+    def max_items(self) -> None:
+        player = self.manager.get_object("player")
+        inv = player.inventory
+        if inv.primary: inv.primary.upgrade(3)
+        if inv.spell: inv.spell.upgrade(3)

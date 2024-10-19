@@ -9,71 +9,12 @@ import sys, platform, uuid, datetime, json, threading
 import pygame
 
 from typing import Type
-from engine import Screen, Manager, Logger, Node
+from engine import Screen, Manager, Logger
 from screens import Level, Menu, SettingsScreen, GameOverviewScreen, Leaderboard
 from util import DebugWindow, SaveHelper, AutoSaver, is_valid_username
 
 from engine.types import *
 from util.constants import *
-
-if IN_DEBUG:
-    from world import Chest, ItemChest
-    from item import Health
-
-class DebugPalette(Node):
-    """Holds helper functions for faster debugging."""
-    def __init__(self, parent: Node) -> None:
-        super().__init__(parent)
-        self.game: Game = self.manager.game
-
-    def go_to_boss(self) -> None:
-        player = self.manager.get_object("player")
-        fm = self.manager.get_object("floor-manager")
-        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "boss" in room.tags][0]
-
-    def go_to_upgrade(self) -> None:
-        player = self.manager.get_object("player")
-        fm = self.manager.get_object("floor-manager")
-        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "upgrade" in room.tags][0]
-
-    def kill_player(self) -> None:
-        self.manager.get_object("player").kill()
-
-    def complete_everything(self) -> None:
-        fm = self.manager.get_object("floor-manager")
-        for room in fm.rooms.values():
-            room.force_completion()
-
-    def force_win(self) -> None:
-        self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data())
-
-    def spawn_chest(self) -> None:
-        player = self.manager.get_object("player")
-        level = self.manager.get_object("level")
-        itempool = self.manager.get_object("itempool")
-        if not itempool.is_empty():
-            chest = level.add_child(ItemChest(level, player.rect.center, itempool.roll()))
-            colliding = True
-            while colliding:
-                colliding = False
-                for s in self.manager.groups["interact"]:
-                    if s == chest or not isinstance(s, Chest): continue
-                    if chest.rect.colliderect(s.rect):
-                        chest.rect.y += TILE_SIZE
-                        colliding = True
-        else:
-            Logger.warn("Item pool is empty, cannot spawn chest.")
-
-    def spawn_heart(self) -> None:
-        player = self.manager.get_object("player")
-        level = self.manager.get_object("level")
-        level.add_child(Health(level, (player.rect.centerx, player.rect.bottom + 16)))
-
-    def max_items(self) -> None:
-        player = self.manager.get_object("player")
-        inv = player.inventory
-        if inv.primary: inv.primary.upgrade(3)
-        if inv.spell: inv.spell.upgrade(3)
 
 class Game(DebugExpandable):
     # main game class that manages screens and pygame events
@@ -99,7 +40,6 @@ class Game(DebugExpandable):
 
         if IN_DEBUG:
             self.debug_window = DebugWindow(self)
-            self.debug_palette = DebugPalette(self.debug_window)
             self.manager.add_window(self.debug_window.window, "debug")
 
         # dictionary to hold screens
@@ -247,7 +187,6 @@ class Game(DebugExpandable):
                     case _:
                         raise ValueError(f"Unknown window mode: {window_mode}")
         except Exception as e:
-            raise e
             Logger.warn(f"Could not load config option [window-mode]. Defaulting to value {default_config['window-mode']} ({e})")
 
         try:
@@ -313,13 +252,6 @@ class Game(DebugExpandable):
 
                 # delegate certain events to current screen
                 elif event.type == pygame.KEYDOWN:
-                    # debug hotkeys
-                    if IN_DEBUG:
-                        # hot reload
-                        if event.key == pygame.K_F9:
-                            self.load_assets()
-                            self.current_screen_instance = self._screens[self.current_screen](self)
-
                     screen_instance.on_key_down(event.key, event.unicode)
 
                 elif event.type == pygame.MOUSEBUTTONDOWN:
