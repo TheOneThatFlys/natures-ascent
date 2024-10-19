@@ -23,7 +23,9 @@ class Slider(Element):
         self._position_knob()
         
     def _position_knob(self) -> None:
-        self.knob.rect.centerx = self.rect.left + self._value * self.rect.width
+        # self.knob.rect.centerx = self.rect.left + self._value * self.rect.width
+        self.knob.style.offset = (self._value * self.rect.width, self.knob.style.offset[1])
+        self.knob.redraw_image()
 
     def on_mouse_down(self, mouse_button: int) -> None:
         super().on_mouse_down(mouse_button)
