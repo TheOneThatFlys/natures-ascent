@@ -1,5 +1,5 @@
 import pygame
-
+import pyperclip
 from typing import Optional, Callable
 
 from .element import Element
@@ -122,9 +122,14 @@ class TextBox(Element):
         if self.focused:
             if key == pygame.K_BACKSPACE:
                 if pressed_keys[pygame.K_LCTRL]:
-                    self.text = ""
+                    self.text = " ".join(self.text.split(" ")[:-1])
                 else:
                     self.text = self.text[:-1]
+            elif pressed_keys[pygame.K_LCTRL]:
+                if key == pygame.K_c:
+                    pyperclip.copy(self.text)
+                elif key == pygame.K_v:
+                    self.text += pyperclip.paste()
             elif key == pygame.K_RETURN:
                 self.unfocus()
             elif len(self.text) < self.max_length:
