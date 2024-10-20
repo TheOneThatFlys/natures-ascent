@@ -36,6 +36,7 @@ class Manager(DebugExpandable):
 
         # stores windows
         self.windows: dict[str, pygame.Window] = {}
+        self.focused_window: str = "main"
 
         # stores mouse positions of windows
         self._window_mouse_positions: dict[str, tuple[int, int]] = {}

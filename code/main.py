@@ -246,7 +246,10 @@ class Game(DebugExpandable):
                         self.debug_window.kill()
                     self.queue_close()
 
-                if event.type == pygame.MOUSEMOTION:
+                elif event.type == pygame.WINDOWFOCUSGAINED:
+                    self.manager.focused_window = "main" if event.window == self.window else "debug"
+
+                elif event.type == pygame.MOUSEMOTION:
                     # ------------------------------------- vvvvvv little hack to get key from a value in a dict
                     self.manager.on_mouse_motion(event.pos, list(self.manager.windows.keys())[list(self.manager.windows.values()).index(event.window)])
 
@@ -343,8 +346,6 @@ def main() -> None:
     # main entry point
     game = Game()
     game.run()
-
-    Logger.info("Game closed successfully.")
 
 if __name__ == "__main__":
     main()
