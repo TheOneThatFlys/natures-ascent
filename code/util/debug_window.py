@@ -506,6 +506,9 @@ class Console(Element):
         self.n = 0
         self.line_height = 16
 
+        self.exec_history: list[str] = []
+        self.cur_history = 0
+
         def foptions(*options):
             a = ""
             for o in options:
@@ -615,8 +618,26 @@ class Console(Element):
         response = self.parse_command(self.text_enter.text)
         if response != None: self.add_line(response)
 
+        self.cur_history = 0
+        self.exec_history.append(self.text_enter.text)
+
         self.text_enter.set_text("")
         self.text_enter.focus()
+
+    def on_key_down(self, key, unicode):
+        super().on_key_down(key, unicode)
+        if self.text_enter.focused:
+            if key == pygame.K_UP:
+                self.cur_history += 1
+                if self.cur_history > len(self.exec_history): self.cur_history = len(self.exec_history)
+                self.text_enter.set_text(self.exec_history[-self.cur_history])
+            elif key == pygame.K_DOWN:
+                self.cur_history -= 1
+                if self.cur_history < 1: self.cur_history = 0
+
+                if self.cur_history == 0: self.text_enter.set_text("")
+                else:
+                    self.text_enter.set_text(self.exec_history[-self.cur_history])
 
     def display_help(self) -> str:
         help_str = ""
@@ -981,7 +1002,6 @@ class DebugWindow(Screen):
         self.attribute_editor = self.add_child(AttributeEditor(self))
 
         # inject some stuff
-        self.manager.game.__setattr__("debug_palette", DebugPalette(self.manager.game))
         Logger.get().callback = self.attribute_editor.console.parse_log
 
     def on_scroll(self, dx: int, dy: int) -> None:
@@ -1007,19 +1027,3 @@ class DebugWindow(Screen):
         SaveHelper.save_file(pickle.dumps(self.attribute_editor.expanded_folders), SAVE_PATH, False)
         self.dead = True
         self.window.destroy()
-
-class DebugPalette(Node):
-    """Holds helper functions for faster debugging."""
-    def __init__(self, parent: Node) -> None:
-        super().__init__(parent)
-        self.game = self.manager.game
-
-    def go_to_boss(self) -> None:
-        player = self.manager.get_object("player")
-        fm = self.manager.get_object("floor-manager")
-        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "boss" in room.tags][0]
-
-    def go_to_upgrade(self) -> None:
-        player = self.manager.get_object("player")
-        fm = self.manager.get_object("floor-manager")
-        player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "upgrade" in room.tags][0]
