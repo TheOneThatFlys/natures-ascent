@@ -18,6 +18,19 @@ INDEX_SPECIAL_STRING = "$$"
 ALLOWED_REC_TYPES = (DebugExpandable, list, dict, set, tuple, pygame.Rect, pygame.FRect, pygame.Vector2, pygame.sprite.Group)
 SAVE_PATH = os.path.join("debug", "config.dat")
 
+DB_BG_COLOUR = (40, 42, 54)
+DB_BG_COLOUR_LIGHT = (49, 51, 65)
+DB_BG_COLOUR_DARK = (33, 34, 44)
+DB_TEXT_COLOUR = (255, 255, 255)
+DB_TEXT_COLOUR_DARK = (62, 64, 74)
+DB_TEXT_COLOUR_FAINT = (98, 114, 164)
+
+DB_TYPE_COLOUR = (139, 233, 253)
+DB_OP_COLOUR = (255, 121, 198)
+DB_NUM_COLOUR = (189, 147, 249)
+DB_STR_COLOUR = (241, 250, 129)
+DB_FUNC_COLOUR = (80, 250, 123)
+
 def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
     """
     Renders a section of rich text.
@@ -92,6 +105,30 @@ def render_rich_text(font: pygame.font.Font, text: str) -> pygame.Surface:
         x_offset += section.get_width()
 
     return surf
+
+def get_last_colour(text: str) -> tuple[int, int, int]|None:
+    current_colour = None
+    index = 0
+    while index < len(text):
+        letter = text[index]
+        # if valid escape is used followed by an opening bracket
+        if letter != "%":
+            index += 1
+        elif text[index + 1] == "(":
+            # grab the entire colour escape clause
+            # e.g. (255, 0, 0)
+            inside_loop_idx = index
+            inside_acc = ""
+            while inside_loop_idx < len(text):
+                inside_loop_idx += 1
+                inside_acc += text[inside_loop_idx]
+                if text[inside_loop_idx] == ")":
+                    break
+            # create a colour tuple from the string
+            current_colour = tuple(map(int, inside_acc.removeprefix("(").removesuffix(")").replace(" ", "").split(",")))
+            # offset the main loop pointer by the length of the escape clause
+            index = inside_loop_idx + 1
+    return current_colour
 
 class Path:
     def __init__(self, values: tuple = ()) -> None:
@@ -182,7 +219,6 @@ class Inspector(Element):
 
         self.parent: AttributeEditor
 
-        self.background_colour = (33, 34, 44)
         norm_font = pygame.font.SysFont("Consolas", 12, bold = True)
 
         self.title = self.add_child(Text(
@@ -193,7 +229,7 @@ class Inspector(Element):
                 offset = (0, 4),
                 antialiasing = True,
                 font = pygame.font.SysFont("Consolas", 16, bold = True),
-                fore_colour = parent.op_colour
+                fore_colour = DB_OP_COLOUR
             )
         ))
 
@@ -202,7 +238,7 @@ class Inspector(Element):
             text = "Type  ",
             style = Style(
                 offset  = (4, self.title.style.offset[1] + self.title.rect.height),
-                fore_colour = parent.type_colour,
+                fore_colour = DB_TYPE_COLOUR,
                 antialiasing = True,
                 font = norm_font
             )
@@ -225,7 +261,7 @@ class Inspector(Element):
             text = "N/A",
             style = Style(
                 offset = (self.type_text_const.style.offset[0] + self.type_text_const.rect.width, self.type_text_const.style.offset[1]),
-                fore_colour = parent.text_colour,
+                fore_colour = DB_TEXT_COLOUR,
                 antialiasing = True,
                 font = norm_font
             )
@@ -236,7 +272,7 @@ class Inspector(Element):
             text = "N/A",
             style = Style(
                 offset = (self.name_text_const.style.offset[0] + self.name_text_const.rect.width, self.name_text_const.style.offset[1]),
-                fore_colour = parent.text_colour,
+                fore_colour = DB_TEXT_COLOUR,
                 antialiasing = True,
                 font = norm_font
             )
@@ -251,14 +287,14 @@ class Inspector(Element):
             style = Style(
                 size = (self.rect.right - self.value_text_const.rect.right - 8, self.value_text_const.rect.height),
                 offset = (self.value_text_const.rect.width + self.value_text_const.style.offset[0], self.value_text_const.style.offset[1] - 2),
-                colour = parent.background_colour,
+                colour = DB_BG_COLOUR,
                 font = norm_font,
-                fore_colour = parent.text_colour,
+                fore_colour = DB_TEXT_COLOUR,
                 antialiasing = True,
                 window = "debug"
             ),
             focused_style = Style(
-                colour = parent.background_colour_2
+                colour = DB_BG_COLOUR_LIGHT
             )
         ))
 
@@ -271,8 +307,8 @@ class Inspector(Element):
                 visible = False,
                 size = (self.value_text_const.rect.height, self.value_text_const.rect.height),
                 offset = self.value_text_box.style.offset,
-                colour = self.background_colour,
-                fore_colour = parent.text_colour,
+                colour = DB_BG_COLOUR_DARK,
+                fore_colour = DB_TEXT_COLOUR,
                 font = norm_font,
                 antialiasing = True,
                 window = "debug",
@@ -282,7 +318,7 @@ class Inspector(Element):
         self.value_execute_box = self.add_child(Button(
             self,
             style = Style(
-                image = norm_font.render("<call>", True, self.parent.text_colour),
+                image = norm_font.render("<call>", True, DB_TEXT_COLOUR),
                 offset = self.value_text_box.style.offset + pygame.Vector2(0, 2),
                 visible = False,
                 window = "debug"
@@ -299,7 +335,7 @@ class Inspector(Element):
                 offset = self.value_text_const.style.offset + pygame.Vector2(0, self.value_text_const.rect.height + 2),
                 stretch_type = "expand",
                 size = (self.rect.width - 8, self.rect.width - 8),
-                fore_colour = parent.background_colour_2,
+                fore_colour = DB_BG_COLOUR_LIGHT,
                 visible = False
             )
         ))
@@ -407,7 +443,22 @@ class Inspector(Element):
     def update(self) -> None:
         super().update()
         self.image = pygame.Surface((self.style.size))
-        self.image.fill(self.background_colour)
+        self.image.fill(DB_BG_COLOUR_DARK)
+
+class ConsoleCommand(Node):
+    def __init__(self, name: str, arg_pattern: tuple[str, ...], func: Callable[[], str], help_text: str = "", restrict_context: str = ""):
+        self.name = name
+        self.arg_pattern = arg_pattern
+        self.func = func
+        self.restrict_context = restrict_context
+        self.help_text = help_text
+
+    def invoke(self, args: tuple) -> str:
+        if len(args) != len(self.arg_pattern):
+            return f"Unexpected number of arguments (expected %{DB_NUM_COLOUR}{len(self.arg_pattern)}%{DB_TEXT_COLOUR}, got %{DB_NUM_COLOUR}{len(args)}%{DB_TEXT_COLOUR})"
+        if self.restrict_context != "" and self.manager.game.current_screen != self.restrict_context:
+            return f"Command only callable in %{DB_TYPE_COLOUR}{self.restrict_context}%{DB_TEXT_COLOUR} screen"
+        return self.func(*args)
 
 class Console(Element):
     def __init__(self, parent: AttributeEditor, height: int):
@@ -421,7 +472,6 @@ class Console(Element):
                 offset = (0, -height),
                 font = parent.font,
                 window = "debug",
-                fore_colour = parent.text_colour
             )
         )
 
@@ -446,99 +496,216 @@ class Console(Element):
                 antialiasing = True,
                 offset = (8, 8),
                 size = (self.style.size[0] - 16, 16),
-                colour = parent.background_colour_2,
+                colour = DB_BG_COLOUR_LIGHT,
                 font = parent.font,
                 window = "debug",
-                fore_colour = parent.text_colour,
+                fore_colour = DB_TEXT_COLOUR,
             )
         ))
 
         self.n = 0
         self.line_height = 16
 
-        self.col_norm = (255, 255, 255)
-        self.col_dark = self.parent.text_colour_faint
-        self.col_high = self.parent.str_colour
-        self.col_num = self.parent.num_colour
-        self.col_type = self.parent.type_colour
-        self.col_error = (180, 20, 20)
+        def foptions(*options):
+            a = ""
+            for o in options:
+                a += f"%{DB_STR_COLOUR}{o}%{DB_OP_COLOUR}|"
+            return a.removesuffix("|") + f"%{DB_TEXT_COLOUR}"
+
+        self.commands: list[ConsoleCommand] = [
+            ConsoleCommand("help", (), self.display_help, "displays this message"),
+            ConsoleCommand("set", ("path", "value"), self.set_value, f"update the variable at %{DB_TYPE_COLOUR}path"),
+            ConsoleCommand("call", ("path",), self.call_func, f"call the function at %{DB_TYPE_COLOUR}path"),
+            ConsoleCommand("spawn", ("item",), self._cmd_spawn, f"spawn {foptions("chest", "heart")}", restrict_context = "level"),
+            ConsoleCommand("complete", (), self._cmd_complete, "complete all rooms in level", restrict_context = "level"),
+            ConsoleCommand("max", (), self._cmd_max, "max upgrade currently equipped items", restrict_context = "level"),
+            ConsoleCommand("goto", ("room",), self._cmd_goto, f"go to {foptions("boss", "upgrade", "spawn")} room", restrict_context = "level"),
+            ConsoleCommand("heal", (), self._cmd_heal, "heal the player to max hp", restrict_context = "level"),
+            ConsoleCommand("health", ("health",), self._cmd_health, "set player max health", restrict_context = "level"),
+            ConsoleCommand("damage", ("damage",), self._cmd_damage, "set primary weapon damage", restrict_context = "level"),
+        ]
+
+        for cmd in self.commands:
+            Node.__init__(cmd, self)
+
+    def _cmd_spawn(self, item: str) -> str:
+        if item == "heart":
+            from item import Health
+            player = self.manager.get_object("player")
+            level = self.manager.get_object("level")
+            a = level.add_child(Health(level, (player.rect.centerx, player.rect.bottom + 16)))
+            return f"Spawned heart at (%{DB_NUM_COLOUR}{int(a.rect.centerx)}%{DB_TEXT_COLOUR}, %{DB_NUM_COLOUR}{int(a.rect.centery)}%{DB_TEXT_COLOUR})"
+
+        elif item == "chest":
+            from world import ItemChest, Chest
+            player = self.manager.get_object("player")
+            level = self.manager.get_object("level")
+            itempool = self.manager.get_object("itempool")
+            if not itempool.is_empty():
+                chest = level.add_child(ItemChest(level, player.rect.center, itempool.roll()))
+                colliding = True
+                while colliding:
+                    colliding = False
+                    for s in self.manager.groups["interact"]:
+                        if s == chest or not isinstance(s, Chest): continue
+                        if chest.rect.colliderect(s.rect):
+                            chest.rect.y += TILE_SIZE
+                            colliding = True
+                return f"Spawned chest at (%{DB_NUM_COLOUR}{chest.rect.centerx}%{DB_TEXT_COLOUR}, %{DB_NUM_COLOUR}{chest.rect.centery}%{DB_TEXT_COLOUR})"
+            else:
+                return f"Cannot spawn chest: item pool is empty"
+            
+        else:
+            return f"Unknown item type: %{DB_TYPE_COLOUR}{item}"
+
+    def _cmd_complete(self) -> str:
+        fm = self.manager.get_object("floor-manager")
+        for room in fm.rooms.values():
+            room.force_completion()
+        return f"Command executed"
+
+    def _cmd_max(self) -> str:
+        player = self.manager.get_object("player")
+        inv = player.inventory
+        if inv.primary: inv.primary.upgrade(3)
+        if inv.spell: inv.spell.upgrade(3)
+        return f"Command executed"
+
+    def _cmd_goto(self, room: str) -> str:
+        player = self.manager.get_object("player")
+        fm = self.manager.get_object("floor-manager")
+
+        if room not in ("boss", "upgrade", "spawn"): return f"Unknown room: %{DB_TYPE_COLOUR}{room}"
+
+        rooms = [r.bounding_rect.center for (_, r) in fm.rooms.items() if room in r.tags]
+        if len(rooms) == 0: return f"Could not find room: %{DB_TYPE_COLOUR}{room}"
+        player.rect.center = rooms[0]
+        return f"Teleported player to (%{DB_NUM_COLOUR}{int(player.rect.centerx)}%{DB_TEXT_COLOUR}, %{DB_NUM_COLOUR}{int(player.rect.centery)}%{DB_TEXT_COLOUR})"
+
+    def _cmd_heal(self) -> str:
+        player = self.manager.get_object("player")
+        player.health = player.stats.health
+        return f"Fully healed player"
+
+    def _cmd_health(self, health: str) -> str:
+        try:
+            x = int(health)
+        except ValueError:
+            return f"Health must be an integer"
+        
+        player = self.manager.get_object("player")
+        player.stats.health = x
+        return f"Set player health to %{DB_NUM_COLOUR}{x}"
+
+    def _cmd_damage(self, damage: str) -> str:
+        try:
+            x = int(damage)
+        except ValueError:
+            return f"Damage must be an integer"
+        
+        player = self.manager.get_object("player")
+        player.inventory.primary.damage = x
+        return f"Set player damage to %{DB_NUM_COLOUR}{x}"
+
+    def _on_enter(self) -> None:
+        if not pygame.key.get_pressed()[pygame.K_RETURN]: return
+        if self.text_enter.text == "": return
+
+        self.add_line(f"%{DB_TEXT_COLOUR_FAINT}> {self.text_enter.text}")
+        response = self.parse_command(self.text_enter.text)
+        if response != None: self.add_line(response)
+
+        self.text_enter.set_text("")
+        self.text_enter.focus()
+
+    def display_help(self) -> str:
+        help_str = ""
+        cmd_width = 8
+        arg_width = 16
+        vdiv = f" %{DB_TEXT_COLOUR_DARK}| "
+        help_str += f"%{DB_FUNC_COLOUR}command" + " " * (cmd_width - len("command")) + vdiv + f"%{DB_FUNC_COLOUR}args" + " " * (arg_width - len("args")) + vdiv + f"%{DB_FUNC_COLOUR}description" + "\n"
+
+        for command in self.commands:
+            help_str += f"%{DB_OP_COLOUR}{command.name}" + " " * (cmd_width - len(command.name)) + vdiv
+
+            args_string = ""
+            for arg in command.arg_pattern:
+                args_string += f"<{arg}> "
+            if args_string != "": args_string = args_string.removesuffix(" ")
+
+            args_string = f"%{DB_TYPE_COLOUR}{args_string}" + " " * (arg_width - len(args_string))
+            help_str += args_string + vdiv
+
+            help_str += f"%{DB_TEXT_COLOUR}{command.help_text}"
+
+            help_str += "\n"
+        help_str = help_str.removesuffix("\n")
+        return help_str        
+
+    def set_value(self, path: str, value: str) -> str:
+        try:
+            current_type = type(self.parent.get_item_from_string(path))
+        except ValueError:
+            return f"Invalid path: %{DB_STR_COLOUR}{path}"
+        try:
+            new_v = current_type(value)
+        except ValueError:
+            return f"Invalid value for type %{DB_TYPE_COLOUR}{current_type.__name__}"
+        self.parent.inspector.set_attribute_value(path, new_v)
+        return ""
+    
+    def call_func(self, path: str) -> str:
+        try:
+            func = self.parent.get_item_from_string(path)
+        except ValueError:
+            return f"Invalid path: %{DB_STR_COLOUR}{path}"
+        if not isinstance(func, Callable): return f"Error: %{DB_STR_COLOUR}{path} is not callable"
+        res = func()
+        return f"%{DB_STR_COLOUR}{path} %{DB_TEXT_COLOUR}returned {res}"
 
     def parse_command(self, text: str) -> str:
         args = text.split(" ")
         if len(args) == 0: return "No command issued"
         cmd = args[0].lower()
-        match cmd:
-            case "ping":
-                return f"%{self.col_highlight}Pong!"
-            
-            case "set":
-                if len(args) != 3: return f"Unexpected number of arguments (expected %{self.col_num}2%{self.col_norm}, got %{self.col_num}{len(args) - 1}%{self.col_norm})"
-                path_to_value = args[1]
-                try:
-                    current_type = type(self.parent.get_item_from_string(path_to_value))
-                except ValueError:
-                    return f"Invalid path: %{self.col_high}{path_to_value}%{self.col_norm}"
-                try:
-                    new_v = current_type(args[2])
-                except ValueError:
-                    return f"Invalid value for type %{self.col_type}{current_type.__name__}"
-                self.parent.inspector.set_attribute_value(path_to_value, new_v)
-                return ""
-            
-            case "call":
-                if len(args) != 2: return f"Unexpected number of arguments (expected %{self.col_num}1%{self.col_norm}, got %{self.col_num}{len(args) - 1}%{self.col_norm})"
-                path_to_value = args[1]
-                try:
-                    func = self.parent.get_item_from_string(path_to_value)
-                except ValueError:
-                    return f"Invalid path: %{self.col_high}{path_to_value}%{self.col_norm}"
-                if not isinstance(func, Callable): return f"Error: %{self.col_high}{path_to_value} is not callable"
-                res = func()
-                return f"%{self.col_high}{path_to_value} returned {res}"
-            
-            case "chest":
-                if self.manager.game.current_screen != "level": return f"Command only callable in %{self.col_high}'level'%{self.col_norm} screen"
-                self.parse_command("call game.debug_palette.spawn_chest")
-                return ""
-        
-            case _:
-                return f"Unknown command: %{self.col_high}{cmd}"
+
+        for command in self.commands:
+            if command.name == cmd:
+                return command.invoke(args[1:] if len(args) > 1 else ())
+        return f"Unknown command: %{DB_OP_COLOUR}{cmd}"
 
     def parse_log(self, time: str, level: str, msg: str) -> None:
         if self.parent.parent.dead: return
-        self.add_line(f"[{level}] {msg}")
-
-    def _on_enter(self) -> None:
-        if self.text_enter.text == "": return
-
-        self.add_line(f"%{self.col_dark}> {self.text_enter.text}")
-        response = self.parse_command(self.text_enter.text)
-        self.add_line(response)
-
-        self.text_enter.set_text("")
-        self.text_enter.focus()
+        self.add_line(f"{msg}")
 
     def add_line(self, text: str) -> None:
         if text == "": return
-        img = render_rich_text(self.style.font, f"%{self.style.fore_colour}" + text)
-        self.text_history.add_child(Element(self.text_history, style = Style(
-            image = img,
-            size = (self.style.size[0], self.line_height),
-            stretch_type = "none",
-            offset = (8, self.n * self.line_height),
-        )))
-        self.n += 1
-        self.text_history.on_resize(self.style.size)
-        self.text_history.scroll_by(-self.line_height)
+        last_colour = DB_TEXT_COLOUR
+        for line in text.split("\n"):
+            riched = f"%{last_colour}{line}"
+            img = render_rich_text(self.style.font, riched)
+            last_colour = get_last_colour(riched)
 
-        if self.text_history._scroll_amount != self.text_history._scroll_min:
-            self.text_history._scroll_amount = self.text_history._scroll_min
+            self.text_history.add_child(Element(self.text_history, style = Style(
+                image = img,
+                size = (self.style.size[0], self.line_height),
+                stretch_type = "none",
+                offset = (8, self.n * self.line_height),
+            )))
+
+            self.n += 1
             self.text_history.on_resize(self.style.size)
+            self.text_history.scroll_by(-self.line_height)
+
+            if self.text_history._scroll_amount != self.text_history._scroll_min:
+                self.text_history._scroll_amount = self.text_history._scroll_min
+                self.text_history.on_resize(self.style.size)
 
     def on_resize(self, new_size: Vec2) -> None:
         self.style.size = new_size[0], self.style.size[1]
         self.text_enter.style.size = (new_size[0] - 16, 16)
         self.text_history.style.size = (new_size[0], self.text_history.style.size[1])
+        for e in self.text_history.children:
+            e.style.size = (new_size[0], e.style.size[1])
         super().on_resize(new_size)
 
 class AttributeEditor(Element):
@@ -549,25 +716,10 @@ class AttributeEditor(Element):
         self.font = pygame.font.SysFont("Consolas", 12, bold = True)
         self.line_height = self.font.get_linesize()
 
-        self.TEST_VALUE_WOW = 10
-
         self.tab_length = self.font.size("  ")[0]
         self.tab_line_offset = self.font.size(" |")[0] / 2
         self.padding_left = 4
         self.padding_top = 4
-
-        self.background_colour = (40, 42, 54)
-        self.background_colour_2 = (49, 51, 65)
-
-        self.text_colour = (255, 255, 255)
-        self.text_colour_2 = (62, 64, 74)
-        self.text_colour_faint = (98, 114, 164)
-
-        self.type_colour = (139, 233, 253)
-        self.op_colour = (255, 121, 198)
-        self.num_colour = (189, 147, 249)
-        self.str_colour = (241, 250, 129)
-        self.func_colour = (80, 250, 123)
 
         self.expanded_folders: set[str] = set()
         self.add_folder_chain(Path(["game"]))
@@ -602,7 +754,7 @@ class AttributeEditor(Element):
             return None
 
         for i in range(tab_index):
-            pygame.draw.line(self.image, self.text_colour_2, (i * self.tab_length + self.tab_line_offset, position.y), (i * self.tab_length + self.tab_line_offset, position.y + self.line_height))
+            pygame.draw.line(self.image, DB_TEXT_COLOUR_DARK, (i * self.tab_length + self.tab_line_offset, position.y), (i * self.tab_length + self.tab_line_offset, position.y + self.line_height))
 
         # draw text
         s = render_rich_text(self.font, rich_text)
@@ -611,7 +763,7 @@ class AttributeEditor(Element):
 
     def render_folder(self, rich_text: str, folder_path: str, tab_index: int) -> pygame.Rect:
         icon = "▼" if folder_path in self.expanded_folders else "►"
-        return self.render_line(f"%{self.text_colour}{icon} {rich_text}", tab_index)
+        return self.render_line(f"%{DB_TEXT_COLOUR}{icon} {rich_text}", tab_index)
 
     def __group_dict_items(self, dict_items: list[tuple], caller: Any) -> list[tuple]:
         def __ranking(x) -> int:
@@ -636,16 +788,16 @@ class AttributeEditor(Element):
 
                 omit_name = isinstance(k, str) and k.startswith(INDEX_SPECIAL_STRING)
 
-                type_str = f"%{self.type_colour}{v.__class__.__name__}"
+                type_str = f"%{DB_TYPE_COLOUR}{v.__class__.__name__}"
                 key_str = f"%{self.str_colour}{k.__repr__()}" if isinstance(caller, dict) and isinstance(k, str) else k 
-                name_str = f"%{self.text_colour}{'' if omit_name else key_str}"
+                name_str = f"%{DB_TEXT_COLOUR}{'' if omit_name else key_str}"
 
                 # if not a base value
                 if isinstance(v, ALLOWED_REC_TYPES) or is_dataclass(v):
                     # render the folder line and get bounding rect
                     folder_text = f"{type_str} {name_str}"
                     if isinstance(v, (list, set, dict, tuple)):
-                        folder_text += f" %{self.text_colour_faint}({len(v)})"
+                        folder_text += f" %{DB_TEXT_COLOUR_FAINT}({len(v)})"
                     bounding_rect = self.render_folder(folder_text, str(path_to_item), depth)
                     if bounding_rect:
                         # add a folder button
@@ -672,20 +824,20 @@ class AttributeEditor(Element):
                         __rec_render(thing_to_render, path_to_item, depth + 1, v)
                 else:
                     v_type = v.__class__
-                    v_colour = self.text_colour
+                    v_colour = DB_TEXT_COLOUR
                     if v_type == int or v_type == float or v_type == bool:
-                        v_colour = self.num_colour
+                        v_colour = DB_NUM_COLOUR
                     elif v_type == str:
-                        v_colour = self.str_colour
+                        v_colour = DB_STR_COLOUR
 
                     value = v
                     if isinstance(v, str):
                         value = v.__repr__()
 
                     value_str = f"%{v_colour}{value}"
-                    op_str = f"%{self.op_colour}{'' if omit_name else ' = '}"
+                    op_str = f"%{DB_OP_COLOUR}{'' if omit_name else ' = '}"
                     line_text = f"{type_str} {name_str}{op_str}{value_str}"
-                    if inspect.ismethod(v): line_text = f"{type_str} %{self.func_colour}{key_str}"
+                    if inspect.ismethod(v): line_text = f"{type_str} %{DB_FUNC_COLOUR}{key_str}"
                     bounding_rect = self.render_line("  " + line_text, depth)
 
                     # add attribute editor button
@@ -703,7 +855,6 @@ class AttributeEditor(Element):
     def get_item_from_string(self, path) -> Any:
         split_path = path.split(".")
         if len(split_path) == "" or split_path[0] != "game":
-            print(split_path)
             raise ValueError("Invalid path")
         current_node = self.manager.game
         if len(split_path) == 1: return current_node
@@ -778,9 +929,9 @@ class AttributeEditor(Element):
     def update(self) -> None:
         super().update()
         self.update_buttons()
-        self.image.fill(self.background_colour)
+        self.image.fill(DB_BG_COLOUR)
         if self.highlighted_rect:
-            pygame.draw.rect(self.image, self.background_colour_2, self.highlighted_rect)
+            pygame.draw.rect(self.image, DB_BG_COLOUR_LIGHT, self.highlighted_rect)
         self.render_lists()
 
 class DebugWindow(Screen):
@@ -872,44 +1023,3 @@ class DebugPalette(Node):
         player = self.manager.get_object("player")
         fm = self.manager.get_object("floor-manager")
         player.rect.center = [room.bounding_rect.center for (_, room) in fm.rooms.items() if "upgrade" in room.tags][0]
-
-    def kill_player(self) -> None:
-        self.manager.get_object("player").kill()
-
-    def complete_everything(self) -> None:
-        fm = self.manager.get_object("floor-manager")
-        for room in fm.rooms.values():
-            room.force_completion()
-
-    def force_win(self) -> None:
-        self.game.set_screen("overview", game_data = self.manager.get_object("level").get_overview_data())
-
-    def spawn_chest(self) -> None:
-        from world import ItemChest, Chest
-        player = self.manager.get_object("player")
-        level = self.manager.get_object("level")
-        itempool = self.manager.get_object("itempool")
-        if not itempool.is_empty():
-            chest = level.add_child(ItemChest(level, player.rect.center, itempool.roll()))
-            colliding = True
-            while colliding:
-                colliding = False
-                for s in self.manager.groups["interact"]:
-                    if s == chest or not isinstance(s, Chest): continue
-                    if chest.rect.colliderect(s.rect):
-                        chest.rect.y += TILE_SIZE
-                        colliding = True
-        else:
-            Logger.warn("Item pool is empty, cannot spawn chest.")
-
-    def spawn_heart(self) -> None:
-        from item import Health
-        player = self.manager.get_object("player")
-        level = self.manager.get_object("level")
-        level.add_child(Health(level, (player.rect.centerx, player.rect.bottom + 16)))
-
-    def max_items(self) -> None:
-        player = self.manager.get_object("player")
-        inv = player.inventory
-        if inv.primary: inv.primary.upgrade(3)
-        if inv.spell: inv.spell.upgrade(3)
