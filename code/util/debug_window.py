@@ -506,6 +506,8 @@ class Console(Element):
         self.n = 0
         self.line_height = 16
 
+        self.write_buf: str = ""
+
         self.exec_history: list[str] = []
         self.cur_history = 0
 
@@ -699,7 +701,7 @@ class Console(Element):
         self.add_line(f"{msg}")
 
     def add_line(self, text: str) -> None:
-        if text == "": return
+        # if text == "": return
         last_colour = DB_TEXT_COLOUR
         for line in text.split("\n"):
             riched = f"%{last_colour}{line}"
@@ -721,6 +723,27 @@ class Console(Element):
                 self.text_history._scroll_amount = self.text_history._scroll_min
                 self.text_history.on_resize(self.style.size)
 
+        self.cleanup_history()
+
+    def cleanup_history(self, max_n: int = 256) -> None:
+        if len(self.text_history.children) <= max_n: return
+
+        n_removed = 0
+        while len(self.text_history.children) > max_n:
+            a = self.text_history.children[0]
+            self.text_history.remove_child(a)
+            n_removed += 1
+            self.n -= 1
+
+        for child in self.text_history.children:
+            child.style.offset = (child.style.offset[0], child.style.offset[1] - n_removed * self.line_height)
+
+        self.text_history._calculate_scroll_bounds()
+        if self.text_history._scroll_amount != self.text_history._scroll_min:
+            self.text_history._scroll_amount = self.text_history._scroll_min
+        
+        self.text_history.on_resize(self.style.size)
+
     def on_resize(self, new_size: Vec2) -> None:
         self.style.size = new_size[0], self.style.size[1]
         self.text_enter.style.size = (new_size[0] - 16, 16)
@@ -729,6 +752,17 @@ class Console(Element):
             e.style.size = (new_size[0], e.style.size[1])
         super().on_resize(new_size)
 
+    def write(self, string: str) -> None:
+        for l in string:
+            if l == "\n":
+                self.add_line(self.write_buf)
+                self.write_buf = ""
+            else:
+                self.write_buf += l
+
+    def flush(self) -> None:
+        pass
+        
 class AttributeEditor(Element):
     def __init__(self, parent: DebugWindow):
         self.console_size = 200
@@ -1002,7 +1036,7 @@ class DebugWindow(Screen):
         self.attribute_editor = self.add_child(AttributeEditor(self))
 
         # inject some stuff
-        Logger.get().callback = self.attribute_editor.console.parse_log
+        sys.stdout = self.attribute_editor.console
 
     def on_scroll(self, dx: int, dy: int) -> None:
         self.attribute_editor.on_scroll(dx, dy)
