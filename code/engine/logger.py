@@ -23,10 +23,10 @@ class Logger:
     WARNING = "WARN"
     ERROR = "ERROR"
 
-    def __init__(self, path: str = _MAGIC_VALUE, callback: Optional[Callable[[str, str, str], None]] = None) -> None:
+    def __init__(self, path: str = _MAGIC_VALUE, use_colours: bool = False) -> None:
         self.out_path = path
         self.allowed_values: list[str] = []
-        self.callback = callback
+        self.use_colours = use_colours
 
         if self.out_path != _MAGIC_VALUE:
             with open(self.out_path, "a"):
@@ -88,10 +88,11 @@ class Logger:
 
         rn = datetime.datetime.now()
         time = f"{rn:%H:%M:%S}.{str(rn.microsecond)[0:3]}"
-        if self.callback != None:
-            self.callback(str(time), str(level), str(msg))
-        elif self.out_path == _MAGIC_VALUE:
-            logged_msg = f"{TerminalColours.TIME}{time} {getattr(TerminalColours, level)}{level} {TerminalColours.END}{msg}"
+        if self.out_path == _MAGIC_VALUE:
+            if self.use_colours:
+                logged_msg = f"{TerminalColours.TIME}{time} {getattr(TerminalColours, level)}{level} {TerminalColours.END}{msg}"
+            else:
+                logged_msg = f"{time} {level} {msg}"
             print(logged_msg)
         else:
             logged_msg = f"[{time}] [{level}] {msg}"
