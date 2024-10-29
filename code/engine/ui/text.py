@@ -1,6 +1,11 @@
 import pygame
-import pyperclip
 from typing import Optional, Callable
+
+try:
+    import pyperclip
+    clipboard = pyperclip
+except ImportError:
+    clipboard = None
 
 from .element import Element
 from .style import Style
@@ -120,16 +125,20 @@ class TextBox(Element):
         if not self.enabled: return
         pressed_keys = pygame.key.get_pressed()
         if self.focused:
+            # deletion
             if key == pygame.K_BACKSPACE:
+                # delete whole word when pressing ctrl
                 if pressed_keys[pygame.K_LCTRL]:
                     self.text = " ".join(self.text.split(" ")[:-1])
                 else:
                     self.text = self.text[:-1]
-            elif pressed_keys[pygame.K_LCTRL]:
+            # copy and paste (if available)
+            elif pressed_keys[pygame.K_LCTRL] and clipboard != None:
                 if key == pygame.K_c:
-                    pyperclip.copy(self.text)
+                    clipboard.copy(self.text)
                 elif key == pygame.K_v:
-                    self.text += pyperclip.paste()
+                    self.text += clipboard.paste()
+            # enter
             elif key == pygame.K_RETURN:
                 self.unfocus()
             elif len(self.text) < self.max_length:
