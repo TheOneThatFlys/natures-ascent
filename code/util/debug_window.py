@@ -1,6 +1,7 @@
 # this code is terrible - mostly hacked together in a weekend
 
 from __future__ import annotations
+from hmac import new
 
 import pygame, inspect, pickle, os
 
@@ -671,7 +672,14 @@ class Console(Element):
         except ValueError:
             return f"Invalid path: %{DB_STR_COLOUR}{path}"
         try:
-            new_v = current_type(value)
+            if current_type == bool:
+                if value == "0" or value.lower() == "false":
+                    new_v = False
+                elif value == "1" or value.lower() == "true":
+                    new_v = True
+                else: raise ValueError()
+            else:
+                new_v = current_type(value)
         except ValueError:
             return f"Invalid value for type %{DB_TYPE_COLOUR}{current_type.__name__}"
         self.parent.inspector.set_attribute_value(path, new_v)
