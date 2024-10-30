@@ -1,9 +1,8 @@
 # this code is terrible - mostly hacked together in a weekend
 
 from __future__ import annotations
-from hmac import new
 
-import pygame, inspect, pickle, os
+import pygame, inspect, pickle, os, sys
 
 from typing import Any, Callable
 from dataclasses import is_dataclass
@@ -18,6 +17,7 @@ from .constants import *
 INDEX_SPECIAL_STRING = "$$"
 ALLOWED_REC_TYPES = (DebugExpandable, list, dict, set, tuple, pygame.Rect, pygame.FRect, pygame.Vector2, pygame.sprite.Group)
 SAVE_PATH = os.path.join("debug", "config.dat")
+BOOT_PATH = os.path.join("debug", "boot.txt")
 
 DB_BG_COLOUR = (40, 42, 54)
 DB_BG_COLOUR_LIGHT = (49, 51, 65)
@@ -446,8 +446,10 @@ class Inspector(Element):
         self.image = pygame.Surface((self.style.size))
         self.image.fill(DB_BG_COLOUR_DARK)
 
+class ArguementCollection(str): pass
+
 class ConsoleCommand(Node):
-    def __init__(self, name: str, arg_pattern: tuple[str, ...], func: Callable[[], str], help_text: str = "", restrict_context: str = ""):
+    def __init__(self, name: str, arg_pattern: tuple[str, ...]|ArguementCollection, func: Callable[[], str], help_text: str = "", restrict_context: str = ""):
         self.name = name
         self.arg_pattern = arg_pattern
         self.func = func
@@ -455,6 +457,8 @@ class ConsoleCommand(Node):
         self.help_text = help_text
 
     def invoke(self, args: tuple) -> str:
+        if isinstance(self.arg_pattern, ArguementCollection):
+            return self.func(args)
         if len(args) != len(self.arg_pattern):
             return f"Unexpected number of arguments (expected %{DB_NUM_COLOUR}{len(self.arg_pattern)}%{DB_TEXT_COLOUR}, got %{DB_NUM_COLOUR}{len(args)}%{DB_TEXT_COLOUR})"
         if self.restrict_context != "" and self.manager.game.current_screen != self.restrict_context:
@@ -521,11 +525,12 @@ class Console(Element):
         self.commands: list[ConsoleCommand] = [
             ConsoleCommand("help", (), self.display_help, "displays this message"),
             ConsoleCommand("set", ("path", "value"), self.set_value, f"update the variable at %{DB_TYPE_COLOUR}path"),
-            ConsoleCommand("call", ("path",), self.call_func, f"call the function at %{DB_TYPE_COLOUR}path"),
-            ConsoleCommand("spawn", ("item",), self._cmd_spawn, f"spawn {foptions("chest", "heart")}", restrict_context = "level"),
+            ConsoleCommand("call", ("path",), self.call_func, f"call the function at %{DB_TYPE_COLOUR}path"),   
+            ConsoleCommand("echo", ArguementCollection("string"), lambda text: f' '.join(text), f"echo the provided string"),
+            ConsoleCommand("spawn", ("item",), self._cmd_spawn, f"spawn {foptions('chest', 'heart')}", restrict_context = "level"),
             ConsoleCommand("complete", (), self._cmd_complete, "complete all rooms in level", restrict_context = "level"),
             ConsoleCommand("max", (), self._cmd_max, "max upgrade currently equipped items", restrict_context = "level"),
-            ConsoleCommand("goto", ("room",), self._cmd_goto, f"go to {foptions("boss", "upgrade", "spawn")} room", restrict_context = "level"),
+            ConsoleCommand("goto", ("room",), self._cmd_goto, f"go to {foptions('boss', 'upgrade', 'spawn')} room", restrict_context = "level"),
             ConsoleCommand("heal", (), self._cmd_heal, "heal the player to max hp", restrict_context = "level"),
             ConsoleCommand("health", ("health",), self._cmd_health, "set player max health", restrict_context = "level"),
             ConsoleCommand("damage", ("damage",), self._cmd_damage, "set primary weapon damage", restrict_context = "level"),
@@ -616,16 +621,27 @@ class Console(Element):
     def _on_enter(self) -> None:
         if not pygame.key.get_pressed()[pygame.K_RETURN]: return
         if self.text_enter.text == "": return
+        self.parse_statement(self.text_enter.text)
+        self.text_enter.set_text("")
+        self.text_enter.focus()
 
-        self.add_line(f"%{DB_TEXT_COLOUR_FAINT}> {self.text_enter.text}")
-        response = self.parse_command(self.text_enter.text)
+    def exec_command(self, command: str) -> str:
+        args = command.split(" ")
+        if len(args) == 0: return "No command issued"
+        cmd = args[0].lower()
+
+        for command in self.commands:
+            if command.name == cmd:
+                return command.invoke(args[1:] if len(args) > 1 else ())
+        return f"Unknown command: %{DB_OP_COLOUR}{cmd}"
+
+    def parse_statement(self, text) -> None:
+        self.add_line(f"%{DB_TEXT_COLOUR_FAINT}> {text}")
+        response = self.exec_command(text)
         if response != None: self.add_line(response)
 
         self.cur_history = 0
         self.exec_history.append(self.text_enter.text)
-
-        self.text_enter.set_text("")
-        self.text_enter.focus()
 
     def on_key_down(self, key, unicode):
         super().on_key_down(key, unicode)
@@ -655,6 +671,8 @@ class Console(Element):
             args_string = ""
             for arg in command.arg_pattern:
                 args_string += f"<{arg}> "
+            if isinstance(command.arg_pattern, ArguementCollection):
+                args_string = f"<{command.arg_pattern}...>"
             if args_string != "": args_string = args_string.removesuffix(" ")
 
             args_string = f"%{DB_TYPE_COLOUR}{args_string}" + " " * (arg_width - len(args_string))
@@ -693,16 +711,6 @@ class Console(Element):
         if not isinstance(func, Callable): return f"Error: %{DB_STR_COLOUR}{path} is not callable"
         res = func()
         return f"%{DB_STR_COLOUR}{path} %{DB_TEXT_COLOUR}returned {res}"
-
-    def parse_command(self, text: str) -> str:
-        args = text.split(" ")
-        if len(args) == 0: return "No command issued"
-        cmd = args[0].lower()
-
-        for command in self.commands:
-            if command.name == cmd:
-                return command.invoke(args[1:] if len(args) > 1 else ())
-        return f"Unknown command: %{DB_OP_COLOUR}{cmd}"
 
     def parse_log(self, time: str, level: str, msg: str) -> None:
         if self.parent.parent.dead: return
@@ -1044,7 +1052,12 @@ class DebugWindow(Screen):
         self.attribute_editor = self.add_child(AttributeEditor(self))
 
         # inject some stuff
-        sys.stdout = self.attribute_editor.console
+        if "-cout" not in sys.argv: sys.stdout = self.attribute_editor.console
+
+        if os.path.exists(BOOT_PATH):
+            with open(BOOT_PATH, "r") as f:
+                for line in f.read().split("\n"):
+                    self.attribute_editor.console.parse_statement(line)
 
     def on_scroll(self, dx: int, dy: int) -> None:
         self.attribute_editor.on_scroll(dx, dy)

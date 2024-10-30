@@ -332,7 +332,7 @@ def main() -> None:
     # create a debug folder
     if IN_DEBUG and not os.path.exists("debug"): os.mkdir("debug")
 
-    log_to_console = IN_DEBUG or "-cout" in sys.argv or "-c" in sys.argv
+    log_to_console = IN_DEBUG or "-cout" in sys.argv
     
     Logger.start("$CONSOLE" if log_to_console else os.path.join("debug", f"{datetime.datetime.now():%H.%M.%S-%d.%m.%y}.log"))
     
